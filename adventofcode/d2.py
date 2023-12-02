@@ -1,10 +1,8 @@
-import argparse
 import logging
-import pathlib
 from typing import Iterable
 
 
-def parse_input(lines: Iterable[str]) -> Iterable[tuple[int, list[dict[str, int]]]]:
+def _parse_input(lines: Iterable[str]) -> Iterable[tuple[int, list[dict[str, int]]]]:
     for line in lines:
         g_id, rounds = line[5:].split(":")
         logging.debug(f"{line=}")
@@ -22,7 +20,7 @@ def parse_input(lines: Iterable[str]) -> Iterable[tuple[int, list[dict[str, int]
 
 
 def p1(input: str):
-    d = parse_input(input.splitlines())
+    d = _parse_input(input.splitlines())
 
     def maxes():
         for g_id, rounds in d:
@@ -43,7 +41,7 @@ def p1(input: str):
 
 
 def p2(input: str):
-    d = parse_input(input.splitlines())
+    d = _parse_input(input.splitlines())
 
     def maxes():
         for _, rounds in d:
