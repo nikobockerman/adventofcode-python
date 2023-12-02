@@ -4,6 +4,8 @@ import logging
 import pathlib
 import sys
 
+from adventofcode.answers import ANSWERS
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -32,10 +34,16 @@ def main():
         print(f"Solver for problem {problem} not found")
         sys.exit(1)
 
-    input = (pathlib.Path(__file__).parent / f"input-d{day}.txt").read_text()
+    input = (pathlib.Path(__file__).parent / f"input-d{day}.txt").read_text().strip()
 
     result = func(input)
     print(result)
+
+    answer = ANSWERS.get(day, {}).get(problem)
+    if answer is not None:
+        if str(answer) != str(result):
+            print(f"Incorrect answer! Correct is: {answer}")
+            sys.exit(2)
 
 
 if __name__ == "__main__":
