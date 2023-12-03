@@ -44,6 +44,8 @@ def main():
         if str(answer) != str(result):
             print(f"Incorrect answer! Correct is: {answer}")
             sys.exit(2)
+        else:
+            print(f"Answer is still correct!")
 
 
 if __name__ == "__main__":
