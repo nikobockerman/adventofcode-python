@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 import logging
 from typing import Iterable
 
+from adventofcode.tooling.ranges import are_ranges_overlapping, partition_range
+
 
 @dataclass
 class RangeMap:
@@ -102,43 +104,13 @@ def p1(input: str):
     return min(map(lambda seed: _get_location(maps, seed), seeds))
 
 
-@dataclass
-class Range:
-    start: int
-    stop: int
-
-    def __len__(self):
-        return self.stop - self.start
-
-    def partition(self, separator: "Range") -> tuple["Range", "Range", "Range"]:
-        before = Range(0, 0)
-        if self.start < separator.start:
-            before = Range(self.start, min(self.stop, separator.start))
-
-        overlap = Range(0, 0)
-        if self.start < separator.stop and self.stop > separator.start:
-            overlap = Range(
-                max(self.start, separator.start), min(self.stop, separator.stop)
-            )
-
-        after = Range(0, 0)
-        if self.stop > separator.stop:
-            after = Range(max(self.start, separator.stop), self.stop)
-
-        return before, overlap, after
-
-    def overlaps(self, other: "Range") -> bool:
-        _, overlap, _ = self.partition(other)
-        return bool(overlap)
-
-
 def _resolve_overlap(
-    overlap_source: Range,
-    dest_overlap: Range,
+    overlap_source: range,
+    dest_overlap: range,
     next_ind: int,
     max_ind: int,
-    mapping_ranges: list[list[tuple[Range, Range]]],
-) -> Iterable[tuple[Range, Range]]:
+    mapping_ranges: list[list[tuple[range, range]]],
+) -> Iterable[tuple[range, range]]:
     for resolved_source, top_level_source in _resolve_ranges(
         overlap_source, next_ind, max_ind, mapping_ranges
     ):
@@ -148,16 +120,16 @@ def _resolve_overlap(
         resolved_dest_stop = dest_overlap.stop - resolved_offset_stop
         assert resolved_dest_start < resolved_dest_stop
 
-        yield Range(resolved_dest_start, resolved_dest_stop), top_level_source
+        yield range(resolved_dest_start, resolved_dest_stop), top_level_source
 
 
 def _resolve_ranges(
-    dest_range_for_ind: Range,
+    dest_range_for_ind: range,
     ind: int,
     max_ind: int,
-    mapping_ranges: list[list[tuple[Range, Range]]],
+    mapping_ranges: list[list[tuple[range, range]]],
     mapping_start_index: int | None = None,
-) -> Iterable[tuple[Range, Range]]:
+) -> Iterable[tuple[range, range]]:
     assert ind <= max_ind
 
     if mapping_start_index is None:
@@ -172,7 +144,7 @@ def _resolve_ranges(
             dest_before,
             dest_overlap,
             dest_after,
-        ) = dest_range_for_ind.partition(mapping_dest_range)
+        ) = partition_range(dest_range_for_ind, mapping_dest_range)
 
         if not dest_overlap:
             assert bool(dest_before) != bool(dest_after)
@@ -189,7 +161,7 @@ def _resolve_ranges(
         overlap_source_stop = mapping_source_range.stop - overlap_offset_stop
         assert overlap_source_start < overlap_source_stop
 
-        overlap_source = Range(overlap_source_start, overlap_source_stop)
+        overlap_source = range(overlap_source_start, overlap_source_stop)
 
         if ind == max_ind:
             yield dest_overlap, overlap_source
@@ -217,7 +189,7 @@ def p2(input: str):
     seed_starts = seed_data[0::2]
     seed_lengths = seed_data[1::2]
     seed_ranges = [
-        Range(start, start + length) for start, length in zip(seed_starts, seed_lengths)
+        range(start, start + length) for start, length in zip(seed_starts, seed_lengths)
     ]
 
     maps.humidity_to_location_map.sort(key=lambda map: map.destination_start)
@@ -231,11 +203,11 @@ def p2(input: str):
     mapping_ranges = [
         [
             (
-                Range(
+                range(
                     mapping.destination_start,
                     mapping.destination_start + mapping.length,
                 ),
-                Range(mapping.source_start, mapping.source_start + mapping.length),
+                range(mapping.source_start, mapping.source_start + mapping.length),
             )
             for mapping in mappings
         ]
@@ -253,14 +225,15 @@ def p2(input: str):
 
     location_dest_ranges = [dest_range for dest_range, _ in mapping_ranges[0]]
     if location_dest_ranges[0].start > 0:
-        location_dest_ranges.insert(0, Range(0, location_dest_ranges[0].start))
+        location_dest_ranges.insert(0, range(0, location_dest_ranges[0].start))
 
     for initial_dest_range in location_dest_ranges:
         for resolved_location_range, resolved_seed_range in _resolve_ranges(
             initial_dest_range, 0, max_ind, mapping_ranges
         ):
             if any(
-                resolved_seed_range.overlaps(seed_range) for seed_range in seed_ranges
+                are_ranges_overlapping(resolved_seed_range, seed_range)
+                for seed_range in seed_ranges
             ):
                 return resolved_location_range.start
     assert False

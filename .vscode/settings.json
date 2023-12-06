@@ -1,7 +1,4 @@
 {
-    "python.testing.pytestArgs": [
-        "adventofcode"
-    ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true
 }
