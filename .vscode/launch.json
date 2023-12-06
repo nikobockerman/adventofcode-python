@@ -11,8 +11,8 @@
             "program": "${workspaceFolder}/adventofcode/main.py",
             "args": [
                 "-d",
-                "3",
-                "1"
+                "5",
+                "2"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
