@@ -54,7 +54,7 @@ def _parse_input(lines: Iterable[str]) -> list[InputRow]:
     return rows
 
 
-def p1(input: str):
+def p1(input: str) -> int:
     d = _parse_input(input.splitlines())
 
     symbol_indexes = [[symbol.index for symbol in row.symbols] for row in d]
@@ -67,7 +67,7 @@ def p1(input: str):
         adjacent_row_range_begin: int
         adjacent_row_range_end: int
 
-    def is_adjacent(number: Number):
+    def is_adjacent(number: Number) -> bool:
         for row_ind in range(
             number.adjacent_row_range_begin, number.adjacent_row_range_end
         ):
@@ -97,7 +97,7 @@ def p1(input: str):
     return sum
 
 
-def p2(input: str):
+def p2(input: str) -> int:
     d = _parse_input(input.splitlines())
 
     @dataclass

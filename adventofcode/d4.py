@@ -21,7 +21,7 @@ def _parse_input(lines: Iterable[str]) -> Iterable[InputCards]:
         )
 
 
-def p1(input: str):
+def p1(input: str) -> int:
     d = _parse_input(input.splitlines())
 
     sum: int = 0
@@ -32,7 +32,7 @@ def p1(input: str):
     return sum
 
 
-def p2(input: str):
+def p2(input: str) -> int:
     d = list(_parse_input(input.splitlines()))
 
     counts: dict[int, int] = {n + 1: 1 for n in range(len(d))}

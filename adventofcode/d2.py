@@ -19,10 +19,10 @@ def _parse_input(lines: Iterable[str]) -> Iterable[tuple[int, list[dict[str, int
         ]
 
 
-def p1(input: str):
+def p1(input: str) -> int:
     d = _parse_input(input.splitlines())
 
-    def maxes():
+    def maxes() -> Iterable[tuple[int, dict[str, int]]]:
         for g_id, rounds in d:
             max_counts: dict[str, int] = {}
             for round in rounds:
@@ -40,10 +40,10 @@ def p1(input: str):
     )
 
 
-def p2(input: str):
+def p2(input: str) -> int:
     d = _parse_input(input.splitlines())
 
-    def maxes():
+    def maxes() -> Iterable[dict[str, int]]:
         for _, rounds in d:
             max_counts: dict[str, int] = {}
             for round in rounds:

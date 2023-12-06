@@ -40,9 +40,9 @@ def _p1_ints(lines: Iterable[str], use_texts: bool) -> Iterable[int]:
         yield value
 
 
-def p1(input: str):
+def p1(input: str) -> int:
     return sum(_p1_ints(input.splitlines(), False))
 
 
-def p2(input: str):
+def p2(input: str) -> int:
     return sum(_p1_ints(input.splitlines(), True))

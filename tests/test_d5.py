@@ -36,9 +36,9 @@ humidity-to-location map:
 56 93 4""".strip()
 
 
-def test_p1():
+def test_p1() -> None:
     assert 35 == d5.p1(example_input)
 
 
-def test_p2():
+def test_p2() -> None:
     assert 46 == d5.p2(example_input)

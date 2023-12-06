@@ -30,11 +30,11 @@ def _parse_input(lines: list[str]) -> tuple[list[int], InputMaps]:
 
     maps = InputMaps()
 
-    def save_mappings(mappings: list[RangeMap], mapping_name: str):
+    def save_mappings(mappings: list[RangeMap], mapping_name: str) -> None:
         prop_name = mapping_name.replace("-", "_").replace(" ", "_")
         setattr(maps, prop_name, mappings)
 
-    def parse_mapping(line: str):
+    def parse_mapping(line: str) -> RangeMap:
         return RangeMap(*map(int, line.strip().split()))
 
     mapping_name: str | None = None
@@ -62,8 +62,8 @@ def _parse_input(lines: list[str]) -> tuple[list[int], InputMaps]:
     return seeds, maps
 
 
-def _get_location(maps: InputMaps, seed: int):
-    def get_destination(mappings: list[RangeMap], source: int):
+def _get_location(maps: InputMaps, seed: int) -> int:
+    def get_destination(mappings: list[RangeMap], source: int) -> int:
         for mapping in mappings:
             if source < mapping.source_start or source >= (
                 mapping.source_start + mapping.length
@@ -96,7 +96,7 @@ def _get_location(maps: InputMaps, seed: int):
     )
 
 
-def p1(input: str):
+def p1(input: str) -> int:
     seeds, maps = _parse_input(input.splitlines())
     logging.debug(f"{seeds=}")
     logging.debug(f"{maps=}")
@@ -183,7 +183,7 @@ def _resolve_ranges(
         yield from _resolve_ranges(dest_range_for_ind, ind + 1, max_ind, mapping_ranges)
 
 
-def p2(input: str):
+def p2(input: str) -> int:
     seed_data, maps = _parse_input(input.splitlines())
 
     seed_starts = seed_data[0::2]

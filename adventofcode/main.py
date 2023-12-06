@@ -8,7 +8,7 @@ from typing import Any
 from adventofcode.answers import ANSWERS
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("day", type=int, nargs="?")
     parser.add_argument("problem", type=int, nargs="?")
@@ -94,7 +94,7 @@ def run_problem(day: int, problem: int, *, quiet: bool = False) -> Any:
 
     result = func(input)
 
-    def output(msg: str):
+    def output(msg: str) -> None:
         if not quiet:
             print(msg)
 
