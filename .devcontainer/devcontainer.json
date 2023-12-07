@@ -20,6 +20,7 @@
             "extensions": [
                 "charliermarsh.ruff",
                 "editorconfig.editorconfig",
+                "github.vscode-github-actions",
                 "ms-python.black-formatter",
                 "ms-python.mypy-type-checker"
             ],
