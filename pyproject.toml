@@ -16,6 +16,10 @@ pytest = "^7.4.3"
 [tool.poetry.scripts]
 adventofcode = "adventofcode.main:main"
 
+[tool.mypy]
+python_version = "3.12"
+strict_optional = true
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
