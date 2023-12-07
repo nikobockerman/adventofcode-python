@@ -193,12 +193,6 @@ def p2(input_str: str) -> int:
     ]
 
     maps.humidity_to_location_map.sort(key=lambda m: m.destination_start)
-    # maps.temperature_to_humidity_map.sort(key=lambda map: map.destination_start)
-    # maps.light_to_temperature_map.sort(key=lambda map: map.destination_start)
-    # maps.water_to_light_map.sort(key=lambda map: map.destination_start)
-    # maps.fertilizer_to_water_map.sort(key=lambda map: map.destination_start)
-    # maps.soil_to_fertilizer_map.sort(key=lambda map: map.destination_start)
-    # maps.seed_to_soil_map.sort(key=lambda map: map.destination_start)
 
     mapping_ranges = [
         [
@@ -225,7 +219,7 @@ def p2(input_str: str) -> int:
 
     location_dest_ranges = [dest_range for dest_range, _ in mapping_ranges[0]]
     if location_dest_ranges[0].start > 0:
-        location_dest_ranges.insert(0, range(0, location_dest_ranges[0].start))
+        location_dest_ranges.insert(0, range(location_dest_ranges[0].start))
 
     for initial_dest_range in location_dest_ranges:
         for resolved_location_range, resolved_seed_range in _resolve_ranges(

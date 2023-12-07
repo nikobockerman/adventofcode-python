@@ -24,7 +24,8 @@ def _find_first_and_last_int(input_str: str, use_texts: bool) -> tuple[str, str]
             else:
                 last = val
 
-    assert first is not None and last is not None
+    assert first is not None
+    assert last is not None
     return first, last
 
 

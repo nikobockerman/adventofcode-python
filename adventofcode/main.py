@@ -26,10 +26,7 @@ def main() -> None:
         problem: int = args.problem
         exit_code = specific_problem(day, problem)
     else:
-        if args.day is None:
-            days = list(ANSWERS.keys())
-        else:
-            days = [args.day]
+        days = list(ANSWERS.keys()) if args.day is None else [args.day]
         all_passed = None
         for day in days:
             problems = ANSWERS.get(day, {})
@@ -52,43 +49,56 @@ def main() -> None:
 def specific_problem(day: int, problem: int) -> int:
     try:
         run_problem(day, problem)
-        return 0
-    except ProblemNotFoundError as e:
+    except SolverNotFoundError as e:
         print(e, file=sys.stderr)
         return 1
     except IncorrectAnswerError as e:
         print(e, file=sys.stderr)
         return 2
+    else:
+        return 0
 
 
 def one_of_many_problems(day: int, problem: int) -> bool:
     try:
         run_problem(day, problem, quiet=True)
-        print(f"Day {day} Problem {problem}: PASS")
-        return True
     except IncorrectAnswerError as e:
         print(f"Day {day} Problem {problem}: FAIL: {e}")
         return False
+    else:
+        print(f"Day {day} Problem {problem}: PASS")
+        return True
 
 
-class ProblemNotFoundError(RuntimeError):
+class SolverNotFoundError(RuntimeError):
     pass
+
+
+class DayNotFoundError(SolverNotFoundError):
+    def __init__(self, day: int) -> None:
+        super().__init__(f"Solver for day {day} not found")
+
+
+class ProblemNotFoundError(SolverNotFoundError):
+    def __init__(self, problem: int) -> None:
+        super().__init__(f"Solver for problem {problem} not found")
 
 
 class IncorrectAnswerError(RuntimeError):
-    pass
+    def __init__(self, answer: Any, correct_answer: Any) -> None:
+        super().__init__(f"Incorrect answer: {answer}. Correct is: {correct_answer}")
 
 
 def run_problem(day: int, problem: int, *, quiet: bool = False) -> Any:
     try:
         mod = importlib.import_module(f"adventofcode.d{day}")
     except ModuleNotFoundError:
-        raise ProblemNotFoundError(f"Solver for day {day} not found") from None
+        raise DayNotFoundError(day) from None
 
     try:
         func = getattr(mod, f"p{problem}")
     except AttributeError:
-        raise ProblemNotFoundError(f"Solver for problem {problem} not found") from None
+        raise ProblemNotFoundError(problem) from None
 
     input_str = (
         (pathlib.Path(__file__).parent / f"input-d{day}.txt").read_text().strip()
@@ -103,11 +113,9 @@ def run_problem(day: int, problem: int, *, quiet: bool = False) -> Any:
     answer = ANSWERS.get(day, {}).get(problem)
     if answer is not None:
         if str(answer) != str(result):
-            raise IncorrectAnswerError(
-                f"Incorrect answer: {result}. Correct is: {answer}"
-            )
-        else:
-            output(f"Answer is still correct: {result}")
+            raise IncorrectAnswerError(result, answer)
+
+        output(f"Answer is still correct: {result}")
     else:
         output(f"{result}")
 

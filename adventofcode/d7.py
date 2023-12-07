@@ -55,20 +55,17 @@ def p1(input_str: str) -> int:
         counts = sorted(value_counts.items(), key=lambda x: x[1], reverse=True)
         if counts[0][1] == 5:
             return HandType.FiveOfAKind
-        elif counts[0][1] == 4:
+        if counts[0][1] == 4:
             return HandType.FourOfAKind
-        elif counts[0][1] == 3:
+        if counts[0][1] == 3:
             if counts[1][1] == 2:
                 return HandType.FullHouse
-            else:
-                return HandType.ThreeOfAKind
-        elif counts[0][1] == 2:
+            return HandType.ThreeOfAKind
+        if counts[0][1] == 2:
             if counts[1][1] == 2:
                 return HandType.TwoPair
-            else:
-                return HandType.OnePair
-        else:
-            return HandType.HighCard
+            return HandType.OnePair
+        return HandType.HighCard
 
     def card_value(value: str) -> int:
         assert len(value) == 1
@@ -111,20 +108,17 @@ def p2(input_str: str) -> int:
         counts = sorted(value_counts.items(), key=lambda x: x[1], reverse=True)
         if counts[0][1] + jokers == 5:
             return HandType.FiveOfAKind
-        elif counts[0][1] + jokers == 4:
+        if counts[0][1] + jokers == 4:
             return HandType.FourOfAKind
-        elif counts[0][1] + jokers == 3:
+        if counts[0][1] + jokers == 3:
             if counts[1][1] == 2:
                 return HandType.FullHouse
-            else:
-                return HandType.ThreeOfAKind
-        elif counts[0][1] + jokers == 2:
+            return HandType.ThreeOfAKind
+        if counts[0][1] + jokers == 2:
             if counts[1][1] == 2:
                 return HandType.TwoPair
-            else:
-                return HandType.OnePair
-        else:
-            return HandType.HighCard
+            return HandType.OnePair
+        return HandType.HighCard
 
     def card_value(value: str) -> int:
         assert len(value) == 1

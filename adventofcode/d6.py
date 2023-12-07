@@ -41,10 +41,7 @@ def p2(input_str: str) -> int:
     def first_possible_button_press_time(
         max_time: int, distance_to_beat: int, forward: bool
     ) -> int:
-        if forward:
-            r = range(1, max_time)
-        else:
-            r = range(max_time - 1, 0, -1)
+        r = range(1, max_time) if forward else range(max_time - 1, 0, -1)
         for button_press_time in r:
             if _is_winning_scenario(button_press_time, max_time, distance_to_beat):
                 return button_press_time

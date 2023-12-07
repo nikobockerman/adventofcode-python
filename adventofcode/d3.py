@@ -36,7 +36,7 @@ def _parse_input(lines: Iterable[str]) -> list[InputRow]:
                     number += symbol
                 continue
 
-            elif number is not None:
+            if number is not None:
                 row.numbers.append(InputNumber(number, ind - len(number)))
                 number = None
 
