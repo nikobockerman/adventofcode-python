@@ -35,8 +35,8 @@ def p1(input: str) -> int:
 
 def p2(input: str) -> int:
     d = _parse_input(input.splitlines())
-    time = int(reduce(lambda t1, t2: str(t1) + str(t2), (t for t, _ in d)))
-    distance = int(reduce(lambda d1, d2: str(d1) + str(d2), (d for _, d in d)))
+    time = int(reduce(lambda t1, t2: t1 + t2, (str(t) for t, _ in d)))
+    distance = int(reduce(lambda d1, d2: d1 + d2, (str(d) for _, d in d)))
 
     def first_possible_button_press_time(
         max_time: int, distance_to_beat: int, forward: bool
