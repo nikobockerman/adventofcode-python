@@ -12,21 +12,21 @@ def _parse_input(lines: Iterable[str]) -> Iterable[tuple[int, list[dict[str, int
                 color_count[1]: int(color_count[0])
                 for color_count in (
                     color_count_str.strip().split(" ")
-                    for color_count_str in round.strip().split(",")
+                    for color_count_str in game_round.strip().split(",")
                 )
             }
-            for round in rounds.strip().split(";")
+            for game_round in rounds.strip().split(";")
         ]
 
 
-def p1(input: str) -> int:
-    d = _parse_input(input.splitlines())
+def p1(input_str: str) -> int:
+    d = _parse_input(input_str.splitlines())
 
     def maxes() -> Iterable[tuple[int, dict[str, int]]]:
         for g_id, rounds in d:
             max_counts: dict[str, int] = {}
-            for round in rounds:
-                for color, count in round.items():
+            for game_round in rounds:
+                for color, count in game_round.items():
                     if color not in max_counts or max_counts[color] < count:
                         max_counts[color] = count
             yield g_id, max_counts
@@ -40,14 +40,14 @@ def p1(input: str) -> int:
     )
 
 
-def p2(input: str) -> int:
-    d = _parse_input(input.splitlines())
+def p2(input_str: str) -> int:
+    d = _parse_input(input_str.splitlines())
 
     def maxes() -> Iterable[dict[str, int]]:
         for _, rounds in d:
             max_counts: dict[str, int] = {}
-            for round in rounds:
-                for color, count in round.items():
+            for game_round in rounds:
+                for color, count in game_round.items():
                     if color not in max_counts or max_counts[color] < count:
                         max_counts[color] = count
             yield max_counts

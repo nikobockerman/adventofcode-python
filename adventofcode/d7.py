@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import enum
+from dataclasses import dataclass
 from functools import total_ordering
 from types import NotImplementedType
 from typing import Iterable
@@ -40,11 +40,11 @@ class Hand:
         for i in range(5):
             if self.card_values[i] != other.card_values[i]:
                 return self.card_values[i] < other.card_values[i]
-        assert False
+        raise AssertionError()
 
 
-def p1(input: str) -> int:
-    d = _parse_input(input.splitlines())
+def p1(input_str: str) -> int:
+    d = _parse_input(input_str.splitlines())
 
     def classify_hand_type(cards: str) -> HandType:
         assert len(cards) == 5
@@ -93,8 +93,8 @@ def p1(input: str) -> int:
     return sum((ind + 1) * hand.bid for ind, hand in enumerate(hands))
 
 
-def p2(input: str) -> int:
-    d = _parse_input(input.splitlines())
+def p2(input_str: str) -> int:
+    d = _parse_input(input_str.splitlines())
 
     def classify_hand_type(cards: str) -> HandType:
         assert len(cards) == 5

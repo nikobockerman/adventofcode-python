@@ -4,16 +4,16 @@ from typing import Iterable
 STR_DIGITS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 
 
-def _find_first_and_last_int(input: str, use_texts: bool) -> tuple[str, str]:
+def _find_first_and_last_int(input_str: str, use_texts: bool) -> tuple[str, str]:
     first: str | None = None
     last: str | None = None
-    for ind, c in enumerate(input):
+    for ind, c in enumerate(input_str):
         val = None
         if c.isdigit():
             val = c
         elif use_texts:
             for digit_ind, str_digit in enumerate(STR_DIGITS):
-                if input.find(str_digit, ind, ind + len(str_digit)) >= 0:
+                if input_str.find(str_digit, ind, ind + len(str_digit)) >= 0:
                     val = str(digit_ind + 1)
                     break
 
@@ -40,9 +40,9 @@ def _p1_ints(lines: Iterable[str], use_texts: bool) -> Iterable[int]:
         yield value
 
 
-def p1(input: str) -> int:
-    return sum(_p1_ints(input.splitlines(), False))
+def p1(input_str: str) -> int:
+    return sum(_p1_ints(input_str.splitlines(), False))
 
 
-def p2(input: str) -> int:
-    return sum(_p1_ints(input.splitlines(), True))
+def p2(input_str: str) -> int:
+    return sum(_p1_ints(input_str.splitlines(), True))

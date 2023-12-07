@@ -56,7 +56,7 @@ def specific_problem(day: int, problem: int) -> int:
     except ProblemNotFoundError as e:
         print(e, file=sys.stderr)
         return 1
-    except IncorrectAnswer as e:
+    except IncorrectAnswerError as e:
         print(e, file=sys.stderr)
         return 2
 
@@ -66,7 +66,7 @@ def one_of_many_problems(day: int, problem: int) -> bool:
         run_problem(day, problem, quiet=True)
         print(f"Day {day} Problem {problem}: PASS")
         return True
-    except IncorrectAnswer as e:
+    except IncorrectAnswerError as e:
         print(f"Day {day} Problem {problem}: FAIL: {e}")
         return False
 
@@ -75,7 +75,7 @@ class ProblemNotFoundError(RuntimeError):
     pass
 
 
-class IncorrectAnswer(RuntimeError):
+class IncorrectAnswerError(RuntimeError):
     pass
 
 
@@ -83,16 +83,18 @@ def run_problem(day: int, problem: int, *, quiet: bool = False) -> Any:
     try:
         mod = importlib.import_module(f"adventofcode.d{day}")
     except ModuleNotFoundError:
-        raise ProblemNotFoundError(f"Solver for day {day} not found")
+        raise ProblemNotFoundError(f"Solver for day {day} not found") from None
 
     try:
         func = getattr(mod, f"p{problem}")
     except AttributeError:
-        raise ProblemNotFoundError(f"Solver for problem {problem} not found")
+        raise ProblemNotFoundError(f"Solver for problem {problem} not found") from None
 
-    input = (pathlib.Path(__file__).parent / f"input-d{day}.txt").read_text().strip()
+    input_str = (
+        (pathlib.Path(__file__).parent / f"input-d{day}.txt").read_text().strip()
+    )
 
-    result = func(input)
+    result = func(input_str)
 
     def output(msg: str) -> None:
         if not quiet:
@@ -101,7 +103,9 @@ def run_problem(day: int, problem: int, *, quiet: bool = False) -> Any:
     answer = ANSWERS.get(day, {}).get(problem)
     if answer is not None:
         if str(answer) != str(result):
-            raise IncorrectAnswer(f"Incorrect answer: {result}. Correct is: {answer}")
+            raise IncorrectAnswerError(
+                f"Incorrect answer: {result}. Correct is: {answer}"
+            )
         else:
             output(f"Answer is still correct: {result}")
     else:

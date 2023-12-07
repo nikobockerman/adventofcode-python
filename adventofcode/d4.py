@@ -4,7 +4,7 @@ from typing import Iterable
 
 @dataclass
 class InputCards:
-    id: int
+    card_id: int
     winning: list[int]
     own: list[int]
 
@@ -21,25 +21,25 @@ def _parse_input(lines: Iterable[str]) -> Iterable[InputCards]:
         )
 
 
-def p1(input: str) -> int:
-    d = _parse_input(input.splitlines())
+def p1(input_: str) -> int:
+    d = _parse_input(input_.splitlines())
 
-    sum: int = 0
+    result: int = 0
     for cards in d:
         matches = len(set(cards.winning) & set(cards.own))
         if matches > 0:
-            sum += 2 ** (matches - 1)
-    return sum
+            result += 2 ** (matches - 1)
+    return result
 
 
-def p2(input: str) -> int:
-    d = list(_parse_input(input.splitlines()))
+def p2(input_str: str) -> int:
+    d = list(_parse_input(input_str.splitlines()))
 
     counts: dict[int, int] = {n + 1: 1 for n in range(len(d))}
     for cards in d:
         matches = len(set(cards.winning) & set(cards.own))
-        card_count = counts[cards.id]
-        for i in range(cards.id + 1, cards.id + 1 + matches):
+        card_count = counts[cards.card_id]
+        for i in range(cards.card_id + 1, cards.card_id + 1 + matches):
             counts[i] += card_count
 
     return sum(v for v in counts.values())

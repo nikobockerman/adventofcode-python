@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
 import logging
+from dataclasses import dataclass, field
 from typing import Iterable
 
 from adventofcode.tooling.ranges import are_ranges_overlapping, partition_range
@@ -96,8 +96,8 @@ def _get_location(maps: InputMaps, seed: int) -> int:
     )
 
 
-def p1(input: str) -> int:
-    seeds, maps = _parse_input(input.splitlines())
+def p1(input_str: str) -> int:
+    seeds, maps = _parse_input(input_str.splitlines())
     logging.debug(f"{seeds=}")
     logging.debug(f"{maps=}")
 
@@ -183,8 +183,8 @@ def _resolve_ranges(
         yield from _resolve_ranges(dest_range_for_ind, ind + 1, max_ind, mapping_ranges)
 
 
-def p2(input: str) -> int:
-    seed_data, maps = _parse_input(input.splitlines())
+def p2(input_str: str) -> int:
+    seed_data, maps = _parse_input(input_str.splitlines())
 
     seed_starts = seed_data[0::2]
     seed_lengths = seed_data[1::2]
@@ -192,7 +192,7 @@ def p2(input: str) -> int:
         range(start, start + length) for start, length in zip(seed_starts, seed_lengths)
     ]
 
-    maps.humidity_to_location_map.sort(key=lambda map: map.destination_start)
+    maps.humidity_to_location_map.sort(key=lambda m: m.destination_start)
     # maps.temperature_to_humidity_map.sort(key=lambda map: map.destination_start)
     # maps.light_to_temperature_map.sort(key=lambda map: map.destination_start)
     # maps.water_to_light_map.sort(key=lambda map: map.destination_start)
@@ -236,4 +236,4 @@ def p2(input: str) -> int:
                 for seed_range in seed_ranges
             ):
                 return resolved_location_range.start
-    assert False
+    raise AssertionError()

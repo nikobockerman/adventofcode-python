@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
 import logging
+from dataclasses import dataclass, field
 from typing import Iterable
 
 
@@ -54,8 +54,8 @@ def _parse_input(lines: Iterable[str]) -> list[InputRow]:
     return rows
 
 
-def p1(input: str) -> int:
-    d = _parse_input(input.splitlines())
+def p1(input_str: str) -> int:
+    d = _parse_input(input_str.splitlines())
 
     symbol_indexes = [[symbol.index for symbol in row.symbols] for row in d]
 
@@ -78,7 +78,7 @@ def p1(input: str) -> int:
                     return True
         return False
 
-    sum = 0
+    result = 0
     for row_ind, row in enumerate(d):
         for input_number in row.numbers:
             number = Number(
@@ -90,15 +90,15 @@ def p1(input: str) -> int:
             )
             if is_adjacent(number):
                 logging.debug(f"{input_number=}. Adjacent")
-                sum += number.number
+                result += number.number
             else:
                 logging.debug(f"{input_number=}. NOT adjacent")
 
-    return sum
+    return result
 
 
-def p2(input: str) -> int:
-    d = _parse_input(input.splitlines())
+def p2(input_str: str) -> int:
+    d = _parse_input(input_str.splitlines())
 
     @dataclass
     class Number:
@@ -143,7 +143,7 @@ def p2(input: str) -> int:
             return False
         return True
 
-    sum = 0
+    result = 0
     for gear_symbol in gear_symbols:
         adjacent_numbers: list[Number] = []
         for number in numbers:
@@ -152,5 +152,5 @@ def p2(input: str) -> int:
                 if len(adjacent_numbers) > 2:
                     break
         if len(adjacent_numbers) == 2:
-            sum += adjacent_numbers[0].number * adjacent_numbers[1].number
-    return sum
+            result += adjacent_numbers[0].number * adjacent_numbers[1].number
+    return result

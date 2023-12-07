@@ -15,8 +15,8 @@ def _is_winning_scenario(
     return distance > distance_to_beat
 
 
-def p1(input: str) -> int:
-    d = _parse_input(input.splitlines())
+def p1(input_str: str) -> int:
+    d = _parse_input(input_str.splitlines())
 
     def possible_button_press_times(
         max_time: int, distance_to_beat: int
@@ -33,8 +33,8 @@ def p1(input: str) -> int:
     return reduce(lambda r1, r2: r1 * r2, possible_scenarios)
 
 
-def p2(input: str) -> int:
-    d = _parse_input(input.splitlines())
+def p2(input_str: str) -> int:
+    d = _parse_input(input_str.splitlines())
     time = int(reduce(lambda t1, t2: t1 + t2, (str(t) for t, _ in d)))
     distance = int(reduce(lambda d1, d2: d1 + d2, (str(d) for _, d in d)))
 
@@ -48,7 +48,7 @@ def p2(input: str) -> int:
         for button_press_time in r:
             if _is_winning_scenario(button_press_time, max_time, distance_to_beat):
                 return button_press_time
-        assert False
+        raise AssertionError()
 
     first_button_press_time = first_possible_button_press_time(time, distance, True)
     last_button_press_time = first_possible_button_press_time(time, distance, False)
