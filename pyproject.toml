@@ -5,6 +5,20 @@ description = ""
 authors = ["Niko Böckerman <git.585wj@slmail.me>"]
 readme = "README.md"
 
+[tool.poe.tasks]
+_black_check = "black --check ."
+_isort_check = "isort --check-only ."
+mypy = "mypy ."
+ruff = "ruff ."
+lint = ["_black_check", "_isort_check", "mypy", "ruff"]
+
+black = "black ."
+isort = "isort ."
+format = ["black", "isort"]
+
+pytest = "pytest ."
+test = ["pytest"]
+
 [tool.poetry.dependencies]
 python = "^3.12"
 
@@ -14,6 +28,7 @@ mypy = "^1.7.1"
 pytest = "^7.4.3"
 ruff = "^0.1.7"
 isort = "^5.12.0"
+poethepoet = "^0.24.4"
 
 [tool.poetry.scripts]
 adventofcode = "adventofcode.main:main"
