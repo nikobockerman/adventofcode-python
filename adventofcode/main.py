@@ -1,32 +1,33 @@
-import argparse
 import importlib
 import logging
 import pathlib
 import sys
-from typing import Any
+from typing import Any, Optional
+
+import typer
+from typing_extensions import Annotated
 
 from adventofcode.answers import ANSWERS
 
+app = typer.Typer()
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("day", type=int, nargs="?")
-    parser.add_argument("problem", type=int, nargs="?")
-    parser.add_argument("--debug", "-d", action="store_true")
-    args = parser.parse_args()
 
+@app.command()
+def main(
+    day: Annotated[Optional[int], typer.Argument()] = None,
+    problem: Annotated[Optional[int], typer.Argument()] = None,
+    debug: Annotated[bool, typer.Option("--debug", "-d")] = False,
+) -> None:
     level = logging.INFO
-    if args.debug:
+    if debug:
         level = logging.DEBUG
     logging.basicConfig(level=level)
 
     exit_code: int = 0
-    if args.day is not None and args.problem is not None:
-        day: int = args.day
-        problem: int = args.problem
+    if day is not None and problem is not None:
         exit_code = specific_problem(day, problem)
     else:
-        days = list(ANSWERS.keys()) if args.day is None else [args.day]
+        days = list(ANSWERS.keys()) if day is None else [day]
         all_passed = None
         for day in days:
             problems = ANSWERS.get(day, {})
@@ -121,4 +122,4 @@ def run_problem(day: int, problem: int, *, quiet: bool = False) -> Any:
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
