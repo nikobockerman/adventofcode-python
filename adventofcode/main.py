@@ -18,9 +18,12 @@ def main(
     problem: Annotated[Optional[int], typer.Argument()] = None,
     debug: Annotated[bool, typer.Option("--debug", "-d")] = False,
 ) -> None:
-    level = logging.INFO
     if debug:
         level = logging.DEBUG
+    elif day is None or problem is None:
+        level = logging.WARNING
+    else:
+        level = logging.INFO
     logging.basicConfig(level=level)
 
     exit_code: int = 0
