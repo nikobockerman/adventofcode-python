@@ -16,6 +16,9 @@ class Dir(Enum):
         return str(self)
 
 
+AllDirections = (Dir.N, Dir.E, Dir.S, Dir.W)
+
+
 @dataclass(frozen=True)
 class Coord2d:
     x: int
