@@ -1,0 +1,59 @@
+import contextlib
+from typing import Iterable
+
+from adventofcode.tooling.map import Coord2d, Map2d
+
+
+class InputMap(Map2d[str]):
+    def __init__(self, data: Iterable[str]):
+        super().__init__([list(line) for line in data])
+
+
+def _calculate_distance(
+    coord1: Coord2d,
+    coord2: Coord2d,
+    expansion_indices_x: set[int],
+    expansion_indices_y: set[int],
+    expansion_distance: int,
+) -> int:
+    min_x = min(coord1.x, coord2.x)
+    max_x = max(coord1.x, coord2.x)
+    min_y = min(coord1.y, coord2.y)
+    max_y = max(coord1.y, coord2.y)
+    distance = max_x - min_x + max_y - min_y
+    traveled_x_indices = set(range(min_x + 1, max_x))
+    traveled_y_indices = set(range(min_y + 1, max_y))
+
+    distance += len(traveled_x_indices & expansion_indices_x) * (expansion_distance - 1)
+    distance += len(traveled_y_indices & expansion_indices_y) * (expansion_distance - 1)
+
+    return distance
+
+
+def calculate_distance_between_galaxies(input_str: str, expansion_distance: int) -> int:
+    input_map = InputMap(input_str.splitlines())
+    empty_x_indices = set(range(input_map.len_x))
+    empty_y_indices = set(range(input_map.len_y))
+    galaxy_coords: list[Coord2d] = []
+    for coord, _ in filter(lambda d: d[1] == "#", input_map.iter_data()):
+        with contextlib.suppress(KeyError):
+            empty_x_indices.remove(coord.x)
+        with contextlib.suppress(KeyError):
+            empty_y_indices.remove(coord.y)
+        galaxy_coords.append(coord)
+
+    return sum(
+        _calculate_distance(
+            coord, other_coord, empty_x_indices, empty_y_indices, expansion_distance
+        )
+        for first_ind, coord in enumerate(galaxy_coords[:-1])
+        for other_coord in galaxy_coords[first_ind + 1 :]
+    )
+
+
+def p1(input_str: str) -> int:
+    return calculate_distance_between_galaxies(input_str, 2)
+
+
+def p2(input_str: str) -> int:
+    return calculate_distance_between_galaxies(input_str, 1_000_000)
