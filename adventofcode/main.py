@@ -27,6 +27,7 @@ def main(
             "times.",
         ),
     ] = 0,
+    day_suffix: Annotated[str, typer.Option("--day-suffix", "-s")] = "",
 ) -> None:
     level = {0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG}.get(
         verbosity, logging.DEBUG
@@ -35,14 +36,14 @@ def main(
 
     exit_code: int = 0
     if day is not None and problem is not None:
-        exit_code = specific_problem(day, problem)
+        exit_code = specific_problem(day, day_suffix, problem)
     else:
         days = list(ANSWERS.keys()) if day is None else [day]
         all_passed = None
         for day in days:
             problems = ANSWERS.get(day, {})
             for problem in problems:
-                passed = one_of_many_problems(day, problem)
+                passed = one_of_many_problems(day, day_suffix, problem)
                 if all_passed is None:
                     all_passed = passed
                 all_passed &= passed
@@ -57,9 +58,9 @@ def main(
     sys.exit(exit_code)
 
 
-def specific_problem(day: int, problem: int) -> int:
+def specific_problem(day: int, day_suffix: str, problem: int) -> int:
     try:
-        run_problem(day, problem)
+        run_problem(day, day_suffix, problem)
     except SolverNotFoundError as e:
         print(e, file=sys.stderr)
         return 1
@@ -70,9 +71,9 @@ def specific_problem(day: int, problem: int) -> int:
         return 0
 
 
-def one_of_many_problems(day: int, problem: int) -> bool:
+def one_of_many_problems(day: int, day_suffix: str, problem: int) -> bool:
     try:
-        run_problem(day, problem, quiet=True)
+        run_problem(day, day_suffix, problem, quiet=True)
     except IncorrectAnswerError as e:
         print(f"Day {day} Problem {problem}: FAIL: {e}")
         return False
@@ -100,9 +101,10 @@ class IncorrectAnswerError(RuntimeError):
         super().__init__(f"Incorrect answer: {answer}. Correct is: {correct_answer}")
 
 
-def run_problem(day: int, problem: int, *, quiet: bool = False) -> Any:
+def run_problem(day: int, day_suffix: str, problem: int, *, quiet: bool = False) -> Any:
     try:
-        mod = importlib.import_module(f"adventofcode.d{day}")
+        mod_name = f"adventofcode.d{day}{day_suffix}"
+        mod = importlib.import_module(mod_name)
     except ModuleNotFoundError:
         raise DayNotFoundError(day) from None
 
