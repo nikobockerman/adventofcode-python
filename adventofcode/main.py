@@ -16,14 +16,21 @@ app = typer.Typer()
 def main(
     day: Annotated[Optional[int], typer.Argument()] = None,
     problem: Annotated[Optional[int], typer.Argument()] = None,
-    debug: Annotated[bool, typer.Option("--debug", "-d")] = False,
+    verbosity: Annotated[
+        int,
+        typer.Option(
+            "--verbose",
+            "-v",
+            count=True,
+            show_default=False,
+            help="Increase verbosity level. This option can be specified multiple "
+            "times.",
+        ),
+    ] = 0,
 ) -> None:
-    if debug:
-        level = logging.DEBUG
-    elif day is None or problem is None:
-        level = logging.WARNING
-    else:
-        level = logging.INFO
+    level = {0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG}.get(
+        verbosity, logging.DEBUG
+    )
     logging.basicConfig(level=level)
 
     exit_code: int = 0

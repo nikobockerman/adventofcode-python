@@ -10,9 +10,9 @@
             "request": "launch",
             "program": "${workspaceFolder}/adventofcode/main.py",
             "args": [
-                "-d",
-                "5",
-                "2"
+                "-vv",
+                "12",
+                "1"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
