@@ -8,6 +8,12 @@
         "ghcr.io/lukewiwa/features/shellcheck:0": {}
     },
     "postCreateCommand": "bash ./.devcontainer/post-install.sh",
+    "portsAttributes": {
+        "8080": {
+            "label": "Web Server for accessing performance profiles",
+            "onAutoForward": "notify"
+        }
+    },
     "customizations": {
         "vscode": {
             "extensions": [
