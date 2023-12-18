@@ -104,6 +104,12 @@ class Map2d(Generic[Map2dDataType]):
         except KeyError:
             return default
 
+    def iter_lines(
+        self,
+    ) -> Iterable[tuple[int, Iterable[tuple[Coord2d, Map2dDataType]]]]:
+        for y in range(self.len_y):
+            yield y, self.iter_data(Coord2d(0, y), Coord2d(self.len_x, y + 1))
+
     def iter_data(
         self, start: Coord2d | None = None, stop: Coord2d | None = None
     ) -> Iterable[tuple[Coord2d, Map2dDataType]]:
@@ -141,3 +147,9 @@ class Map2d(Generic[Map2dDataType]):
 
         for row in self._sequence_data:
             yield "".join(row_symbols(row))
+
+    def __str__(self) -> str:
+        return "\n".join(self.str_lines())
+
+    def transpose(self) -> "Map2d[Map2dDataType]":
+        return Map2d(list(zip(*self._sequence_data)))
