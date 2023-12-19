@@ -1,0 +1,145 @@
+import logging
+
+from adventofcode.tooling.map import Coord2d, Dir, Map2d
+
+logger = logging.getLogger(__name__)
+
+
+def _calculate_load(map_: Map2d[str]) -> int:
+    max_load = map_.height
+    return sum(
+        max_load - y
+        for y, x_iter in map_.iter_data()
+        for _, sym in x_iter
+        if sym == "O"
+    )
+
+
+def _roll_rocks(map_: Map2d[str], direction: Dir) -> Map2d[str]:
+    lines: list[list[str]] = [["."] * map_.width for _ in range(map_.height)]
+
+    def _coord_rows_first(outer: int, inner: int) -> Coord2d:
+        return Coord2d(inner, outer)
+
+    def _coord_columns_first(outer: int, inner: int) -> Coord2d:
+        return Coord2d(outer, inner)
+
+    if direction == Dir.N:
+        map_iter = map_.iter_data(columns_first=True)
+        coord_func = _coord_columns_first
+
+        def set_rock(
+            prev_square: Coord2d | None, rock_group_count: int, coord: Coord2d
+        ) -> None:
+            nonlocal lines
+            y = (-1 if prev_square is None else prev_square.y) + rock_group_count
+            lines[y][coord.x] = "O"
+
+    elif direction == Dir.E:
+        map_iter = map_.iter_data(Coord2d(map_.last_x, 0), Coord2d(0, map_.last_y))
+        coord_func = _coord_rows_first
+
+        def set_rock(
+            prev_square: Coord2d | None, rock_group_count: int, coord: Coord2d
+        ) -> None:
+            nonlocal lines
+            x = (
+                map_.width if prev_square is None else prev_square.x
+            ) - rock_group_count
+            lines[coord.y][x] = "O"
+
+    elif direction == Dir.S:
+        map_iter = map_.iter_data(
+            Coord2d(0, map_.last_y), Coord2d(map_.last_x, 0), columns_first=True
+        )
+        coord_func = _coord_columns_first
+
+        def set_rock(
+            prev_square: Coord2d | None, rock_group_count: int, coord: Coord2d
+        ) -> None:
+            nonlocal lines
+            y = (
+                map_.height if prev_square is None else prev_square.y
+            ) - rock_group_count
+            lines[y][coord.x] = "O"
+
+    elif direction == Dir.W:
+        map_iter = map_.iter_data()
+        coord_func = _coord_rows_first
+
+        def set_rock(
+            prev_square: Coord2d | None, rock_group_count: int, coord: Coord2d
+        ) -> None:
+            nonlocal lines
+            x = (-1 if prev_square is None else prev_square.x) + rock_group_count
+            lines[coord.y][x] = "O"
+
+    else:
+        raise ValueError(direction)
+
+    for outer, data_iter in map_iter:
+        prev_square: Coord2d | None = None
+        rock_group_count = 0
+        for inner, sym in data_iter:
+            if sym == ".":
+                continue
+            coord = coord_func(outer, inner)
+            if sym == "#":
+                lines[coord.y][coord.x] = "#"
+                prev_square = coord
+                rock_group_count = 0
+            elif sym == "O":
+                rock_group_count += 1
+                set_rock(prev_square, rock_group_count, coord)
+
+    return Map2d(lines)
+
+
+def p1(input_str: str) -> int:
+    map_ = Map2d([list(line) for line in input_str.splitlines()])
+    return _calculate_load(_roll_rocks(map_, Dir.N))
+
+
+def _perform_spin(map_: Map2d[str]) -> Map2d[str]:
+    for dir_ in (Dir.N, Dir.W, Dir.S, Dir.E):
+        map_ = _roll_rocks(map_, dir_)
+    return map_
+
+
+def _get_rock_coords(map_: Map2d[str]) -> frozenset[tuple[int, int]]:
+    return frozenset(
+        (x, y) for y, x_iter in map_.iter_data() for x, sym in x_iter if sym == "O"
+    )
+
+
+def p2(input_str: str) -> int:
+    map_ = Map2d([list(line) for line in input_str.splitlines()])
+    logger.debug("Initial map:\n%s", map_)
+    maps_after_spins: list[Map2d[str]] = []
+    seen_rock_coords: dict[frozenset[tuple[int, int]], int] = dict()
+    final_map: Map2d[str] | None = None
+    for i in range(1, 1_000_000_000 + 1):
+        map_ = _perform_spin(map_)
+        logger.info("Done spinning %d", i)
+        logger.debug("Map after spin %d:\n%s", i, map_)
+        rock_coords = _get_rock_coords(map_)
+        seen = seen_rock_coords.get(rock_coords)
+        if seen is not None:
+            final_spin = seen + ((1_000_000_000 - seen) % (i - seen))
+            logger.info(
+                "Found loop at %d matching spin %d -> final spin = %d",
+                i,
+                seen,
+                final_spin,
+            )
+            final_map = maps_after_spins[final_spin - 1]
+            break
+
+        seen_rock_coords[rock_coords] = i
+        maps_after_spins.append(map_)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Load on spin %d: %d", i, _calculate_load(map_))
+
+    assert final_map is not None
+    logger.debug("Final map:\n%s", final_map)
+    return _calculate_load(final_map)
