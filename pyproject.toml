@@ -37,6 +37,9 @@ pyinstrument = "^4.6.1"
 [tool.poetry.scripts]
 adventofcode = "adventofcode.main:app"
 
+[tool.isort]
+profile = "black"
+
 [tool.mypy]
 python_version = "3.12"
 strict_optional = true
