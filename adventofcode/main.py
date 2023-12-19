@@ -117,7 +117,11 @@ def run_problem(day: int, day_suffix: str, problem: int, *, quiet: bool = False)
         (pathlib.Path(__file__).parent / f"input-d{day}.txt").read_text().strip()
     )
 
-    result = func(input_str)
+    try:
+        result = func(input_str)
+    except AssertionError as e:
+        logging.critical(f"{mod_name}.p{problem}: Assertion failed: %s", e)
+        raise
 
     def output(msg: str) -> None:
         if not quiet:
