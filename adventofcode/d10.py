@@ -163,22 +163,23 @@ def p2(input_str: str) -> int:
 
     def create_first_path_pipe() -> PathPipe:
         # Guessed value for y to hit path on | symbol
-        y = (map_data.len_y // 2) + 1
+        y = (map_data.height // 2) + 1
 
-        for _, pipe in map_data.iter_data(
-            start=Coord2d(0, y), stop=Coord2d(map_data.len_x, y + 1)
+        for _, x_iter in map_data.iter_data(
+            Coord2d(0, y), Coord2d(map_data.last_x, y + 1)
         ):
-            coord = pipe.coord
-            if coord not in coords_in_path:
-                assert pipe.inside is Inside.Unknown
-                pipe.inside = Inside.Outside
-            else:
-                assert pipe.symbol not in "J7-S"
-                assert pipe.symbol == "|", "Use better value for y"
-                east_neighbor = map_data.get(pipe.coord.adjoin(Dir.E))
-                if east_neighbor and east_neighbor.coord not in coords_in_path:
-                    east_neighbor.inside = Inside.Inside
-                return PathPipe(pipe, {Dir.E: Inside.Inside, Dir.W: Inside.Outside})
+            for _, pipe in x_iter:
+                coord = pipe.coord
+                if coord not in coords_in_path:
+                    assert pipe.inside is Inside.Unknown
+                    pipe.inside = Inside.Outside
+                else:
+                    assert pipe.symbol not in "J7-S"
+                    assert pipe.symbol == "|", "Use better value for y"
+                    east_neighbor = map_data.get(pipe.coord.adjoin(Dir.E))
+                    if east_neighbor and east_neighbor.coord not in coords_in_path:
+                        east_neighbor.inside = Inside.Inside
+                    return PathPipe(pipe, {Dir.E: Inside.Inside, Dir.W: Inside.Outside})
         raise AssertionError()
 
     first_path_pipe = create_first_path_pipe()
@@ -346,8 +347,9 @@ def p2(input_str: str) -> int:
                 return
         raise AssertionError()
 
-    for _, pipe in map_data.iter_data():
-        mark_pipe(pipe)
+    for _, pipe_iter in map_data.iter_data():
+        for _, pipe in pipe_iter:
+            mark_pipe(pipe)
 
     def get_symbol_for_pipe(pipe: Pipe) -> str:
         if pipe.inside is Inside.Inside:
@@ -364,4 +366,9 @@ def p2(input_str: str) -> int:
 
     logger.info("Calculating inside locations")
 
-    return sum(1 for _, pipe in map_data.iter_data() if pipe.inside is Inside.Inside)
+    return sum(
+        1
+        for _, pipe_iter in map_data.iter_data()
+        for _, pipe in pipe_iter
+        if pipe.inside is Inside.Inside
+    )

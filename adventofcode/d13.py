@@ -17,11 +17,11 @@ def _parse_maps(input_str: str) -> Iterable[Map2d[str]]:
         yield Map2d(lines)
 
 
-def _compare_lines(
-    line1: Iterable[str], line2: Iterable[str], allowed_mismatches: int
+def _compare_datas(
+    data1: Iterable[str], data2: Iterable[str], allowed_mismatches: int
 ) -> int | None:
     mismatches = 0
-    for sym1, sym2 in zip(line1, line2):
+    for sym1, sym2 in zip(data1, data2):
         if sym1 != sym2:
             mismatches += 1
             if mismatches > allowed_mismatches:
@@ -29,94 +29,118 @@ def _compare_lines(
     return mismatches
 
 
-def _find_consecutive_lines(
-    map_: Map2d[str], start_line: int, allowed_mismatches: int
+def _find_consecutive_rows_or_columns(
+    map_: Map2d[str], start_pos: int, find_column_not_row: bool, allowed_mismatches: int
 ) -> tuple[int, int] | None:
-    for (y1, y1_line), (_, y2_line) in itertools.islice(
-        itertools.pairwise(
-            (y, list(sym for _, sym in sym_iter)) for y, sym_iter in map_.iter_lines()
-        ),
-        start_line,
-        None,
+    first_corner = (
+        Coord2d(start_pos, 0) if find_column_not_row else Coord2d(0, start_pos)
+    )
+    for (i1, data1), (_, data2) in itertools.pairwise(
+        (i, list(sym for _, sym in sym_iter))
+        for i, sym_iter in map_.iter_data(
+            first_corner, columns_first=find_column_not_row
+        )
     ):
-        match_res = _compare_lines(y1_line, y2_line, allowed_mismatches)
+        match_res = _compare_datas(data1, data2, allowed_mismatches)
         if match_res is None:
             continue
-        return y1, match_res
+        return i1, match_res
     return None
 
 
-def _map_data_iter_to_data(d: tuple[Coord2d, str]) -> str:
+def _map_data_iter_to_data(d: tuple[int, str]) -> str:
     return d[1]
 
 
-def _find_reflection_line(map_: Map2d[str], required_mismatches: int = 0) -> int | None:
-    start = 0
+def _check_if_datas_around_reflection_match(
+    map_: Map2d[str],
+    pos_before_reflection: int,
+    find_column_not_row: bool,
+    allowed_mismatches: int,
+) -> int | None:
+    before_first_corner = (
+        Coord2d(pos_before_reflection - 1, 0)
+        if find_column_not_row
+        else Coord2d(0, pos_before_reflection - 1)
+    )
+    before_last_corner = (
+        Coord2d(-1, map_.last_y) if find_column_not_row else Coord2d(map_.last_x, -1)
+    )
+    after_first_corner = (
+        Coord2d(pos_before_reflection + 2, 0)
+        if find_column_not_row
+        else Coord2d(0, pos_before_reflection + 2)
+    )
+
+    mismatches = 0
+
+    for (i1, data1_iter), (i2, data2_iter) in zip(
+        map_.iter_data(before_first_corner, before_last_corner),
+        map_.iter_data(after_first_corner),
+    ):
+        match_res = _compare_datas(
+            map(_map_data_iter_to_data, data1_iter),
+            map(_map_data_iter_to_data, data2_iter),
+            allowed_mismatches,
+        )
+        if match_res is None:
+            logging.debug("Invalid mirror data at %d and %d", i1, i2)
+            return None
+
+        assert match_res >= 0
+        mismatches += match_res
+        if mismatches > allowed_mismatches:
+            return None
+
+    return mismatches
+
+
+def _find_reflection_line(
+    map_: Map2d[str], find_column_not_row: bool, required_mismatches: int = 0
+) -> int | None:
+    logging.debug(
+        "Searching for reflection with %d required mismatches", required_mismatches
+    )
+    search_start_pos = 0
     while True:
         remaining_mismatches = required_mismatches
-        found_line_info = _find_consecutive_lines(map_, start, remaining_mismatches)
-        if found_line_info is None:
+        found_data_info = _find_consecutive_rows_or_columns(
+            map_, search_start_pos, find_column_not_row, remaining_mismatches
+        )
+        if found_data_info is None:
             logging.debug(
-                "No consecutive lines found with %d allowed mismatches",
+                "No consecutive datas found with %d allowed mismatches",
                 remaining_mismatches,
             )
             return None
 
-        y_first, mismatches = found_line_info
-
-        start = y_first + 1
+        first_pos, mismatches = found_data_info
+        search_start_pos = first_pos + 1
         remaining_mismatches -= mismatches
 
         logging.debug(
-            "Found consecutive lines at %d with %d mismatches. "
-            "Remaining mismatches: %d",
-            y_first,
-            mismatches,
+            "Found reflection at %d with %d mismatches remaining",
+            first_pos,
             remaining_mismatches,
         )
 
-        for y in range(y_first - 1, -1, -1):
-            y_below = y_first + 1 + (y_first - y)
-            if y_below >= map_.len_y:
-                logging.debug(
-                    "No more lines below (%d + 1 - (%d - %d) = %d >= %d)",
-                    y_first,
-                    y_first,
-                    y,
-                    y_below,
-                    map_.len_y,
-                )
-                continue
-
-            match_res = _compare_lines(
-                map(
-                    _map_data_iter_to_data,
-                    map_.iter_data(Coord2d(0, y), Coord2d(map_.len_x, y + 1)),
-                ),
-                map(
-                    _map_data_iter_to_data,
-                    map_.iter_data(
-                        Coord2d(0, y_below), Coord2d(map_.len_x, y_below + 1)
-                    ),
-                ),
+        check_res = _check_if_datas_around_reflection_match(
+            map_, first_pos, find_column_not_row, remaining_mismatches
+        )
+        if check_res is None:
+            logging.debug(
+                "Datas around reflection don't match with %d allowed mismatches",
                 remaining_mismatches,
             )
-            if match_res is None:
-                logging.debug(
-                    "Invalid mirror line at y: %d and y_above: %d", y, y_below
-                )
-                break
+            continue
 
-            assert match_res >= 0
-            assert match_res <= remaining_mismatches
-            remaining_mismatches -= match_res
-        else:
-            assert remaining_mismatches >= 0
-            if remaining_mismatches > 0:
-                logging.debug("Not enough mismatches")
-                continue
-            logging.debug("Found perfect mirror line at y: %d", y_first)
-            return y_first
+        remaining_mismatches -= check_res
+        assert remaining_mismatches >= 0
+        if remaining_mismatches > 0:
+            logging.debug("Not enough mismatches")
+            continue
+        logging.debug("Found perfect reflection at %d", first_pos)
+        return first_pos
 
 
 def _resolve(input_str: str, required_mismatches_per_map: int) -> int:
@@ -125,26 +149,16 @@ def _resolve(input_str: str, required_mismatches_per_map: int) -> int:
         logging.info(
             "Map %2d: Size (LxC) %2d x %2d\n%s",
             map_counter,
-            map_.len_y,
-            map_.len_x,
+            map_.height,
+            map_.width,
             map_,
         )
-        match_index = _find_reflection_line(map_, required_mismatches_per_map)
+        match_index = _find_reflection_line(map_, False, required_mismatches_per_map)
         if match_index is not None:
             line_or_column = "L"
             match_multiplier = 100
         else:
-            transposed_map = map_.transpose()
-            logging.debug(
-                "Transposed map %2d: Size (LxC) %2d x %2d\n%s",
-                map_counter,
-                transposed_map.len_y,
-                transposed_map.len_x,
-                transposed_map,
-            )
-            match_index = _find_reflection_line(
-                transposed_map, required_mismatches_per_map
-            )
+            match_index = _find_reflection_line(map_, True, required_mismatches_per_map)
             assert match_index is not None
             line_or_column = "C"
             match_multiplier = 1

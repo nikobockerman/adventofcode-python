@@ -6,7 +6,7 @@ from adventofcode.tooling.map import Coord2d, Map2d
 
 class InputMap(Map2d[str]):
     def __init__(self, data: Iterable[str]):
-        super().__init__([list(line) for line in data])
+        super().__init__([line for line in data])
 
 
 def _calculate_distance(
@@ -32,15 +32,19 @@ def _calculate_distance(
 
 def calculate_distance_between_galaxies(input_str: str, expansion_distance: int) -> int:
     input_map = InputMap(input_str.splitlines())
-    empty_x_indices = set(range(input_map.len_x))
-    empty_y_indices = set(range(input_map.len_y))
+    empty_x_indices = set(range(input_map.width))
+    empty_y_indices = set(range(input_map.height))
     galaxy_coords: list[Coord2d] = []
-    for coord, _ in filter(lambda d: d[1] == "#", input_map.iter_data()):
+    # filter(lambda d: d[1] == "#",
+    iter_ = (
+        (y, x) for y, x_iter in input_map.iter_data() for x, sym in x_iter if sym == "#"
+    )
+    for y, x in iter_:
         with contextlib.suppress(KeyError):
-            empty_x_indices.remove(coord.x)
+            empty_x_indices.remove(x)
         with contextlib.suppress(KeyError):
-            empty_y_indices.remove(coord.y)
-        galaxy_coords.append(coord)
+            empty_y_indices.remove(y)
+        galaxy_coords.append(Coord2d(x, y))
 
     return sum(
         _calculate_distance(
