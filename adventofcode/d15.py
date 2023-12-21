@@ -14,7 +14,7 @@ def _calculate_hash(str_: str) -> int:
 
 def p1(input_str: str) -> int:
     hash_sum = 0
-    for step_str in input_str.partition(","):
+    for step_str in input_str.split(","):
         h = _calculate_hash(step_str)
         logger.debug(f"{step_str=} -> {h=}")
         hash_sum += h
