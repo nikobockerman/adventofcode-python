@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Any, Callable, Generic, Iterable, Sequence, TypeVar, overload
+from typing import Callable, Generic, Iterable, Sequence, TypeVar, overload
 
 
 class Dir(Enum):
@@ -171,39 +171,27 @@ class Map2d(Generic[Map2dDataType]):
 
     @overload
     def get(
-        self, x: int, y: int, /, default: Map2dDataType | None = None
+        self, x_y: tuple[int, int], /, default: Map2dDataType | None = None
     ) -> Map2dDataType | None:
         ...
 
     def get(
         self,
-        first: Coord2d | int,
-        *args: Any,
+        first: Coord2d | tuple[int, int],
+        *args: Map2dDataType | None,
         **kwargs: Map2dDataType | None,
     ) -> Map2dDataType | None:
         if isinstance(first, Coord2d):
-            if len(args) > 1:
-                raise TypeError(args)
-            coord: Coord2d = first
-            x: int = coord.x
-            y: int = coord.y
-            args_after_coord = args
+            x: int = first.x
+            y: int = first.y
         else:
-            if len(args) == 0:
-                raise TypeError(args)
-            if not isinstance(args[0], int):
-                raise TypeError(args[0])
-            x = first
-            y = args[0]
-            args_after_coord = args[1:]
+            x = first[0]
+            y = first[1]
 
-        if len(args_after_coord) > 1:
-            raise TypeError(args_after_coord)
-        if len(args_after_coord) == 0:
-            default = kwargs.pop("default", None)
-        else:
-            default = args_after_coord[0]
+        if len(args) > 1:
+            raise TypeError(args)
 
+        default = args[0] if args else kwargs.get("default", None)
         return self.__get_or_default(x, y, default)
 
     def __iter_data_by_lines(
