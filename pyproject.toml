@@ -19,6 +19,10 @@ format = ["black", "isort"]
 pytest = "pytest ."
 test = ["pytest"]
 
+runall = "adventofcode"
+validate = ["lint", "test", "runall"]
+
+
 [tool.poetry.dependencies]
 python = "^3.12"
 typer = "^0.9.0"
