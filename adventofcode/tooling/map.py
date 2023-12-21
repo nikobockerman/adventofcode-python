@@ -8,6 +8,28 @@ class Dir(Enum):
     S = auto()
     W = auto()
 
+    def turn_left(self) -> "Dir":
+        if self is Dir.N:
+            return Dir.W
+        if self is Dir.E:
+            return Dir.N
+        if self is Dir.S:
+            return Dir.E
+        if self is Dir.W:
+            return Dir.S
+        raise ValueError(self)
+
+    def turn_right(self) -> "Dir":
+        if self is Dir.N:
+            return Dir.E
+        if self is Dir.E:
+            return Dir.S
+        if self is Dir.S:
+            return Dir.W
+        if self is Dir.W:
+            return Dir.N
+        raise ValueError(self)
+
     def __str__(self) -> str:
         return self.name
 
@@ -67,6 +89,9 @@ class Coord2d:
         if other.y < self.y:
             return Dir.N
         raise ValueError(other)
+
+    def __str__(self) -> str:
+        return f"({self.x}, {self.y})"
 
 
 class Map2dEmptyDataError(ValueError):
