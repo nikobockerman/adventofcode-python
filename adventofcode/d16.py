@@ -53,12 +53,12 @@ def _process_splitter_exit(
             continue
 
         if symbol == "/":
-            dir_ = dir_.turn_right() if dir_ in (Dir.N, Dir.S) else dir_.turn_left()
+            dir_ = dir_.rotate_right() if dir_ in (Dir.N, Dir.S) else dir_.rotate_left()
             coord = coord.adjoin(dir_)
             continue
 
         if symbol == "\\":
-            dir_ = dir_.turn_left() if dir_ in (Dir.N, Dir.S) else dir_.turn_right()
+            dir_ = dir_.rotate_left() if dir_ in (Dir.N, Dir.S) else dir_.rotate_right()
             coord = coord.adjoin(dir_)
             continue
 

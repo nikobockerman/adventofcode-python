@@ -8,7 +8,7 @@ class Dir(Enum):
     S = auto()
     W = auto()
 
-    def turn_left(self) -> "Dir":
+    def rotate_left(self) -> "Dir":
         if self is Dir.N:
             return Dir.W
         if self is Dir.E:
@@ -19,7 +19,7 @@ class Dir(Enum):
             return Dir.S
         raise ValueError(self)
 
-    def turn_right(self) -> "Dir":
+    def rotate_right(self) -> "Dir":
         if self is Dir.N:
             return Dir.E
         if self is Dir.E:
@@ -154,6 +154,8 @@ class Map2d(Generic[Map2dDataType]):
         return self._last_y
 
     def __get(self, x: int, y: int) -> Map2dDataType:
+        if x < 0 or x > self._last_x or y < 0 or y > self._last_y:
+            raise IndexError((x, y))
         return self._sequence_data[y][x]
 
     def __get_or_default(
@@ -164,9 +166,17 @@ class Map2d(Generic[Map2dDataType]):
         return self.__get(x, y)
 
     @overload
+    def get(self, coord: Coord2d, /) -> Map2dDataType:
+        ...
+
+    @overload
     def get(
         self, coord: Coord2d, /, default: Map2dDataType | None = None
     ) -> Map2dDataType | None:
+        ...
+
+    @overload
+    def get(self, x_y: tuple[int, int], /) -> Map2dDataType:
         ...
 
     @overload
@@ -191,8 +201,11 @@ class Map2d(Generic[Map2dDataType]):
         if len(args) > 1:
             raise TypeError(args)
 
-        default = args[0] if args else kwargs.get("default", None)
-        return self.__get_or_default(x, y, default)
+        if args:
+            return self.__get_or_default(x, y, args[0])
+        if "default" in kwargs:
+            return self.__get_or_default(x, y, kwargs["default"])
+        return self.__get(x, y)
 
     def __iter_data_by_lines(
         self, first_x: int, first_y: int, last_x: int, last_y: int

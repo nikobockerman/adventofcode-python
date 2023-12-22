@@ -60,7 +60,7 @@ class MapData(Map2d[Pipe]):
 
 
 def get_adjoin_pipes_on_path(pipe: Pipe, map_data: MapData) -> Iterable[Pipe]:
-    east = map_data.get(pipe.coord.adjoin(Dir.E))
+    east = map_data.get(pipe.coord.adjoin(Dir.E), None)
     if (
         east
         and pipe.symbol in symbols_open_to_east
@@ -68,7 +68,7 @@ def get_adjoin_pipes_on_path(pipe: Pipe, map_data: MapData) -> Iterable[Pipe]:
     ):
         yield east
 
-    south = map_data.get(pipe.coord.adjoin(Dir.S))
+    south = map_data.get(pipe.coord.adjoin(Dir.S), None)
     if (
         south
         and pipe.symbol in symbols_open_to_south
@@ -76,7 +76,7 @@ def get_adjoin_pipes_on_path(pipe: Pipe, map_data: MapData) -> Iterable[Pipe]:
     ):
         yield south
 
-    west = map_data.get(pipe.coord.adjoin(Dir.W))
+    west = map_data.get(pipe.coord.adjoin(Dir.W), None)
     if (
         west
         and pipe.symbol in symbols_open_to_west
@@ -84,7 +84,7 @@ def get_adjoin_pipes_on_path(pipe: Pipe, map_data: MapData) -> Iterable[Pipe]:
     ):
         yield west
 
-    north = map_data.get(pipe.coord.adjoin(Dir.N))
+    north = map_data.get(pipe.coord.adjoin(Dir.N), None)
     if (
         north
         and pipe.symbol in symbols_open_to_north
@@ -306,7 +306,7 @@ def p2(input_str: str) -> int:
         # Set inside/outside for direct neighbors already in map as we have the data
         # available
         for neighbor_dir, inside in neighbors.items():
-            neighbor = map_data.get(pipe.coord.adjoin(neighbor_dir))
+            neighbor = map_data.get(pipe.coord.adjoin(neighbor_dir), None)
             if neighbor is not None and neighbor.inside is not Inside.InPath:
                 assert neighbor.inside is Inside.Unknown or neighbor.inside is inside
                 neighbor.inside = inside
@@ -335,7 +335,8 @@ def p2(input_str: str) -> int:
         visited_recursive_coords.add(pipe.coord)
 
         for neighbor in (
-            map_data.get(pipe.coord.adjoin(direction)) for direction in AllDirections
+            map_data.get(pipe.coord.adjoin(direction), None)
+            for direction in AllDirections
         ):
             if not neighbor:
                 continue
