@@ -31,6 +31,17 @@ class Dir(Enum):
             return Dir.N
         raise ValueError(self)
 
+    def opposite(self) -> "Dir":
+        if self is Dir.N:
+            return Dir.S
+        if self is Dir.E:
+            return Dir.W
+        if self is Dir.S:
+            return Dir.N
+        if self is Dir.W:
+            return Dir.E
+        raise ValueError(self)
+
     def __str__(self) -> str:
         return self.name
 
@@ -90,6 +101,24 @@ class Coord2d:
         if other.y < self.y:
             return Dir.N
         raise ValueError(other)
+
+    def get_relative(self, direction: Dir, distance: int = 1) -> "Coord2d":
+        if direction is Dir.N:
+            return Coord2d(self.x, self.y - distance)
+        if direction is Dir.E:
+            return Coord2d(self.x + distance, self.y)
+        if direction is Dir.S:
+            return Coord2d(self.x, self.y + distance)
+        if direction is Dir.W:
+            return Coord2d(self.x - distance, self.y)
+        raise ValueError(direction)
+
+    def int_distance_to(self, other: "Coord2d") -> int:
+        if self.y == other.y:
+            return abs(self.x - other.x)
+        if self.x == other.x:
+            return abs(self.y - other.y)
+        return math.isqrt(abs(self.x - other.x) ** 2 + abs(self.y - other.y) ** 2)
 
     def distance_to(self, other: "Coord2d") -> float:
         return math.sqrt(float(abs(self.x - other.x) ** 2 + abs(self.y - other.y) ** 2))
