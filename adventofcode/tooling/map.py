@@ -1,3 +1,4 @@
+import math
 from enum import Enum, auto
 from typing import Callable, Generic, Iterable, Sequence, TypeVar, overload
 
@@ -90,8 +91,14 @@ class Coord2d:
             return Dir.N
         raise ValueError(other)
 
+    def distance_to(self, other: "Coord2d") -> float:
+        return math.sqrt(float(abs(self.x - other.x) ** 2 + abs(self.y - other.y) ** 2))
+
     def __str__(self) -> str:
         return f"({self.x}, {self.y})"
+
+    def __repr__(self) -> str:
+        return f"Coord2d({self.x}, {self.y})"
 
 
 class Map2dEmptyDataError(ValueError):
