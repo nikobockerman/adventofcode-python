@@ -1,4 +1,7 @@
 {
+    "files.associations": {
+        "*.txt": "plaintext"
+    },
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "[python]": {
