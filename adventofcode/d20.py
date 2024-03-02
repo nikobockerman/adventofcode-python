@@ -1,4 +1,3 @@
-import itertools
 import logging
 import math
 from copy import deepcopy
@@ -187,13 +186,8 @@ def p1(input_str: str) -> int:
                 signal.source_name, signal.state
             )
             if logger.isEnabledFor(logging.DEBUG):
-                # logger.debug("Current state after %d button presses:", button_press_count)
-                # _log_state(modules)
-                # logger.debug("State diff against initial state:")
-                # _log_state_diff(initial_state, modules)
                 logger.debug("State diff against previous state:")
                 _log_state_diff(prev_state, modules)
-                # prev_state = deepcopy(modules)
 
             if output_signal_state is not None:
                 for output in destination.outputs:
