@@ -202,24 +202,20 @@ class Map2d(Generic[Map2dDataType]):
         return self.__get(x, y)
 
     @overload
-    def get(self, coord: Coord2d, /) -> Map2dDataType:
-        ...
+    def get(self, coord: Coord2d, /) -> Map2dDataType: ...
 
     @overload
     def get(
         self, coord: Coord2d, /, default: Map2dDataType | None = None
-    ) -> Map2dDataType | None:
-        ...
+    ) -> Map2dDataType | None: ...
 
     @overload
-    def get(self, x_y: tuple[int, int], /) -> Map2dDataType:
-        ...
+    def get(self, x_y: tuple[int, int], /) -> Map2dDataType: ...
 
     @overload
     def get(
         self, x_y: tuple[int, int], /, default: Map2dDataType | None = None
-    ) -> Map2dDataType | None:
-        ...
+    ) -> Map2dDataType | None: ...
 
     def get(
         self,
