@@ -249,9 +249,11 @@ def _category_value_ranges_from_rule(rule: _Rule) -> dict[str, list[range] | Non
         category: (
             None
             if category != rule.category
-            else [range(1, rule.value)]
-            if rule.comparison == _Comparison.LT
-            else [range(rule.value + 1, 4_000 + 1)]
+            else (
+                [range(1, rule.value)]
+                if rule.comparison == _Comparison.LT
+                else [range(rule.value + 1, 4_000 + 1)]
+            )
         )
         for category in "xmas"
     }
