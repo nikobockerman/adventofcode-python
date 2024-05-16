@@ -236,7 +236,7 @@ def _negated_value_range(value_range: list[range] | None) -> list[range] | None:
 
 
 def _negated_category_value_ranges(
-    category_value_ranges: Mapping[str, list[range] | None]
+    category_value_ranges: Mapping[str, list[range] | None],
 ) -> dict[str, list[range] | None]:
     return {
         category: _negated_value_range(category_value_ranges[category])
@@ -260,7 +260,7 @@ def _category_value_ranges_from_rule(rule: _Rule) -> dict[str, list[range] | Non
 
 
 def _possible_category_value_ranges(
-    category_value_ranges: dict[str, list[range] | None]
+    category_value_ranges: dict[str, list[range] | None],
 ) -> bool:
     return all(
         value_ranges is None or value_ranges

@@ -7,16 +7,19 @@ def _parse_input(lines: Iterable[str]) -> Iterable[tuple[int, list[dict[str, int
         g_id, rounds = line[5:].split(":")
         logging.debug(f"{line=}")
 
-        yield int(g_id), [
-            {
-                color_count[1]: int(color_count[0])
-                for color_count in (
-                    color_count_str.strip().split(" ")
-                    for color_count_str in game_round.strip().split(",")
-                )
-            }
-            for game_round in rounds.strip().split(";")
-        ]
+        yield (
+            int(g_id),
+            [
+                {
+                    color_count[1]: int(color_count[0])
+                    for color_count in (
+                        color_count_str.strip().split(" ")
+                        for color_count_str in game_round.strip().split(",")
+                    )
+                }
+                for game_round in rounds.strip().split(";")
+            ],
+        )
 
 
 def p1(input_str: str) -> int:

@@ -6,18 +6,15 @@ authors = ["Niko Böckerman <git.585wj@slmail.me>"]
 readme = "README.md"
 
 [tool.poe.tasks]
-_black_check = "black --check ."
-_isort_check = "isort --check-only ."
 mypy = "mypy ."
-ruff = "ruff ."
-lint = ["_black_check", "_isort_check", "mypy", "ruff"]
+ruff-check = "ruff check"
+lint = ["ruff-check", "mypy"]
 
-black = "black ."
-isort = "isort ."
-format = ["black", "isort"]
+format = "ruff format"
 
-pytest = "pytest ."
-test = ["pytest"]
+ruff-fix = "ruff check --fix-only"
+
+test = "pytest"
 
 runall = "adventofcode"
 validate = ["lint", "test", "runall"]
@@ -28,11 +25,9 @@ python = "^3.12"
 typer = "^0.9.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.3.0"
 mypy = "^1.7.1"
 pytest = "^7.4.3"
 ruff = "^0.1.7"
-isort = "^5.12.0"
 poethepoet = "^0.24.4"
 snakeviz = "^2.2.0"
 tuna = "^0.5.11"
@@ -40,9 +35,6 @@ pyinstrument = "^4.6.1"
 
 [tool.poetry.scripts]
 adventofcode = "adventofcode.main:app"
-
-[tool.isort]
-profile = "black"
 
 [tool.mypy]
 python_version = "3.12"
@@ -77,6 +69,9 @@ select = [
     "TRY",  # tryceratops
     "PERF",  # perflint
     "SLOT",  # flake8-slots
+]
+ignore = [
+    "ISC001"
 ]
 
 

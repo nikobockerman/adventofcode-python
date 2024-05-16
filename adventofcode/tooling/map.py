@@ -202,20 +202,24 @@ class Map2d(Generic[Map2dDataType]):
         return self.__get(x, y)
 
     @overload
-    def get(self, coord: Coord2d, /) -> Map2dDataType: ...
+    def get(self, coord: Coord2d, /) -> Map2dDataType:
+        ...
 
     @overload
     def get(
         self, coord: Coord2d, /, default: Map2dDataType | None = None
-    ) -> Map2dDataType | None: ...
+    ) -> Map2dDataType | None:
+        ...
 
     @overload
-    def get(self, x_y: tuple[int, int], /) -> Map2dDataType: ...
+    def get(self, x_y: tuple[int, int], /) -> Map2dDataType:
+        ...
 
     @overload
     def get(
         self, x_y: tuple[int, int], /, default: Map2dDataType | None = None
-    ) -> Map2dDataType | None: ...
+    ) -> Map2dDataType | None:
+        ...
 
     def get(
         self,
@@ -272,9 +276,12 @@ class Map2d(Generic[Map2dDataType]):
             else:
                 slice_row_datas = row[first_x : last_x + step_x : step_x]
 
-            yield y, (
-                (x_ind * step_x + first_x, data)
-                for x_ind, data in enumerate(slice_row_datas)
+            yield (
+                y,
+                (
+                    (x_ind * step_x + first_x, data)
+                    for x_ind, data in enumerate(slice_row_datas)
+                ),
             )
 
     def __iter_data_by_columns(
@@ -294,8 +301,12 @@ class Map2d(Generic[Map2dDataType]):
             if x < 0 or x >= self._width:
                 continue
 
-            yield x, (
-                (y, self.__get(x, y)) for y in range(first_y, last_y + step_y, step_y)
+            yield (
+                x,
+                (
+                    (y, self.__get(x, y))
+                    for y in range(first_y, last_y + step_y, step_y)
+                ),
             )
 
     def iter_data(
