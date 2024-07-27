@@ -214,7 +214,7 @@ def p1(input_str: str) -> int:
                 "Found initial state after %d button presses", button_press_count
             )
             break
-        logger.warning("Button press %d done", button_press_count)
+        logger.info("Button press %d done", button_press_count)
 
     logger.info(f"Counts: {counts}")
 
