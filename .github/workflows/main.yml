@@ -26,3 +26,4 @@ jobs:
         cache: 'poetry'
     - run: poetry install
     - run: poetry run poe lint
+    - run: poetry run poe test
