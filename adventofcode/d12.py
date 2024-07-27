@@ -110,12 +110,12 @@ class _Classifier:
                 return False
 
         if known_damaged_lengths == self._data.group_lengths:
-            if self._first_unknown_index_resolved and any(
-                symbol == "#"
+            if not self._first_unknown_index_resolved:
+                return True
+            return all(
+                symbol != "#"
                 for symbol in self._data.records[self._first_unknown_index :]
-            ):
-                return False
-            return True
+            )
 
         if self._first_unknown_index is None:
             # No unknowns found -> records processed exhaustively

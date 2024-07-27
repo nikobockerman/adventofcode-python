@@ -137,11 +137,10 @@ def p2(input_str: str) -> int:
             number.adjacent_row_range_begin, number.adjacent_row_range_end
         ):
             return False
-        if gear_symbol.ind not in range(
+
+        return gear_symbol.ind in range(
             number.adjacent_ind_range_begin, number.adjacent_ind_range_end
-        ):
-            return False
-        return True
+        )
 
     result = 0
     for gear_symbol in gear_symbols:
