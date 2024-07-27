@@ -9,6 +9,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+  schedule:
+    # Run every Monday at 00:30 UTC
+    - cron: '30 0 * * 1'
 
 jobs:
   build:
