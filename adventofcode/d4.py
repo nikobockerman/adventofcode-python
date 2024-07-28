@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -35,11 +36,15 @@ def p1(input_: str) -> int:
 def p2(input_str: str) -> int:
     d = list(_parse_input(input_str.splitlines()))
 
-    counts: dict[int, int] = {n + 1: 1 for n in range(len(d))}
+    counts: Counter[int] = Counter(range(1, len(d) + 1))
     for cards in d:
         matches = len(set(cards.winning) & set(cards.own))
         card_count = counts[cards.card_id]
-        for i in range(cards.card_id + 1, cards.card_id + 1 + matches):
-            counts[i] += card_count
+        counts.update(
+            {
+                i: card_count
+                for i in range(cards.card_id + 1, cards.card_id + 1 + matches)
+            }
+        )
 
     return sum(v for v in counts.values())

@@ -1,4 +1,5 @@
 import enum
+from collections import Counter
 from dataclasses import dataclass
 from functools import total_ordering
 from types import NotImplementedType
@@ -48,21 +49,19 @@ def p1(input_str: str) -> int:
 
     def classify_hand_type(cards: str) -> HandType:
         assert len(cards) == 5
-        value_counts: dict[str, int] = {}
-        for c in cards:
-            value_counts[c] = value_counts.get(c, 0) + 1
+        value_counts = Counter[str](cards)
+        counts = list(map(lambda x: x[1], value_counts.most_common(2)))
 
-        counts = sorted(value_counts.items(), key=lambda x: x[1], reverse=True)
-        if counts[0][1] == 5:
+        if counts[0] == 5:
             return HandType.FiveOfAKind
-        if counts[0][1] == 4:
+        if counts[0] == 4:
             return HandType.FourOfAKind
-        if counts[0][1] == 3:
-            if counts[1][1] == 2:
+        if counts[0] == 3:
+            if counts[1] == 2:
                 return HandType.FullHouse
             return HandType.ThreeOfAKind
-        if counts[0][1] == 2:
-            if counts[1][1] == 2:
+        if counts[0] == 2:
+            if counts[1] == 2:
                 return HandType.TwoPair
             return HandType.OnePair
         return HandType.HighCard
@@ -95,9 +94,7 @@ def p2(input_str: str) -> int:
 
     def classify_hand_type(cards: str) -> HandType:
         assert len(cards) == 5
-        value_counts: dict[str, int] = {}
-        for c in cards:
-            value_counts[c] = value_counts.get(c, 0) + 1
+        value_counts = Counter[str](cards)
 
         jokers = value_counts.get("J", 0)
         value_counts.pop("J", None)
@@ -105,17 +102,17 @@ def p2(input_str: str) -> int:
         if jokers == 5:
             return HandType.FiveOfAKind
 
-        counts = sorted(value_counts.items(), key=lambda x: x[1], reverse=True)
-        if counts[0][1] + jokers == 5:
+        counts = list(map(lambda x: x[1], value_counts.most_common(2)))
+        if counts[0] + jokers == 5:
             return HandType.FiveOfAKind
-        if counts[0][1] + jokers == 4:
+        if counts[0] + jokers == 4:
             return HandType.FourOfAKind
-        if counts[0][1] + jokers == 3:
-            if counts[1][1] == 2:
+        if counts[0] + jokers == 3:
+            if counts[1] == 2:
                 return HandType.FullHouse
             return HandType.ThreeOfAKind
-        if counts[0][1] + jokers == 2:
-            if counts[1][1] == 2:
+        if counts[0] + jokers == 2:
+            if counts[1] == 2:
                 return HandType.TwoPair
             return HandType.OnePair
         return HandType.HighCard
