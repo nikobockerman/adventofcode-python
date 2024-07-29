@@ -25,6 +25,6 @@ jobs:
         python-version: '3.12'
         cache: 'poetry'
     - run: poetry install
-    - run: poetry run poe lint
+    - run: poetry run poe validate
     - run: poetry run poe test
-    - run: poetry run adventofcode
+    - run: poetry run poe runall

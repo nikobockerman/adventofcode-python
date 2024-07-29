@@ -7,8 +7,9 @@ readme = "README.md"
 
 [tool.poe.tasks]
 mypy = "mypy ."
+pyright = "pyright"
 ruff-check = "ruff check"
-lint = ["ruff-check", "mypy"]
+lint = ["ruff-check", "pyright", "mypy"]
 
 format = "ruff format"
 
@@ -32,9 +33,14 @@ poethepoet = "^0.27.0"
 snakeviz = "^2.2.0"
 tuna = "^0.5.11"
 pyinstrument = "^4.6.1"
+pyright = "^1.1.373"
 
 [tool.poetry.scripts]
 adventofcode = "adventofcode.main:app"
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
 
 [tool.mypy]
 python_version = "3.12"

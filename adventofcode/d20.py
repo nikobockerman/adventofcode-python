@@ -166,6 +166,7 @@ def p1(input_str: str) -> int:
     counts = {_Low: 0, _High: 0}
     initial_state = [deepcopy(module) for module in modules]
 
+    prev_state = None
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("Initial state:")
         _log_state(modules)
@@ -185,7 +186,7 @@ def p1(input_str: str) -> int:
             output_signal_state = destination.process_input(
                 signal.source_name, signal.state
             )
-            if logger.isEnabledFor(logging.DEBUG):
+            if prev_state is not None:
                 logger.debug("State diff against previous state:")
                 _log_state_diff(prev_state, modules)
 
@@ -204,7 +205,7 @@ def p1(input_str: str) -> int:
                 button_press_count,
             )
             _log_state_diff(initial_state, modules, logging.INFO)
-        if logger.isEnabledFor(logging.DEBUG):
+        if prev_state is not None:
             logger.debug("State diff against previous state:")
             _log_state_diff(prev_state, modules)
             prev_state = deepcopy(modules)
