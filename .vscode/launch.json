@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Problem",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/adventofcode/main.py",
             "args": [
