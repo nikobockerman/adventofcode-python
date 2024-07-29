@@ -39,6 +39,7 @@ adventofcode = "adventofcode.main:app"
 [tool.mypy]
 python_version = "3.12"
 strict_optional = true
+enable_incomplete_feature = ["NewGenericSyntax"]
 
 [tool.ruff.lint]
 select = [
