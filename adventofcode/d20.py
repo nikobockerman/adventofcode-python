@@ -10,7 +10,9 @@ from dataclasses import dataclass
 from queue import Queue
 from typing import Iterable, Iterator, Literal, NewType, assert_never, final, override
 
-from adventofcode.tooling import digraph
+from joblib import Parallel, delayed
+
+from adventofcode.tooling import debugger, digraph
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ class _PatternAnalysisLogic(enum.Enum):
     AllModulesInBatches = enum.auto()
 
 
-class PostProcessLogic(enum.Enum):
+class _PostProcessLogic(enum.Enum):
     OnEveryButtonPress = enum.auto()
     InBatches = enum.auto()
 
@@ -417,7 +419,7 @@ def _detect_pattern(
             _Duration(time.perf_counter() - time_begin_task),
             stats,
         ),
-        processed_max_length=max(stats.keys()),
+        processed_max_length=max(stats.keys()) if stats else None,
         processed_max_starts=processed_max_starts,
     )
 
@@ -865,19 +867,15 @@ def _get_cycles(
     return cycles
 
 
-def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
-    if output_module_name is None:
-        output_module_name = _ModuleName("rx")
-
-    pattern_logic_config = _PatternLogicConfig(
-        analysis=_PatternAnalysisLogic.AllModulesInBatches,
-        length=_PatternLengthLogic.Exp2,
-        start=_PatternStartLogic.AtZero,
-    )
-    post_process_logic = PostProcessLogic.InBatches
-    batch_length = 1_000
-    pattern_analysis_logic = pattern_logic_config.analysis
-
+def _process_p2(
+    input_str: str,
+    output_module_name: _ModuleName,
+    pattern_logic_config: _PatternLogicConfig,
+    post_process_logic: _PostProcessLogic,
+    batch_length: int,
+    *,
+    parallel: Parallel | None = None,
+) -> int:
     graph = _parse_modules(input_str.splitlines(), pattern_logic_config)
 
     cycles = _get_cycles(graph)
@@ -900,17 +898,31 @@ def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
     nodes_with_finalized_pattern = set[_ModuleName]()
     nodes_with_considered_pattern = set[_ModuleName]()
 
+    output_only_nodes = set[_ModuleName](
+        filter(
+            lambda node: not graph.get_arcs_from(node),
+            graph.nodes,
+        )
+    )
+    assert output_only_nodes == {output_module_name}
+    inputs_to_output_only_nodes = set[_ModuleName](
+        map(lambda arc: arc.from_, graph.get_arcs_to(output_module_name))
+    )
+    assert len(inputs_to_output_only_nodes) == 1
+    output_gateway_node = next(iter(inputs_to_output_only_nodes))
+
+    duration_diff_total: float = 0.0
+
     def log_task_output(task_output: _DetectPatternOutput) -> None:
         duration = task_output.stats[0]
         if isinstance(task_output.stats[1], dict):
             desc = "No pattern found"
         else:
             desc = task_output.stats[1]
-        _logger.info("%s: %s seconds, %s", task_output.module_name, duration, desc)
+        _logger.info("%s: %.5f seconds, %s", task_output.module_name, duration, desc)
 
     def process_pattern_detection_for_nodes(
-        nodes: Iterable[_ModuleName],
-        check_type: _CheckType,
+        nodes: Iterable[_ModuleName], check_type: _CheckType
     ) -> list[_DetectPatternOutput]:
         task_inputs = [
             pattern_detector.create_detect_pattern_task(check_type)
@@ -927,13 +939,35 @@ def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
                 task_input,
             )
 
-        task_outputs = [run_detection_task(task_input) for task_input in task_inputs]
+        start_time = time.perf_counter()
+        if parallel is None:
+            task_outputs = [
+                run_detection_task(task_input) for task_input in task_inputs
+            ]
+        else:
+            task_outputs = parallel(
+                delayed(run_detection_task)(task_input) for task_input in task_inputs
+            )
+        total_duration = time.perf_counter() - start_time
+        summed_duration = sum(o.stats[0] for o in task_outputs)
+        duration_diff = summed_duration - total_duration
 
+        nonlocal duration_diff_total
+        duration_diff_total += duration_diff
+
+        _logger.info(
+            "Analysis time: total: %.5f; summed: %.5f; diff: %.5f",
+            total_duration,
+            summed_duration,
+            duration_diff,
+        )
         for task_output in task_outputs:
             log_task_output(task_output)
             pattern_detector = graph.nodes[task_output.module_name].pattern_detector
             pattern_detector.process_detect_pattern_task_output(task_output)
 
+        if parallel is not None:
+            _logger.info("Total time saved with parallel: %.5f", duration_diff_total)
         return task_outputs
 
     def detect_individual_patterns(
@@ -944,7 +978,7 @@ def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
         )
 
         minimal_pattern_outputs = list[_DetectPatternOutput]()
-        if pattern_analysis_logic is _PatternAnalysisLogic.AllModulesInBatches:
+        if pattern_logic_config.analysis is _PatternAnalysisLogic.AllModulesInBatches:
             minimal_pattern_outputs = process_pattern_detection_for_nodes(
                 nodes_to_process, "minimal"
             )
@@ -993,11 +1027,7 @@ def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
             )
         }
 
-    assert not graph.get_arcs_from(_ModuleName("rx"))
-    assert list(map(lambda x: x.from_, graph.get_arcs_to(_ModuleName("rx")))) == [
-        _ModuleName("kh")
-    ]
-    signals_to_kh = list[tuple[_ModuleName, _Signal]]()
+    signals_to_output_gateway = list[tuple[_ModuleName, _Signal]]()
 
     for button_press_count in itertools.count(1):
         if (
@@ -1009,18 +1039,18 @@ def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
             _ButtonPressProcessInput(graph, button_press_count)
         )
 
-        signals_to_kh.extend(
+        signals_to_output_gateway.extend(
             (signal.source, signal.state)
             for signal in result.signals
-            if signal.destination == _ModuleName("kh")
+            if signal.destination == output_gateway_node
         )
 
-        if post_process_logic is PostProcessLogic.OnEveryButtonPress:
+        if post_process_logic is _PostProcessLogic.OnEveryButtonPress:
             destinations = {signal.destination for signal in result.signals}
             nodes_detected_with_considered_pattern, minimal_pattern_outputs = (
                 detect_individual_patterns(destinations)
             )
-        elif post_process_logic is PostProcessLogic.InBatches:
+        elif post_process_logic is _PostProcessLogic.InBatches:
             if button_press_count % batch_length != 0:
                 continue
 
@@ -1108,7 +1138,7 @@ def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
             )
             break
 
-        if post_process_logic is PostProcessLogic.OnEveryButtonPress:
+        if post_process_logic is _PostProcessLogic.OnEveryButtonPress:
             continue
 
         conjuction_modules = {
@@ -1153,7 +1183,7 @@ def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
             if press_counts:
                 detected_any = True
                 _logger.warning(
-                    "Both high and low signals sent to '%s' during one button press %d",
+                    "Both high and low signal sent during one button press: %s at %s",
                     module.name,
                     press_counts,
                 )
@@ -1164,3 +1194,41 @@ def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
             )
 
     return button_press_count
+
+
+def p2(input_str: str, output_module_name: _ModuleName | None = None) -> int:
+    if output_module_name is None:
+        output_module_name = _ModuleName("rx")
+
+    pattern_logic_config = _PatternLogicConfig(
+        analysis=_PatternAnalysisLogic.AllModulesInBatches,
+        length=_PatternLengthLogic.Any,
+        start=_PatternStartLogic.AtZero,
+    )
+    post_process_logic = _PostProcessLogic.InBatches
+    batch_length = 1_000
+
+    is_debugger_connected = debugger.is_connected()
+    if is_debugger_connected:
+        _logger.warning("Running in debugger mode")
+
+    if is_debugger_connected or (
+        pattern_logic_config.length == _PatternLengthLogic.Exp2
+        and pattern_logic_config.start == _PatternStartLogic.AtZero
+    ):
+        return _process_p2(
+            input_str,
+            output_module_name,
+            pattern_logic_config,
+            post_process_logic,
+            batch_length,
+        )
+    with Parallel(n_jobs=-1, verbose=49) as parallel:
+        return _process_p2(
+            input_str,
+            output_module_name,
+            pattern_logic_config,
+            post_process_logic,
+            batch_length,
+            parallel=parallel,
+        )
