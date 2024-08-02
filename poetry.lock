@@ -37,6 +37,31 @@ files = [
 ]
 
 [[package]]
+name = "joblib"
+version = "1.4.2"
+description = "Lightweight pipelining with Python functions"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "joblib-1.4.2-py3-none-any.whl", hash = "sha256:06d478d5674cbc267e7496a410ee875abd68e4340feff4490bcb7afb88060ae6"},
+    {file = "joblib-1.4.2.tar.gz", hash = "sha256:2382c5816b2636fbd20a09e0f4e9dad4736765fdfb7dca582943b9c1366b3f0e"},
+]
+
+[[package]]
+name = "joblib-stubs"
+version = "1.4.2.3.20240619"
+description = "joblib stubs"
+optional = false
+python-versions = ">=3"
+files = [
+    {file = "joblib_stubs-1.4.2.3.20240619-py3-none-any.whl", hash = "sha256:d9e9bad31473a026783bf5c249919b15cd42bbea0adeb16bf9cdb38f6bdfcda2"},
+    {file = "joblib_stubs-1.4.2.3.20240619.tar.gz", hash = "sha256:6100e50beed7ca951f162efbd78902b8cf7627da3d11b978a250d7b08ac3e67d"},
+]
+
+[package.dependencies]
+typing-extensions = ">=4.4.0"
+
+[[package]]
 name = "markdown-it-py"
 version = "3.0.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -465,4 +490,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "17176cf41c07411922487f8745d12b97c5a957d13dff0418fc165bfde3df3ab6"
+content-hash = "490c8a79c7bb4bb2b8a5b33d76e537d7aa439f053b9c41464608746e693fe73c"

@@ -1,223 +1,474 @@
+from __future__ import annotations
+
+import itertools
 import logging
 import math
-from copy import deepcopy
-from dataclasses import dataclass, field
-from queue import Queue
-from typing import Iterable, override
+from abc import ABCMeta, abstractmethod
+from collections import Counter, deque
+from dataclasses import dataclass
+from typing import Iterable, Iterator, Never, NewType, override
 
-logger = logging.getLogger(__name__)
-
-_Low = False
-_High = True
+_logger = logging.getLogger(__name__)
 
 
-# @dataclass(slots=True)
-@dataclass
-class _Module:
-    name: str
-    outputs: list[str] = field(default_factory=list)
+_PulseValue = NewType("_PulseValue", bool)
+_PulseLow = _PulseValue(False)
+_PulseHigh = _PulseValue(True)
 
-    def add_input(self, name: str) -> None:
-        # No-op by default
-        pass
-
-    def process_input(self, source_name: str, state: bool) -> bool | None:
-        raise NotImplementedError()
-
-    def get_diff(self, other: "_Module") -> dict[str, str]:
-        assert self.__class__ == other.__class__
-        assert self.name == other.name
-        assert self.outputs == other.outputs
-        return {}
-
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.name}, {self.outputs})"
+_ModuleName = NewType("_ModuleName", str)
 
 
-# @dataclass(slots=True)
-@dataclass
-class _FlipFlop(_Module):
-    state: bool = _Low
-
-    @override
-    def process_input(self, source_name: str, state: bool) -> bool | None:
-        if state is _High:
-            return None
-
-        self.state = not self.state
-        return self.state
-
-    @override
-    def get_diff(self, other: _Module) -> dict[str, str]:
-        diff = super().get_diff(other)
-        assert isinstance(other, self.__class__)
-        if self.state != other.state:
-            diff["state"] = f"{self.state} -> {other.state}"
-        return diff
-
-    @override
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.name}, {self.outputs}, {self.state})"
+def to_str(value: _PulseValue) -> str:
+    return "high" if value else "low"
 
 
-# @dataclass(slots=True)
-@dataclass
-class _Conjuction(_Module):
-    state: dict[str, bool] = field(default_factory=dict)
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _PulseNew:
+    value: _PulseValue
+    from_: _Module
+    to: _Module
 
-    @override
-    def add_input(self, name: str) -> None:
-        self.state[name] = _Low
 
-    @override
-    def process_input(self, source_name: str, state: bool) -> bool | None:
-        assert source_name in self.state
-        self.state[source_name] = state
-        return not all(self.state.values())
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _Pulse:
+    value: _PulseValue
+    from_: _Module
+    to: _Module
+    button_presses: int
 
-    @override
-    def get_diff(self, other: _Module) -> dict[str, str]:
-        diff = super().get_diff(other)
-        assert isinstance(other, self.__class__)
-        assert self.state.keys() == other.state.keys()
-        for name, state in self.state.items():
-            if state != other.state[name]:
-                diff[f"state[{name}]"] = f"{state} -> {other.state[name]}"
-        return diff
+    @staticmethod
+    def create(new_pulse: _PulseNew, button_presses: int, /) -> _Pulse:
+        return _Pulse(
+            value=new_pulse.value,
+            from_=new_pulse.from_,
+            to=new_pulse.to,
+            button_presses=button_presses,
+        )
+
+
+class _Module(metaclass=ABCMeta):
+    def __init__(self, name: _ModuleName) -> None:
+        self._name = name
+        self._outputs: list[_Module] = []
+
+    @property
+    def name(self) -> _ModuleName:
+        return self._name
+
+    def add_receiving_module(self, output: _Module) -> None:
+        self._outputs.append(output)
+
+    @abstractmethod
+    def process_pulse(self, pulse: _Pulse) -> Iterator[_PulseNew]: ...
+
+    def _get_output_pulses(self, value: _PulseValue) -> Iterator[_PulseNew]:
+        for output in self._outputs:
+            yield _PulseNew(value=value, from_=self, to=output)
+
+    if __debug__:
+
+        def _validate_incoming_pulse(self, pulse: _Pulse) -> None:
+            assert pulse.to is self
+
+
+class _Button(_Module):
+    def __init__(self) -> None:
+        super().__init__(name=_ModuleName(""))
+        self._button_presses: int = 0
+
+    @property
+    def button_presses(self) -> int:
+        return self._button_presses
+
+    def process_button_press(self) -> Iterator[_PulseNew]:
+        self._button_presses += 1
+        yield from self._get_output_pulses(_PulseLow)
 
     @override
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.name}, {self.outputs}, {self.state})"
+    def process_pulse(self, pulse: _Pulse) -> Never:
+        if __debug__:
+            self._validate_incoming_pulse(pulse)
+        raise AssertionError()
 
 
-# @dataclass(slots=True)
-@dataclass
 class _Broadcast(_Module):
     @override
-    def process_input(self, source_name: str, state: bool) -> bool | None:
-        return state
+    def process_pulse(self, pulse: _Pulse) -> Iterator[_PulseNew]:
+        if __debug__:
+            self._validate_incoming_pulse(pulse)
+        yield from self._get_output_pulses(pulse.value)
 
 
-# @dataclass(slots=True)
-@dataclass
 class _Receiver(_Module):
+    def __init__(self, name: _ModuleName) -> None:
+        super().__init__(name=name)
+
     @override
-    def process_input(self, source_name: str, state: bool) -> bool | None:
-        return None
+    def add_receiving_module(self, output: _Module) -> Never:
+        super().add_receiving_module(output)
+        raise AssertionError()
+
+    @override
+    def process_pulse(self, pulse: _Pulse) -> Iterator[_PulseNew]:
+        if __debug__:
+            self._validate_incoming_pulse(pulse)
+        if pulse.value is _PulseLow:
+            _logger.info(
+                "Receiver received signal from %s: %s", pulse.from_, pulse.value
+            )
+            self._received_low = True
+        yield from []
 
 
-def _parse_module(line: str) -> _Module:
+class _FlipFlop(_Module):
+    def __init__(self, name: _ModuleName) -> None:
+        super().__init__(name=name)
+        self._state: _PulseValue = _PulseLow
+
+    @override
+    def process_pulse(self, pulse: _Pulse) -> Iterator[_PulseNew]:
+        if __debug__:
+            self._validate_incoming_pulse(pulse)
+
+        if pulse.value is _PulseHigh:
+            return
+
+        self._state = _PulseValue(not self._state)
+        yield from self._get_output_pulses(self._state)
+
+
+class _Conjunction(_Module):
+    def __init__(self, name: _ModuleName) -> None:
+        super().__init__(name=name)
+        self._state: dict[_ModuleName, _PulseValue] = {}
+
+    @override
+    def process_pulse(self, pulse: _Pulse) -> Iterator[_PulseNew]:
+        if __debug__:
+            self._validate_incoming_pulse(pulse)
+        assert pulse.from_.name in self._state
+
+        self._state[pulse.from_.name] = pulse.value
+
+        output_pulse_value = (
+            _PulseLow
+            if all(value is _PulseHigh for value in self._state.values())
+            else _PulseHigh
+        )
+        yield from self._get_output_pulses(output_pulse_value)
+
+    def set_inputs(self, inputs: Iterable[_ModuleName]) -> None:
+        self._state.update({name: _PulseLow for name in inputs})
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Pattern:
+    period: int
+
+
+@dataclass(slots=True, kw_only=True)
+class _PulseData:
+    value: _PulseValue
+    count: int
+    first_button_press: int
+    last_button_press: int
+
+    @property
+    def button_press_period(self) -> int:
+        return self.last_button_press - self.first_button_press + 1
+
+    def __repr__(self) -> str:
+        return (
+            f"({self.value}, {self.count}, {self.first_button_press}, "
+            f"{self.last_button_press}, {self.button_press_period})"
+        )
+
+
+class _GatewayConjuction(_Conjunction):
+    def __init__(self, name: _ModuleName) -> None:
+        super().__init__(name=name)
+        self._input_pulses: dict[_ModuleName, list[_PulseData]] = {}
+        self._patterns: dict[_ModuleName, Pattern] = {}
+
+    @property
+    def has_pattern_for_all(self) -> bool:
+        return all(name in self._patterns for name in self._input_pulses)
+
+    @property
+    def patterns(self) -> dict[_ModuleName, Pattern]:
+        return self._patterns
+
+    @override
+    def set_inputs(self, inputs: Iterable[_ModuleName]) -> None:
+        inputs = list(inputs)
+        super().set_inputs(inputs)
+        self._input_pulses.update({name: [] for name in inputs})
+
+    @override
+    def process_pulse(self, pulse: _Pulse) -> Iterator[_PulseNew]:
+        result_iter = super().process_pulse(pulse)
+
+        input_pulses = self._input_pulses[pulse.from_.name]
+        if not input_pulses or pulse.value != input_pulses[-1].value:
+            input_pulses.append(
+                _PulseData(
+                    value=pulse.value,
+                    count=0,
+                    first_button_press=pulse.button_presses,
+                    last_button_press=pulse.button_presses,
+                )
+            )
+        input_pulses[-1].count += 1
+        input_pulses[-1].last_button_press = pulse.button_presses
+
+        if sum(data.count for data in input_pulses) % 200 == 0:
+            _logger.info(
+                "Conjuction(%s) input pulses for %s: %s",
+                self.name,
+                pulse.from_.name,
+                input_pulses,
+            )
+
+        if pulse.from_.name not in self._patterns and len(input_pulses) == 7:
+            _logger.info(
+                "Conjuction(%s) input pulses for pattern: %s",
+                self.name,
+                input_pulses[:6],
+            )
+            first_low, first_high, second_low, second_high, third_low, third_high = (
+                input_pulses[:6]
+            )
+            assert first_low.value is _PulseLow
+            assert first_high.value is _PulseHigh
+            assert second_low.value is _PulseLow
+            assert second_high.value is _PulseHigh
+            assert third_low.value is _PulseLow
+            assert third_high.value is _PulseHigh
+            assert first_low.count > 1
+            assert first_high.count == 1
+            assert second_low.count > 1
+            assert second_high.count == 1
+            assert third_low.count > 1
+            assert third_high.count == 1
+
+            assert first_low.first_button_press == 1
+            assert first_low.last_button_press > 1
+            assert first_low.button_press_period > 1
+
+            assert first_high.first_button_press > first_low.last_button_press
+            assert first_high.last_button_press == first_high.first_button_press
+            assert first_high.button_press_period == 1
+
+            assert second_low.first_button_press == first_high.last_button_press
+            assert second_low.last_button_press > second_low.first_button_press
+            assert second_low.button_press_period > 1
+
+            assert second_high.first_button_press > second_low.last_button_press
+            assert second_high.last_button_press == second_high.first_button_press
+            assert second_high.button_press_period == 1
+
+            assert third_low.first_button_press == second_high.last_button_press
+            assert third_low.last_button_press > third_low.first_button_press
+            assert third_low.button_press_period > 1
+
+            assert third_high.first_button_press > third_low.last_button_press
+            assert third_high.last_button_press == third_high.first_button_press
+            assert third_high.button_press_period == 1
+
+            assert first_low.count < second_low.count
+            assert second_low.count == third_low.count
+
+            assert first_low.button_press_period == second_low.button_press_period - 1
+            assert second_low.button_press_period == third_low.button_press_period
+
+            self._patterns[pulse.from_.name] = Pattern(
+                period=second_low.button_press_period
+            )
+            _logger.info(
+                "Conjuction(%s) pattern for %s: %s",
+                self.name,
+                pulse.from_.name,
+                self._patterns[pulse.from_.name],
+            )
+
+        yield from result_iter
+
+    # Pattern notes:
+    # - Formula: start + n*constant
+    # - start is always constant - 1 -> try without taking that into account
+    # - Value changes to True and back to False during same button press: try first
+    #   without taking this into consideration
+
+
+type _AnyModule = (
+    _Button | _Broadcast | _Receiver | _FlipFlop | _Conjunction | _GatewayConjuction
+)
+
+
+def _parse_module(line: str) -> tuple[_AnyModule, list[_ModuleName]]:
     name, outputs_str = map(str.strip, line.split("->"))
-    outputs = list(map(str.strip, outputs_str.split(",")))
+    name = _ModuleName(name)
+    outputs = list(map(lambda x: _ModuleName(x.strip()), outputs_str.split(",")))
     if name == "broadcaster":
-        return _Broadcast(name, outputs)
+        return _Broadcast(name), outputs
 
     assert name[0] in "%&"
     module_type = name[0]
-    name = name[1:]
+    name = _ModuleName(name[1:])
 
     if module_type == "%":
-        return _FlipFlop(name, outputs)
-    return _Conjuction(name, outputs)
+        return _FlipFlop(name), outputs
+    return _Conjunction(name), outputs
 
 
-def _parse_modules(lines: Iterable[str]) -> tuple[list[_Module], dict[str, _Module]]:
-    modules = [_parse_module(line) for line in lines]
-    modules_by_name = {module.name: module for module in modules}
-    for module in modules:
-        for output in module.outputs:
-            output_module = modules_by_name.get(output)
-            if output_module is None:
-                receiver = _Receiver(output)
-                modules.append(receiver)
-                modules_by_name[output] = receiver
-                output_module = receiver
-            output_module.add_input(module.name)
-    return modules, modules_by_name
+def _parse_modules(
+    lines: Iterable[str], *, use_gateway: bool = False
+) -> tuple[
+    _Receiver | None,
+    _Button,
+    _GatewayConjuction | None,
+    dict[type[_AnyModule], list[_AnyModule]],
+]:
+    modules_with_output_names = [(_Button(), [_ModuleName("broadcaster")])] + [
+        _parse_module(line) for line in lines
+    ]
+
+    all_names_with_outputs = {module.name for module, _ in modules_with_output_names}
+    all_output_names = {
+        output for _, outputs in modules_with_output_names for output in outputs
+    }
+    receiver_names = all_output_names - all_names_with_outputs
+    assert (
+        len(receiver_names) <= 1
+    ), "Safety check: only inputs with 0-1 receivers are known"
+
+    if receiver_names:
+        receiver_name = receiver_names.pop()
+        modules_with_output_names.append((_Receiver(receiver_name), []))
+        gateways_to_receiver = [
+            module
+            for module, outputs in modules_with_output_names
+            if receiver_name in outputs
+        ]
+        if use_gateway:
+            assert (
+                len(gateways_to_receiver) <= 1
+            ), "Safety check: only 0-1 gateways are known"
+            if gateways_to_receiver:
+                gateway_to_receiver = gateways_to_receiver[0]
+                assert isinstance(
+                    gateway_to_receiver, _Conjunction
+                ), "Safety check: only conjunctions are known"
+                modules_with_output_names = [
+                    (
+                        _GatewayConjuction(module.name)
+                        if module is gateway_to_receiver
+                        else module,
+                        outputs,
+                    )
+                    for module, outputs in modules_with_output_names
+                ]
+
+    modules_by_name = {module.name: module for module, _ in modules_with_output_names}
+
+    modules_with_output_modules = [
+        (module, list(map(modules_by_name.__getitem__, outputs)))
+        for module, outputs in modules_with_output_names
+    ]
+
+    for module, output_modules in modules_with_output_modules:
+        for output_module in output_modules:
+            module.add_receiving_module(output_module)
+
+    modules_by_type: dict[type[_AnyModule], list[_AnyModule]] = {
+        t: list(g)
+        for t, g in itertools.groupby(
+            sorted(
+                list(
+                    map(lambda x: x[0], modules_with_output_modules),
+                ),
+                key=lambda x: type(x).__name__,
+            ),
+            key=lambda x: type(x),
+        )
+    }
+
+    for t, conjunctions in modules_by_type.items():
+        if not issubclass(t, _Conjunction):
+            continue
+        for conjunction in conjunctions:
+            assert isinstance(conjunction, _Conjunction)
+            inputs = (
+                module.name
+                for module, outputs in modules_with_output_names
+                if conjunction.name in outputs
+            )
+            conjunction.set_inputs(inputs)
+
+    receiver = modules_by_type.get(_Receiver, [None])[0]
+    if receiver is not None:
+        assert isinstance(receiver, _Receiver)
+
+    button = modules_by_type[_Button][0]
+    assert isinstance(button, _Button)
+
+    gateway = modules_by_type.get(_GatewayConjuction, [None])[0]
+    if gateway is not None:
+        assert isinstance(gateway, _GatewayConjuction)
+
+    return receiver, button, gateway, modules_by_type
 
 
-@dataclass(slots=True, frozen=True)
-class _SentPulse:
-    source_name: str
-    destination_name: str
-    state: bool
-
-
-def _log_state_diff(
-    old_state: list[_Module], new_state: list[_Module], level: int = logging.DEBUG
+def _extend_pulses(
+    queue: deque[_Pulse], button: _Button, pulses: Iterable[_PulseNew]
 ) -> None:
-    for old_module, new_module in zip(old_state, new_state):
-        diff = old_module.get_diff(new_module)
-        if diff:
-            logger.log(level, "Module %s:", new_module)
-            for key, value in diff.items():
-                logger.log(level, "  %s: %s", key, value)
-
-
-def _log_state(state: list[_Module]) -> None:
-    for module in state:
-        logger.debug("  %s", module)
+    queue.extend(map(lambda new: _Pulse.create(new, button.button_presses), pulses))
 
 
 def p1(input_str: str) -> int:
-    modules, modules_by_name = _parse_modules(input_str.splitlines())
-    modules.sort(key=lambda module: module.name)
+    _, button, _, _ = _parse_modules(input_str.splitlines())
 
-    counts = {_Low: 0, _High: 0}
-    initial_state = [deepcopy(module) for module in modules]
+    counts = Counter[_PulseValue]()
+    queue = deque[_Pulse]()
 
-    prev_state = None
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("Initial state:")
-        _log_state(modules)
-        prev_state = deepcopy(modules)
+    for _ in range(1000):
+        _extend_pulses(queue, button, button.process_button_press())
 
-    button_press_count = 0
+        while queue:
+            pulse = queue.popleft()
+            counts.update((pulse.value,))
+            _extend_pulses(queue, button, pulse.to.process_pulse(pulse))
 
-    for button_press_count in range(1, 1001):
-        sent_signals = Queue[_SentPulse]()
-        sent_signals.put(_SentPulse("", "broadcaster", _Low))
+    _logger.info(f"Counts: {counts}")
 
-        while sent_signals.empty() is False:
-            signal = sent_signals.get_nowait()
-            logger.debug("Processing signal: %s", signal)
-            counts[signal.state] += 1
-            destination = modules_by_name[signal.destination_name]
-            output_signal_state = destination.process_input(
-                signal.source_name, signal.state
-            )
-            if prev_state is not None:
-                logger.debug("State diff against previous state:")
-                _log_state_diff(prev_state, modules)
+    return math.prod(counts.values())
 
-            if output_signal_state is not None:
-                for output in destination.outputs:
-                    sent_signals.put_nowait(
-                        _SentPulse(destination.name, output, output_signal_state)
-                    )
 
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Current state after %d button presses:", button_press_count)
-            _log_state(modules)
-        if logger.isEnabledFor(logging.INFO):
-            logger.info(
-                "State diff against initial state after %d button presses:",
-                button_press_count,
-            )
-            _log_state_diff(initial_state, modules, logging.INFO)
-        if prev_state is not None:
-            logger.debug("State diff against previous state:")
-            _log_state_diff(prev_state, modules)
-            prev_state = deepcopy(modules)
+def p2(input_str: str) -> int:
+    receiver_name = _ModuleName("rx")
+    receiver, button, gateway, _ = _parse_modules(
+        input_str.splitlines(), use_gateway=True
+    )
+    assert receiver is not None
+    assert receiver.name == receiver_name
+    assert gateway is not None
 
-        if modules == initial_state:
-            logger.info(
-                "Found initial state after %d button presses", button_press_count
+    queue = deque[_Pulse]()
+
+    while True:
+        _extend_pulses(queue, button, button.process_button_press())
+        if button.button_presses % 100_000 == 0:
+            _logger.info(f"Button presses: {button.button_presses:_}")
+
+        while queue:
+            pulse = queue.popleft()
+            _extend_pulses(queue, button, pulse.to.process_pulse(pulse))
+
+        if gateway.has_pattern_for_all:
+            _logger.info(
+                "All patterns found for gateway after %d button presses",
+                button.button_presses,
             )
             break
-        logger.info("Button press %d done", button_press_count)
 
-    logger.info(f"Counts: {counts}")
-
-    assert button_press_count > 0
-    return math.prod(count * 1000 // button_press_count for count in counts.values())
+    return math.lcm(*(pattern.period for pattern in gateway.patterns.values()))
