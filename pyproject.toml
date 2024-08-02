@@ -9,10 +9,10 @@ readme = "README.md"
 mypy = "mypy ."
 pyright = "pyright"
 ruff-check = "ruff check"
-lint = ["ruff-check", "pyright", "mypy"]
+ruff-check-format = "ruff format --check"
+lint = ["ruff-check", "ruff-check-format", "pyright", "mypy"]
 
 format = "ruff format"
-
 ruff-fix = "ruff check --fix-only"
 
 test = "pytest"
