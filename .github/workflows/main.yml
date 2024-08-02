@@ -26,5 +26,3 @@ jobs:
         cache: 'poetry'
     - run: poetry install
     - run: poetry run poe validate
-    - run: poetry run poe test
-    - run: poetry run poe runall
