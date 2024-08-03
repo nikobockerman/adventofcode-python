@@ -6,6 +6,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable, Iterable, Optional
 
+import joblib
 import typer
 from typing_extensions import Annotated
 
@@ -74,17 +75,19 @@ def _specific_problem(day: int, day_suffix: str, problem: int) -> int:
 def _multiple_problems(days: Iterable[int], day_suffix: str) -> int:
     all_passed = None
     start = time.perf_counter()
-    for day in days:
-        problems = ANSWERS.get(day, {})
-        inputs = list(
-            _get_problem_input(day, day_suffix, problem) for problem in problems
-        )
-        results = map(lambda x: _process_output(_exec_problem(x)), inputs)
-        for result in results:
-            passed = _report_one_of_many_problems(result)
-            if all_passed is None:
-                all_passed = passed
-            all_passed &= passed
+    with joblib.Parallel(n_jobs=-1) as parallel:
+        for day in days:
+            problems = ANSWERS.get(day, {})
+            inputs = list(
+                _get_problem_input(day, day_suffix, problem) for problem in problems
+            )
+            outputs = parallel(joblib.delayed(_exec_problem)(x) for x in inputs)
+            results = map(lambda x: _process_output(x), outputs)
+            for result in results:
+                passed = _report_one_of_many_problems(result)
+                if all_passed is None:
+                    all_passed = passed
+                all_passed &= passed
     duration = time.perf_counter() - start
 
     if all_passed is None:
