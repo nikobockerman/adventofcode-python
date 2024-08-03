@@ -9,7 +9,7 @@ from typing import Iterable, Mapping, cast
 
 _logger = logging.getLogger(__name__)
 
-_Part = dict[str, int]
+type _Part = dict[str, int]
 
 _categories = frozenset("xmas")
 
