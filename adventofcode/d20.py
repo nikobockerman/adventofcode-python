@@ -173,14 +173,10 @@ class _PulseData:
     first_button_press: int
     last_button_press: int
 
-    @property
-    def button_press_period(self) -> int:
-        return self.last_button_press - self.first_button_press + 1
-
     def __repr__(self) -> str:
         return (
             f"({self.value}, {self.count}, {self.first_button_press}, "
-            f"{self.last_button_press}, {self.button_press_period})"
+            f"{self.last_button_press})"
         )
 
 
@@ -253,37 +249,39 @@ class _GatewayConjuction(_Conjunction):
 
             assert first_low.first_button_press == 1
             assert first_low.last_button_press > 1
-            assert first_low.button_press_period > 1
 
             assert first_high.first_button_press > first_low.last_button_press
             assert first_high.last_button_press == first_high.first_button_press
-            assert first_high.button_press_period == 1
 
             assert second_low.first_button_press == first_high.last_button_press
             assert second_low.last_button_press > second_low.first_button_press
-            assert second_low.button_press_period > 1
 
             assert second_high.first_button_press > second_low.last_button_press
             assert second_high.last_button_press == second_high.first_button_press
-            assert second_high.button_press_period == 1
 
             assert third_low.first_button_press == second_high.last_button_press
             assert third_low.last_button_press > third_low.first_button_press
-            assert third_low.button_press_period > 1
 
             assert third_high.first_button_press > third_low.last_button_press
             assert third_high.last_button_press == third_high.first_button_press
-            assert third_high.button_press_period == 1
 
             assert first_low.count < second_low.count
             assert second_low.count == third_low.count
 
-            assert first_low.button_press_period == second_low.button_press_period - 1
-            assert second_low.button_press_period == third_low.button_press_period
-
-            self._patterns[pulse.from_.name] = Pattern(
-                period=second_low.button_press_period
+            period_start_to_first = first_high.first_button_press
+            period_first_to_second = (
+                second_high.first_button_press - first_high.first_button_press
             )
+            period_second_to_third = (
+                third_high.first_button_press - second_high.first_button_press
+            )
+            assert (
+                period_start_to_first
+                == period_first_to_second
+                == period_second_to_third
+            )
+
+            self._patterns[pulse.from_.name] = Pattern(period=period_start_to_first)
             _logger.info(
                 "Conjuction(%s) pattern for %s: %s",
                 self.name,
