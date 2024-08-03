@@ -4,7 +4,7 @@ import pathlib
 import sys
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Callable, Iterable, Optional
 
 import typer
 from typing_extensions import Annotated
@@ -40,31 +40,17 @@ def main(
     if day is not None and problem is not None:
         exit_code = _specific_problem(day, day_suffix, problem)
     else:
-        days = list(ANSWERS.keys()) if day is None else [day]
-        all_passed = None
-        start = time.perf_counter()
-        for day in days:
-            problems = ANSWERS.get(day, {})
-            for problem in problems:
-                passed = _one_of_many_problems(day, day_suffix, problem)
-                if all_passed is None:
-                    all_passed = passed
-                all_passed &= passed
-        duration = time.perf_counter() - start
-        if all_passed is None:
-            print("No answers known for requested day")
-        elif all_passed:
-            print(f"Finished with all passing. Duration {duration:.3f}s")
-        else:
-            print(f"Finished with failures. Duration {duration:.3f}s")
-            exit_code = 1
+        days = (ANSWERS.keys()) if day is None else [day]
+        exit_code = _multiple_problems(days, day_suffix=day_suffix)
 
     sys.exit(exit_code)
 
 
 def _specific_problem(day: int, day_suffix: str, problem: int) -> int:
     try:
-        result = _run_problem(day, day_suffix, problem)
+        result = _process_output(
+            _exec_problem(_get_problem_input(day, day_suffix, problem))
+        )
         print(f"Duration: {result.duration:.3f}s")
 
         if result.incorrect:
@@ -85,19 +71,32 @@ def _specific_problem(day: int, day_suffix: str, problem: int) -> int:
         return 0
 
 
-def _one_of_many_problems(day: int, day_suffix: str, problem: int) -> bool:
-    result = _run_problem(day, day_suffix, problem)
-    msg = f"Day {day:2} Problem {problem}: "
-    msg += f"{result.duration:.3f}s: "
-    if result.incorrect:
-        msg += (
-            f"FAIL: Incorrect answer: {result.answer}. "
-            f"Correct is: {result.correct_answer}"
+def _multiple_problems(days: Iterable[int], day_suffix: str) -> int:
+    all_passed = None
+    start = time.perf_counter()
+    for day in days:
+        problems = ANSWERS.get(day, {})
+        inputs = list(
+            _get_problem_input(day, day_suffix, problem) for problem in problems
         )
-    else:
-        msg += "PASS"
-    print(msg)
-    return not result.incorrect
+        results = map(lambda x: _process_output(_exec_problem(x)), inputs)
+        for result in results:
+            passed = _report_one_of_many_problems(result)
+            if all_passed is None:
+                all_passed = passed
+            all_passed &= passed
+    duration = time.perf_counter() - start
+
+    if all_passed is None:
+        print(f"No answers known for requested day. Duration {duration:.3f}s")
+        return 0
+
+    if all_passed:
+        print(f"Finished with all passing. Duration {duration:.3f}s")
+        return 0
+
+    print(f"Finished with failures. Duration {duration:.3f}s")
+    return 1
 
 
 class _SolverNotFoundError(RuntimeError):
@@ -116,6 +115,9 @@ class _ProblemNotFoundError(_SolverNotFoundError):
 
 @dataclass
 class _ProblemResult:
+    day: int
+    problem: int
+
     answer: str
     duration: float
     correct_answer: str | None
@@ -133,7 +135,44 @@ class _ProblemResult:
         return self.answer_known and self.answer != self.correct_answer
 
 
-def _run_problem(day: int, day_suffix: str, problem: int) -> _ProblemResult:
+def _report_one_of_many_problems(result: _ProblemResult) -> bool:
+    msg = f"Day {result.day:2} Problem {result.problem}: "
+    msg += f"{result.duration:.3f}s: "
+    if result.incorrect:
+        msg += (
+            f"FAIL: Incorrect answer: {result.answer}. "
+            f"Correct is: {result.correct_answer}"
+        )
+    else:
+        msg += "PASS"
+    print(msg)
+    return not result.incorrect
+
+
+@dataclass(frozen=True, slots=True)
+class _ProblemInput:
+    day: int
+    problem: int
+    func: Callable[[str], Any]
+    input_str: str
+
+
+@dataclass(frozen=True, slots=True)
+class _ProblemOutput:
+    input_: _ProblemInput
+    duration: float
+    result: str
+
+    @property
+    def day(self) -> int:
+        return self.input_.day
+
+    @property
+    def problem(self) -> int:
+        return self.input_.problem
+
+
+def _get_problem_input(day: int, day_suffix: str, problem: int) -> _ProblemInput:
     try:
         mod_name = f"adventofcode.d{day}{day_suffix}"
         mod = importlib.import_module(mod_name)
@@ -149,16 +188,21 @@ def _run_problem(day: int, day_suffix: str, problem: int) -> _ProblemResult:
         (pathlib.Path(__file__).parent / f"input-d{day}.txt").read_text().strip()
     )
 
-    try:
-        start_time = time.perf_counter()
-        result = func(input_str)
-        duration = time.perf_counter() - start_time
-    except AssertionError as e:
-        logging.critical(f"{mod_name}.p{problem}: Assertion failed: %s", e)
-        raise
+    return _ProblemInput(day, problem, func, input_str)
 
-    answer = ANSWERS.get(day, {}).get(problem)
-    return _ProblemResult(str(result), duration, str(answer))
+
+def _process_output(output: _ProblemOutput) -> _ProblemResult:
+    answer = ANSWERS.get(output.day, {}).get(output.problem)
+    return _ProblemResult(
+        output.day, output.problem, output.result, output.duration, str(answer)
+    )
+
+
+def _exec_problem(input_: _ProblemInput) -> _ProblemOutput:
+    start_time = time.perf_counter()
+    result = input_.func(input_.input_str)
+    duration = time.perf_counter() - start_time
+    return _ProblemOutput(input_, duration, str(result))
 
 
 if __name__ == "__main__":
