@@ -161,132 +161,30 @@ class _Conjunction(_Module):
         self._state.update({name: _PulseLow for name in inputs})
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class Pattern:
-    period: int
-
-
-@dataclass(slots=True, kw_only=True)
-class _PulseData:
-    value: _PulseValue
-    count: int
-    first_button_press: int
-    last_button_press: int
-
-    def __repr__(self) -> str:
-        return (
-            f"({self.value}, {self.count}, {self.first_button_press}, "
-            f"{self.last_button_press})"
-        )
-
-
 class _GatewayConjuction(_Conjunction):
     def __init__(self, name: _ModuleName) -> None:
         super().__init__(name=name)
-        self._input_pulses: dict[_ModuleName, list[_PulseData]] = {}
-        self._patterns: dict[_ModuleName, Pattern] = {}
+        self._periods: dict[_ModuleName, int] = {}
 
     @property
     def has_pattern_for_all(self) -> bool:
-        return all(name in self._patterns for name in self._input_pulses)
+        return all(name in self._periods for name in self._state)
 
     @property
-    def patterns(self) -> dict[_ModuleName, Pattern]:
-        return self._patterns
-
-    @override
-    def set_inputs(self, inputs: Iterable[_ModuleName]) -> None:
-        inputs = list(inputs)
-        super().set_inputs(inputs)
-        self._input_pulses.update({name: [] for name in inputs})
+    def periods(self) -> dict[_ModuleName, int]:
+        return self._periods
 
     @override
     def process_pulse(self, pulse: _Pulse) -> Iterator[_PulseNew]:
         result_iter = super().process_pulse(pulse)
 
-        input_pulses = self._input_pulses[pulse.from_.name]
-        if not input_pulses or pulse.value != input_pulses[-1].value:
-            input_pulses.append(
-                _PulseData(
-                    value=pulse.value,
-                    count=0,
-                    first_button_press=pulse.button_presses,
-                    last_button_press=pulse.button_presses,
-                )
-            )
-        input_pulses[-1].count += 1
-        input_pulses[-1].last_button_press = pulse.button_presses
-
-        if sum(data.count for data in input_pulses) % 200 == 0:
+        if pulse.from_.name not in self._periods and pulse.value is _PulseHigh:
+            self._periods[pulse.from_.name] = pulse.button_presses
             _logger.info(
-                "Conjuction(%s) input pulses for %s: %s",
+                "Conjuction(%s) period for %s: %s",
                 self.name,
                 pulse.from_.name,
-                input_pulses,
-            )
-
-        if pulse.from_.name not in self._patterns and len(input_pulses) == 7:
-            _logger.info(
-                "Conjuction(%s) input pulses for pattern: %s",
-                self.name,
-                input_pulses[:6],
-            )
-            first_low, first_high, second_low, second_high, third_low, third_high = (
-                input_pulses[:6]
-            )
-            assert first_low.value is _PulseLow
-            assert first_high.value is _PulseHigh
-            assert second_low.value is _PulseLow
-            assert second_high.value is _PulseHigh
-            assert third_low.value is _PulseLow
-            assert third_high.value is _PulseHigh
-            assert first_low.count > 1
-            assert first_high.count == 1
-            assert second_low.count > 1
-            assert second_high.count == 1
-            assert third_low.count > 1
-            assert third_high.count == 1
-
-            assert first_low.first_button_press == 1
-            assert first_low.last_button_press > 1
-
-            assert first_high.first_button_press > first_low.last_button_press
-            assert first_high.last_button_press == first_high.first_button_press
-
-            assert second_low.first_button_press == first_high.last_button_press
-            assert second_low.last_button_press > second_low.first_button_press
-
-            assert second_high.first_button_press > second_low.last_button_press
-            assert second_high.last_button_press == second_high.first_button_press
-
-            assert third_low.first_button_press == second_high.last_button_press
-            assert third_low.last_button_press > third_low.first_button_press
-
-            assert third_high.first_button_press > third_low.last_button_press
-            assert third_high.last_button_press == third_high.first_button_press
-
-            assert first_low.count < second_low.count
-            assert second_low.count == third_low.count
-
-            period_start_to_first = first_high.first_button_press
-            period_first_to_second = (
-                second_high.first_button_press - first_high.first_button_press
-            )
-            period_second_to_third = (
-                third_high.first_button_press - second_high.first_button_press
-            )
-            assert (
-                period_start_to_first
-                == period_first_to_second
-                == period_second_to_third
-            )
-
-            self._patterns[pulse.from_.name] = Pattern(period=period_start_to_first)
-            _logger.info(
-                "Conjuction(%s) pattern for %s: %s",
-                self.name,
-                pulse.from_.name,
-                self._patterns[pulse.from_.name],
+                self._periods[pulse.from_.name],
             )
 
         yield from result_iter
@@ -469,4 +367,4 @@ def p2(input_str: str) -> int:
             )
             break
 
-    return math.lcm(*(pattern.period for pattern in gateway.patterns.values()))
+    return math.lcm(*(pattern for pattern in gateway.periods.values()))
