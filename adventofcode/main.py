@@ -76,6 +76,7 @@ def _multiple_problems(days: Iterable[int], day_suffix: str) -> int:
     all_passed = None
     start = time.perf_counter()
     with joblib.Parallel(n_jobs=-1) as parallel:
+        slowest = None
         for day in days:
             problems = ANSWERS.get(day, {})
             inputs = list(
@@ -88,7 +89,16 @@ def _multiple_problems(days: Iterable[int], day_suffix: str) -> int:
                 if all_passed is None:
                     all_passed = passed
                 all_passed &= passed
+                if slowest is None or result.duration > slowest.duration:
+                    slowest = result
+
     duration = time.perf_counter() - start
+
+    if slowest is not None:
+        print(
+            f"Slowest: Day {slowest.day} Problem {slowest.problem}: "
+            f"{slowest.duration:.3f}s"
+        )
 
     if all_passed is None:
         print(f"No answers known for requested day. Duration {duration:.3f}s")
