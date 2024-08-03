@@ -4,7 +4,7 @@ from typing import Iterable
 from adventofcode.tooling.map import Coord2d, Map2d
 
 
-class InputMap(Map2d[str]):
+class _InputMap(Map2d[str]):
     def __init__(self, data: Iterable[str]):
         super().__init__([line for line in data])
 
@@ -31,7 +31,7 @@ def _calculate_distance(
 
 
 def calculate_distance_between_galaxies(input_str: str, expansion_distance: int) -> int:
-    input_map = InputMap(input_str.splitlines())
+    input_map = _InputMap(input_str.splitlines())
     empty_x_indices = set(range(input_map.width))
     empty_y_indices = set(range(input_map.height))
     galaxy_coords: list[Coord2d] = []

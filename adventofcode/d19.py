@@ -7,7 +7,7 @@ from enum import Enum
 from queue import Queue
 from typing import Iterable, Mapping, cast
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _Part = dict[str, int]
 
@@ -73,11 +73,11 @@ def _parse_workflow(line: str) -> _Workflow:
     return _Workflow(name, rules, default)
 
 
-part_regex = re.compile(r"\{x=(?P<x>\d+),m=(?P<m>\d+),a=(?P<a>\d+),s=(?P<s>\d+)\}")
+_part_regex = re.compile(r"\{x=(?P<x>\d+),m=(?P<m>\d+),a=(?P<a>\d+),s=(?P<s>\d+)\}")
 
 
 def _parse_part(line: str) -> _Part:
-    match = part_regex.match(line)
+    match = _part_regex.match(line)
     assert match is not None
     return {k: int(v) for k, v in match.groupdict().items()}
 
@@ -140,12 +140,12 @@ def p1(input_str: str) -> int:
     result = 0
     for part in parts_iter:
         if not _process_part(in_workflow, workflows, part):
-            logger.debug("Part %s rejected", part)
+            _logger.debug("Part %s rejected", part)
             continue
 
         total = sum(part.values())
         result += total
-        logger.debug(
+        _logger.debug(
             "Part %s accepted: total=%d, result so far=%d", part, total, result
         )
 
@@ -302,12 +302,12 @@ def p2(input_str: str) -> int:
     accepted_category_value_ranges = list[dict[str, list[range]]]()
     while not queue.empty():
         step = queue.get_nowait()
-        logger.debug("Processing step: %s", step)
+        _logger.debug("Processing step: %s", step)
         if step.next_workflow == "R":
-            logger.debug("Rejected step")
+            _logger.debug("Rejected step")
             continue
         if step.next_workflow == "A":
-            logger.debug("Accepted step")
+            _logger.debug("Accepted step")
             assert all(
                 ranges is not None for ranges in step.category_value_ranges.values()
             )
@@ -318,9 +318,9 @@ def p2(input_str: str) -> int:
         workflow = workflows[step.next_workflow]
         workflow_steps = workflow_step_cache.get(workflow.name)
         if workflow_steps is None:
-            logger.debug("Constructing workflow steps for %s", workflow)
+            _logger.debug("Constructing workflow steps for %s", workflow)
             workflow_steps = _construct_workflow_steps(workflow)
-            logger.debug("Constructed workflow steps: %s", workflow_steps)
+            _logger.debug("Constructed workflow steps: %s", workflow_steps)
             workflow_step_cache[workflow.name] = workflow_steps
 
         for workflow_step in workflow_steps:
@@ -328,7 +328,7 @@ def p2(input_str: str) -> int:
                 step.category_value_ranges, workflow_step.category_value_ranges
             )
             if not _possible_category_value_ranges(new_category_value_ranges):
-                logger.debug(
+                _logger.debug(
                     "Skipping step -> workflow as ranges are impossible: %s -> %s",
                     step,
                     workflow_step,
@@ -345,11 +345,11 @@ def p2(input_str: str) -> int:
         for ranges in cat_value_ranges.values()
     )
 
-    if logger.isEnabledFor(logging.DEBUG):
+    if _logger.isEnabledFor(logging.DEBUG):
         for i, cat_value_ranges in enumerate(accepted_category_value_ranges):
-            logger.debug("i=%d, cat_value_ranges=%s", i, cat_value_ranges)
+            _logger.debug("i=%d, cat_value_ranges=%s", i, cat_value_ranges)
             lenghts = {cat: len(ranges[0]) for cat, ranges in cat_value_ranges.items()}
-            logger.debug("i=%d, range_lengths=%s", i, lenghts)
+            _logger.debug("i=%d, range_lengths=%s", i, lenghts)
 
     return sum(
         math.prod(len(ranges[0]) for ranges in cat_value_ranges.values())

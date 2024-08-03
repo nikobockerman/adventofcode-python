@@ -6,10 +6,10 @@ from typing import Iterable
 
 from adventofcode.tooling.map import AllDirections, Coord2d, Dir, Map2d
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-class Inside(enum.Enum):
+class _Inside(enum.Enum):
     Inside = enum.auto()
     Outside = enum.auto()
     InPath = enum.auto()
@@ -23,33 +23,33 @@ class Inside(enum.Enum):
 
 
 @dataclass
-class Pipe:
+class _Pipe:
     coord: Coord2d
     symbol: str
-    inside: Inside = Inside.Unknown
+    inside: _Inside = _Inside.Unknown
 
     def __hash__(self) -> int:
         return hash(self.coord)
 
 
-symbols_open_to_north = "|JLS"
-symbols_open_to_east = "-FLS"
-symbols_open_to_south = "|F7S"
-symbols_open_to_west = "-J7S"
+_symbols_open_to_north = "|JLS"
+_symbols_open_to_east = "-FLS"
+_symbols_open_to_south = "|F7S"
+_symbols_open_to_west = "-J7S"
 
 
 @dataclass
-class MapData(Map2d[Pipe]):
-    start: Pipe
+class _MapData(Map2d[_Pipe]):
+    start: _Pipe
 
     def __init__(self, input_data: list[str]) -> None:
-        data: list[list[Pipe]] = []
-        start: Pipe | None = None
+        data: list[list[_Pipe]] = []
+        start: _Pipe | None = None
         for y, row in enumerate(input_data):
-            y_pipes: list[Pipe] = []
+            y_pipes: list[_Pipe] = []
             data.append(y_pipes)
             for x, symbol in enumerate(row):
-                pipe = Pipe(Coord2d(x, y), symbol)
+                pipe = _Pipe(Coord2d(x, y), symbol)
                 if symbol == "S":
                     assert start is None
                     start = pipe
@@ -59,45 +59,45 @@ class MapData(Map2d[Pipe]):
         self.start = start
 
 
-def get_adjoin_pipes_on_path(pipe: Pipe, map_data: MapData) -> Iterable[Pipe]:
+def _get_adjoin_pipes_on_path(pipe: _Pipe, map_data: _MapData) -> Iterable[_Pipe]:
     east = map_data.get(pipe.coord.adjoin(Dir.E), None)
     if (
         east
-        and pipe.symbol in symbols_open_to_east
-        and east.symbol in symbols_open_to_west
+        and pipe.symbol in _symbols_open_to_east
+        and east.symbol in _symbols_open_to_west
     ):
         yield east
 
     south = map_data.get(pipe.coord.adjoin(Dir.S), None)
     if (
         south
-        and pipe.symbol in symbols_open_to_south
-        and south.symbol in symbols_open_to_north
+        and pipe.symbol in _symbols_open_to_south
+        and south.symbol in _symbols_open_to_north
     ):
         yield south
 
     west = map_data.get(pipe.coord.adjoin(Dir.W), None)
     if (
         west
-        and pipe.symbol in symbols_open_to_west
-        and west.symbol in symbols_open_to_east
+        and pipe.symbol in _symbols_open_to_west
+        and west.symbol in _symbols_open_to_east
     ):
         yield west
 
     north = map_data.get(pipe.coord.adjoin(Dir.N), None)
     if (
         north
-        and pipe.symbol in symbols_open_to_north
-        and north.symbol in symbols_open_to_south
+        and pipe.symbol in _symbols_open_to_north
+        and north.symbol in _symbols_open_to_south
     ):
         yield north
 
 
 def p1(input_str: str) -> int:
-    map_data = MapData(list(input_str.splitlines()))
+    map_data = _MapData(list(input_str.splitlines()))
 
     start = map_data.start
-    neighbors_cur = list(get_adjoin_pipes_on_path(start, map_data))
+    neighbors_cur = list(_get_adjoin_pipes_on_path(start, map_data))
     assert len(neighbors_cur) == 2
 
     neighbors_prev = [start, start]
@@ -105,7 +105,7 @@ def p1(input_str: str) -> int:
     dist = 1
     while neighbors_cur[0] != neighbors_cur[1]:
         neighbors_new = [
-            next(n for n in get_adjoin_pipes_on_path(cur, map_data) if n != prev)
+            next(n for n in _get_adjoin_pipes_on_path(cur, map_data) if n != prev)
             for prev, cur in zip(neighbors_prev, neighbors_cur)
         ]
         neighbors_prev = neighbors_cur
@@ -116,10 +116,10 @@ def p1(input_str: str) -> int:
 
 
 def p2(input_str: str) -> int:
-    map_data = MapData(list(input_str.splitlines()))
+    map_data = _MapData(list(input_str.splitlines()))
 
     start = map_data.start
-    start_neighbors = list(get_adjoin_pipes_on_path(start, map_data))
+    start_neighbors = list(_get_adjoin_pipes_on_path(start, map_data))
 
     def resolve_start_symbol() -> str:
         north = start.coord.adjoin(Dir.N)
@@ -137,14 +137,14 @@ def p2(input_str: str) -> int:
         }[start_neighbor_coords]
 
     fixed_start_symbol = resolve_start_symbol()
-    logger.debug("fixed_start_symbol=%s", fixed_start_symbol)
+    _logger.debug("fixed_start_symbol=%s", fixed_start_symbol)
     start.symbol = fixed_start_symbol
 
-    path_by_pipes: list[Pipe] = [start, start_neighbors[0]]
+    path_by_pipes: list[_Pipe] = [start, start_neighbors[0]]
     while True:
         n = next(
             pipe
-            for pipe in get_adjoin_pipes_on_path(path_by_pipes[-1], map_data)
+            for pipe in _get_adjoin_pipes_on_path(path_by_pipes[-1], map_data)
             if pipe is not path_by_pipes[-2]
         )
         if n == start:
@@ -152,14 +152,14 @@ def p2(input_str: str) -> int:
         path_by_pipes.append(n)
 
     for p in path_by_pipes:
-        p.inside = Inside.InPath
+        p.inside = _Inside.InPath
 
     coords_in_path = set(pipe.coord for pipe in path_by_pipes)
 
     @dataclass
     class PathPipe:
-        pipe: Pipe
-        neighbors: dict[Dir, Inside]
+        pipe: _Pipe
+        neighbors: dict[Dir, _Inside]
 
     def create_first_path_pipe() -> PathPipe:
         # Guessed value for y to hit path on | symbol
@@ -171,27 +171,29 @@ def p2(input_str: str) -> int:
             for _, pipe in x_iter:
                 coord = pipe.coord
                 if coord not in coords_in_path:
-                    assert pipe.inside is Inside.Unknown
-                    pipe.inside = Inside.Outside
+                    assert pipe.inside is _Inside.Unknown
+                    pipe.inside = _Inside.Outside
                 else:
                     assert pipe.symbol not in "J7-S"
                     assert pipe.symbol == "|", "Use better value for y"
                     east_neighbor = map_data.get(pipe.coord.adjoin(Dir.E))
                     if east_neighbor and east_neighbor.coord not in coords_in_path:
-                        east_neighbor.inside = Inside.Inside
-                    return PathPipe(pipe, {Dir.E: Inside.Inside, Dir.W: Inside.Outside})
+                        east_neighbor.inside = _Inside.Inside
+                    return PathPipe(
+                        pipe, {Dir.E: _Inside.Inside, Dir.W: _Inside.Outside}
+                    )
         raise AssertionError()
 
     first_path_pipe = create_first_path_pipe()
-    logger.debug(f"{first_path_pipe=}")
+    _logger.debug(f"{first_path_pipe=}")
 
     @dataclass
     class NeighborCheckGroup:
         prev_neighbor_dirs_to_check: list[Dir]
         neighbor_dirs_to_set: list[Dir] = field(default_factory=list)
-        inside: Inside = Inside.Unknown
+        inside: _Inside = _Inside.Unknown
 
-    def create_path_pipe(prev: PathPipe, pipe: Pipe) -> PathPipe:
+    def create_path_pipe(prev: PathPipe, pipe: _Pipe) -> PathPipe:
         path_dir = prev.pipe.coord.dir_to(pipe.coord)
 
         neighbor_check_groups: list[NeighborCheckGroup] = []
@@ -268,7 +270,7 @@ def p2(input_str: str) -> int:
                 prev_inside = prev.neighbors.get(check_dir)
                 if prev_inside is None:
                     continue
-                assert prev_inside in (Inside.Inside, Inside.Outside)
+                assert prev_inside in (_Inside.Inside, _Inside.Outside)
                 check_group.inside = prev_inside
                 break
 
@@ -276,19 +278,20 @@ def p2(input_str: str) -> int:
         unknown_check_groups_with_neighbors_to_set = [
             check_group
             for check_group in neighbor_check_groups
-            if check_group.inside is Inside.Unknown and check_group.neighbor_dirs_to_set
+            if check_group.inside is _Inside.Unknown
+            and check_group.neighbor_dirs_to_set
         ]
         assert len(unknown_check_groups_with_neighbors_to_set) <= 1
         if unknown_check_groups_with_neighbors_to_set:
             known_check_groups = [
                 check_group
                 for check_group in neighbor_check_groups
-                if check_group.inside is not Inside.Unknown
+                if check_group.inside is not _Inside.Unknown
             ]
             assert len(known_check_groups) == 1
             known_inside = known_check_groups[0].inside
             inside_for_unknown = (
-                Inside.Inside if known_inside is Inside.Outside else Inside.Outside
+                _Inside.Inside if known_inside is _Inside.Outside else _Inside.Outside
             )
             for check_group in unknown_check_groups_with_neighbors_to_set:
                 check_group.inside = inside_for_unknown
@@ -300,20 +303,20 @@ def p2(input_str: str) -> int:
             for neighbor_dir in check_group.neighbor_dirs_to_set
         }
         assert all(
-            value in (Inside.Inside, Inside.Outside) for value in neighbors.values()
+            value in (_Inside.Inside, _Inside.Outside) for value in neighbors.values()
         )
 
         # Set inside/outside for direct neighbors already in map as we have the data
         # available
         for neighbor_dir, inside in neighbors.items():
             neighbor = map_data.get(pipe.coord.adjoin(neighbor_dir), None)
-            if neighbor is not None and neighbor.inside is not Inside.InPath:
-                assert neighbor.inside is Inside.Unknown or neighbor.inside is inside
+            if neighbor is not None and neighbor.inside is not _Inside.InPath:
+                assert neighbor.inside is _Inside.Unknown or neighbor.inside is inside
                 neighbor.inside = inside
 
         return PathPipe(pipe, neighbors)
 
-    logger.info("Detecting inside/outside neighbors along path")
+    _logger.info("Detecting inside/outside neighbors along path")
     index_in_path_for_first_path_pipe = path_by_pipes.index(first_path_pipe.pipe)
     prev_path_pipe: PathPipe = first_path_pipe
     for pipe in itertools.chain(
@@ -322,12 +325,12 @@ def p2(input_str: str) -> int:
     ):
         prev_path_pipe = create_path_pipe(prev_path_pipe, pipe)
 
-    logger.info("Marking rest of map for inside/outside")
+    _logger.info("Marking rest of map for inside/outside")
 
     def mark_pipe(
-        pipe: Pipe, visited_recursive_coords: set[Coord2d] | None = None
+        pipe: _Pipe, visited_recursive_coords: set[Coord2d] | None = None
     ) -> None:
-        if pipe.inside is not Inside.Unknown:
+        if pipe.inside is not _Inside.Unknown:
             return
 
         if visited_recursive_coords is None:
@@ -343,7 +346,7 @@ def p2(input_str: str) -> int:
             if neighbor.coord in visited_recursive_coords:
                 continue
             mark_pipe(neighbor, visited_recursive_coords)
-            if neighbor.inside in (Inside.Inside, Inside.Outside):
+            if neighbor.inside in (_Inside.Inside, _Inside.Outside):
                 pipe.inside = neighbor.inside
                 return
         raise AssertionError()
@@ -352,24 +355,24 @@ def p2(input_str: str) -> int:
         for _, pipe in pipe_iter:
             mark_pipe(pipe)
 
-    def get_symbol_for_pipe(pipe: Pipe) -> str:
-        if pipe.inside is Inside.Inside:
+    def get_symbol_for_pipe(pipe: _Pipe) -> str:
+        if pipe.inside is _Inside.Inside:
             return " "
-        if pipe.inside is Inside.Outside:
+        if pipe.inside is _Inside.Outside:
             return "."
-        if pipe.inside is Inside.InPath:
+        if pipe.inside is _Inside.InPath:
             return pipe.symbol
         return "#"
 
-    if logger.isEnabledFor(logging.DEBUG):
+    if _logger.isEnabledFor(logging.DEBUG):
         for map_line in map_data.str_lines(get_symbol_for_pipe):
             print(map_line)
 
-    logger.info("Calculating inside locations")
+    _logger.info("Calculating inside locations")
 
     return sum(
         1
         for _, pipe_iter in map_data.iter_data()
         for _, pipe in pipe_iter
-        if pipe.inside is Inside.Inside
+        if pipe.inside is _Inside.Inside
     )

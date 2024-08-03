@@ -1,6 +1,6 @@
 from adventofcode import d8
 
-example_input_p1 = """
+_example_input_p1 = """
 LLR
 
 AAA = (BBB, BBB)
@@ -10,10 +10,10 @@ ZZZ = (ZZZ, ZZZ)
 
 
 def test_d8_p1() -> None:
-    assert d8.p1(example_input_p1) == 6
+    assert d8.p1(_example_input_p1) == 6
 
 
-example_input_p2 = """
+_example_input_p2 = """
 LR
 
 11A = (11B, XXX)
@@ -28,4 +28,4 @@ XXX = (XXX, XXX)
 
 
 def test_d8_p2() -> None:
-    assert d8.p2(example_input_p2) == 6
+    assert d8.p2(_example_input_p2) == 6

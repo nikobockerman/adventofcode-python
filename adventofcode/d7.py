@@ -13,7 +13,7 @@ def _parse_input(lines: Iterable[str]) -> Iterable[tuple[str, int]]:
 
 
 @total_ordering
-class HandType(enum.Enum):
+class _HandType(enum.Enum):
     HighCard = 0
     OnePair = 1
     TwoPair = 2
@@ -22,19 +22,19 @@ class HandType(enum.Enum):
     FourOfAKind = 5
     FiveOfAKind = 6
 
-    def __lt__(self, other: "HandType") -> bool | NotImplementedType:
+    def __lt__(self, other: "_HandType") -> bool | NotImplementedType:
         if self.__class__ is other.__class__:
             return self.value < other.value
         return NotImplemented
 
 
 @dataclass
-class Hand:
+class _Hand:
     card_values: list[int]
-    hand_type: HandType
+    hand_type: _HandType
     bid: int
 
-    def __lt__(self, other: "Hand") -> bool:
+    def __lt__(self, other: "_Hand") -> bool:
         if self.hand_type != other.hand_type:
             return self.hand_type < other.hand_type
 
@@ -47,24 +47,24 @@ class Hand:
 def p1(input_str: str) -> int:
     d = _parse_input(input_str.splitlines())
 
-    def classify_hand_type(cards: str) -> HandType:
+    def classify_hand_type(cards: str) -> _HandType:
         assert len(cards) == 5
         value_counts = Counter[str](cards)
         counts = list(map(lambda x: x[1], value_counts.most_common(2)))
 
         if counts[0] == 5:
-            return HandType.FiveOfAKind
+            return _HandType.FiveOfAKind
         if counts[0] == 4:
-            return HandType.FourOfAKind
+            return _HandType.FourOfAKind
         if counts[0] == 3:
             if counts[1] == 2:
-                return HandType.FullHouse
-            return HandType.ThreeOfAKind
+                return _HandType.FullHouse
+            return _HandType.ThreeOfAKind
         if counts[0] == 2:
             if counts[1] == 2:
-                return HandType.TwoPair
-            return HandType.OnePair
-        return HandType.HighCard
+                return _HandType.TwoPair
+            return _HandType.OnePair
+        return _HandType.HighCard
 
     def card_value(value: str) -> int:
         assert len(value) == 1
@@ -76,7 +76,7 @@ def p1(input_str: str) -> int:
         return "TJQKA".index(value) + 10
 
     hands = [
-        Hand(
+        _Hand(
             [card_value(c) for c in cards],
             classify_hand_type(cards),
             bid,
@@ -92,7 +92,7 @@ def p1(input_str: str) -> int:
 def p2(input_str: str) -> int:
     d = _parse_input(input_str.splitlines())
 
-    def classify_hand_type(cards: str) -> HandType:
+    def classify_hand_type(cards: str) -> _HandType:
         assert len(cards) == 5
         value_counts = Counter[str](cards)
 
@@ -100,22 +100,22 @@ def p2(input_str: str) -> int:
         value_counts.pop("J", None)
 
         if jokers == 5:
-            return HandType.FiveOfAKind
+            return _HandType.FiveOfAKind
 
         counts = list(map(lambda x: x[1], value_counts.most_common(2)))
         if counts[0] + jokers == 5:
-            return HandType.FiveOfAKind
+            return _HandType.FiveOfAKind
         if counts[0] + jokers == 4:
-            return HandType.FourOfAKind
+            return _HandType.FourOfAKind
         if counts[0] + jokers == 3:
             if counts[1] == 2:
-                return HandType.FullHouse
-            return HandType.ThreeOfAKind
+                return _HandType.FullHouse
+            return _HandType.ThreeOfAKind
         if counts[0] + jokers == 2:
             if counts[1] == 2:
-                return HandType.TwoPair
-            return HandType.OnePair
-        return HandType.HighCard
+                return _HandType.TwoPair
+            return _HandType.OnePair
+        return _HandType.HighCard
 
     def card_value(value: str) -> int:
         assert len(value) == 1
@@ -128,7 +128,7 @@ def p2(input_str: str) -> int:
         return "TQKA".index(value) + 10
 
     hands = [
-        Hand(
+        _Hand(
             [card_value(c) for c in cards],
             classify_hand_type(cards),
             bid,

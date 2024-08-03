@@ -4,7 +4,7 @@ from queue import PriorityQueue
 
 from adventofcode.tooling.map import Coord2d, Dir, Map2d
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True, frozen=True, order=True)
@@ -36,7 +36,7 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
             0,
             _estimate_remaining_heat_loss(new_next_coord, destination),
         )
-        logger.debug("Adding %s to queue", pos)
+        _logger.debug("Adding %s to queue", pos)
         queue.put_nowait(pos)
 
     visited_min_cache: dict[
@@ -47,13 +47,13 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
     while True:
         pos = queue.get_nowait()
 
-        logger.debug("Processing cheapest: %s", pos)
+        _logger.debug("Processing cheapest: %s", pos)
 
         new_heat_loss = pos.heat_loss + map_.get(pos.next_coord)
 
         if pos.next_coord == destination:
             if result is None or new_heat_loss < result:
-                logger.debug(f"Found new shortest path: {new_heat_loss=}")
+                _logger.debug(f"Found new shortest path: {new_heat_loss=}")
                 result = new_heat_loss
             elif new_heat_loss > result:
                 break
@@ -73,7 +73,7 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
             else:
                 new_moves_straight = 1
 
-            logger.debug("Processing move %s -> %s", pos.next_coord, new_dir)
+            _logger.debug("Processing move %s -> %s", pos.next_coord, new_dir)
 
             cached_pos = visited_min_cache.get((pos.next_coord, new_dir))
             if cached_pos is None:
@@ -109,14 +109,14 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
                         None,
                     )
                 if cached_min is not None and cached_min <= new_heat_loss:
-                    logger.debug(
+                    _logger.debug(
                         "Already seen with better or equal heat loss: %d",
                         cached_min,
                     )
                     continue
                 cache_list.append((new_moves_straight, new_heat_loss))
                 cache_list.sort(key=lambda x: x[1])
-                logger.debug(
+                _logger.debug(
                     "Cached before but with worse heat loss. New entries: %s",
                     cached_pos,
                 )
@@ -129,7 +129,7 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
                 or new_next_coord.y < map_.first_y
                 or new_next_coord.y > map_.last_y
             ):
-                logger.debug("Outside of map")
+                _logger.debug("Outside of map")
                 continue
 
             new_pos = _PathPosition(
@@ -141,7 +141,7 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
                 new_heat_loss
                 + _estimate_remaining_heat_loss(new_next_coord, destination),
             )
-            logger.debug("Adding %s to queue", new_pos)
+            _logger.debug("Adding %s to queue", new_pos)
             queue.put_nowait(new_pos)
 
     assert result is not None

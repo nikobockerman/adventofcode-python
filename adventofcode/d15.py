@@ -1,6 +1,6 @@
 import logging
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _calculate_hash(str_: str) -> int:
@@ -16,7 +16,7 @@ def p1(input_str: str) -> int:
     hash_sum = 0
     for step_str in input_str.split(","):
         h = _calculate_hash(step_str)
-        logger.debug(f"{step_str=} -> {h=}")
+        _logger.debug(f"{step_str=} -> {h=}")
         hash_sum += h
 
     return hash_sum
@@ -37,8 +37,8 @@ def p2(input_str: str) -> int:
             assert 1 <= focal_length <= 9
 
         box = _calculate_hash(label)
-        logger.debug(f"{step_str=} -> {label=} {operation=} {focal_length=} {box=}")
-        logger.debug(f"Box contents before: {boxes[box]}")
+        _logger.debug(f"{step_str=} -> {label=} {operation=} {focal_length=} {box=}")
+        _logger.debug(f"Box contents before: {boxes[box]}")
 
         if operation == "-":
             ind = next(
@@ -46,7 +46,7 @@ def p2(input_str: str) -> int:
                 -1,
             )
             if ind == -1:
-                logger.debug(f"Label {label} not found in box {box}")
+                _logger.debug(f"Label {label} not found in box {box}")
             else:
                 del boxes[box][ind]
         else:
@@ -61,14 +61,14 @@ def p2(input_str: str) -> int:
             else:
                 boxes[box].append((label, focal_length))
 
-        logger.debug(f"Box contents after : {boxes[box]}")
+        _logger.debug(f"Box contents after : {boxes[box]}")
 
     total_focusing_strength = 0
     for box, box_data in enumerate(boxes):
         for ind, (label, fl) in enumerate(box_data):
             focusing_strength = (box + 1) * (ind + 1) * fl
             total_focusing_strength += focusing_strength
-            logger.debug(
+            _logger.debug(
                 f"{box=} {ind=} {label=} {fl=} {focusing_strength=} "
                 f"-> {total_focusing_strength=}"
             )

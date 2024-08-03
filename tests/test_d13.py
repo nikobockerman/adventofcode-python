@@ -1,6 +1,6 @@
 from adventofcode import d13
 
-example_input = """
+_example_input = """
 #.##..##.
 ..#.##.#.
 ##......#
@@ -20,4 +20,4 @@ example_input = """
 
 
 def test_p1():
-    assert d13.p1(example_input) == 405
+    assert d13.p1(_example_input) == 405

@@ -4,18 +4,18 @@ from typing import Iterable
 
 
 @dataclass
-class InputCards:
+class _InputCards:
     card_id: int
     winning: list[int]
     own: list[int]
 
 
-def _parse_input(lines: Iterable[str]) -> Iterable[InputCards]:
+def _parse_input(lines: Iterable[str]) -> Iterable[_InputCards]:
     for line in lines:
         card_id, numbers_str = line[4:].split(":")
         winning_str, own_str = numbers_str.strip().split("|")
 
-        yield InputCards(
+        yield _InputCards(
             int(card_id.strip()),
             [int(n) for n in winning_str.strip().split()],
             [int(n) for n in own_str.strip().split()],

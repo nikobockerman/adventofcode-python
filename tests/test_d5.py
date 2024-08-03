@@ -1,6 +1,6 @@
 from adventofcode import d5
 
-example_input = """
+_example_input = """
 seeds: 79 14 55 13
 
 seed-to-soil map:
@@ -37,8 +37,8 @@ humidity-to-location map:
 
 
 def test_p1() -> None:
-    assert d5.p1(example_input) == 35
+    assert d5.p1(_example_input) == 35
 
 
 def test_p2() -> None:
-    assert d5.p2(example_input) == 46
+    assert d5.p2(_example_input) == 46

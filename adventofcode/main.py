@@ -38,14 +38,14 @@ def main(
 
     exit_code: int = 0
     if day is not None and problem is not None:
-        exit_code = specific_problem(day, day_suffix, problem)
+        exit_code = _specific_problem(day, day_suffix, problem)
     else:
         days = list(ANSWERS.keys()) if day is None else [day]
         all_passed = None
         for day in days:
             problems = ANSWERS.get(day, {})
             for problem in problems:
-                passed = one_of_many_problems(day, day_suffix, problem)
+                passed = _one_of_many_problems(day, day_suffix, problem)
                 if all_passed is None:
                     all_passed = passed
                 all_passed &= passed
@@ -60,9 +60,9 @@ def main(
     sys.exit(exit_code)
 
 
-def specific_problem(day: int, day_suffix: str, problem: int) -> int:
+def _specific_problem(day: int, day_suffix: str, problem: int) -> int:
     try:
-        result = run_problem(day, day_suffix, problem)
+        result = _run_problem(day, day_suffix, problem)
         print(f"Duration: {result.duration:.3f}s")
 
         if result.incorrect:
@@ -76,15 +76,15 @@ def specific_problem(day: int, day_suffix: str, problem: int) -> int:
             print(f"Answer is still correct: {result.answer}")
         else:
             print(result.answer)
-    except SolverNotFoundError as e:
+    except _SolverNotFoundError as e:
         print(e, file=sys.stderr)
         return 1
     else:
         return 0
 
 
-def one_of_many_problems(day: int, day_suffix: str, problem: int) -> bool:
-    result = run_problem(day, day_suffix, problem)
+def _one_of_many_problems(day: int, day_suffix: str, problem: int) -> bool:
+    result = _run_problem(day, day_suffix, problem)
     msg = f"Day {day:2} Problem {problem}: "
     msg += f"{result.duration:.3f}s: "
     if result.incorrect:
@@ -98,16 +98,16 @@ def one_of_many_problems(day: int, day_suffix: str, problem: int) -> bool:
     return not result.incorrect
 
 
-class SolverNotFoundError(RuntimeError):
+class _SolverNotFoundError(RuntimeError):
     pass
 
 
-class DayNotFoundError(SolverNotFoundError):
+class _DayNotFoundError(_SolverNotFoundError):
     def __init__(self, day: int) -> None:
         super().__init__(f"Solver for day {day} not found")
 
 
-class ProblemNotFoundError(SolverNotFoundError):
+class _ProblemNotFoundError(_SolverNotFoundError):
     def __init__(self, problem: int) -> None:
         super().__init__(f"Solver for problem {problem} not found")
 
@@ -131,17 +131,17 @@ class _ProblemResult:
         return self.answer_known and self.answer != self.correct_answer
 
 
-def run_problem(day: int, day_suffix: str, problem: int) -> _ProblemResult:
+def _run_problem(day: int, day_suffix: str, problem: int) -> _ProblemResult:
     try:
         mod_name = f"adventofcode.d{day}{day_suffix}"
         mod = importlib.import_module(mod_name)
     except ModuleNotFoundError:
-        raise DayNotFoundError(day) from None
+        raise _DayNotFoundError(day) from None
 
     try:
         func = getattr(mod, f"p{problem}")
     except AttributeError:
-        raise ProblemNotFoundError(problem) from None
+        raise _ProblemNotFoundError(problem) from None
 
     input_str = (
         (pathlib.Path(__file__).parent / f"input-d{day}.txt").read_text().strip()

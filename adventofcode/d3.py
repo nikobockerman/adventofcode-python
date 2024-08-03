@@ -4,28 +4,28 @@ from typing import Iterable
 
 
 @dataclass
-class InputNumber:
+class _InputNumber:
     value: str
     begin_index: int
 
 
 @dataclass
-class InputSymbol:
+class _InputSymbol:
     symbol: str
     index: int
 
 
 @dataclass
-class InputRow:
-    numbers: list[InputNumber] = field(default_factory=list, init=False)
-    symbols: list[InputSymbol] = field(default_factory=list, init=False)
+class _InputRow:
+    numbers: list[_InputNumber] = field(default_factory=list, init=False)
+    symbols: list[_InputSymbol] = field(default_factory=list, init=False)
 
 
-def _parse_input(lines: Iterable[str]) -> list[InputRow]:
-    rows: list[InputRow] = []
+def _parse_input(lines: Iterable[str]) -> list[_InputRow]:
+    rows: list[_InputRow] = []
     for row_ind, line in enumerate(lines):
         logging.debug(f"{row_ind}: {line=}")
-        row = InputRow()
+        row = _InputRow()
 
         number: str | None = None
         for ind, symbol in enumerate(line):
@@ -37,16 +37,16 @@ def _parse_input(lines: Iterable[str]) -> list[InputRow]:
                 continue
 
             if number is not None:
-                row.numbers.append(InputNumber(number, ind - len(number)))
+                row.numbers.append(_InputNumber(number, ind - len(number)))
                 number = None
 
             if symbol == ".":
                 continue
 
-            row.symbols.append(InputSymbol(symbol, ind))
+            row.symbols.append(_InputSymbol(symbol, ind))
 
         if number is not None:
-            row.numbers.append(InputNumber(number, len(line) - 1 - len(number)))
+            row.numbers.append(_InputNumber(number, len(line) - 1 - len(number)))
             number = None
 
         logging.debug(f"{row_ind}: {row=}")

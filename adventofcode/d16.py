@@ -2,7 +2,7 @@ import logging
 
 from adventofcode.tooling.map import Coord2d, Dir, Map2d
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class _SplitterExitCache:
@@ -41,12 +41,12 @@ def _process_splitter_exit(
             or coord.y < map_.first_y
             or coord.y > map_.last_y
         ):
-            logger.debug("Out of map")
+            _logger.debug("Out of map")
             break
         visited.add(coord)
 
         symbol = map_.get(coord)
-        logger.debug("Coord: %s Dir: %s Symbol: %s", coord, dir_, symbol)
+        _logger.debug("Coord: %s Dir: %s Symbol: %s", coord, dir_, symbol)
 
         if symbol == ".":
             coord = coord.adjoin(dir_)
@@ -94,16 +94,16 @@ def _try_one_enter(
 
     while processing_queue:
         coord, dir_ = processing_queue.pop(0)
-        logger.debug("Start processing %s -> %s", coord, dir_)
+        _logger.debug("Start processing %s -> %s", coord, dir_)
         if (coord, dir_) in processed_splitter_exits:
-            logger.debug("Already processed")
+            _logger.debug("Already processed")
             continue
         processed_splitter_exits.add((coord, dir_))
-        logger.debug("Visited count so far: %d", len(visited))
+        _logger.debug("Visited count so far: %d", len(visited))
 
         cached = exit_cache.get(coord, dir_)
         if cached is not None:
-            logger.debug("Cache hit")
+            _logger.debug("Cache hit")
             processed_visited, next_splitter_exits = cached
         else:
             processed_visited, next_splitter_exits = _process_splitter_exit(

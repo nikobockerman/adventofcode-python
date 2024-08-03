@@ -2,7 +2,7 @@ import logging
 
 from adventofcode.tooling.map import Coord2d, Dir, Map2d
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _calculate_load(map_: Map2d[str]) -> int:
@@ -114,19 +114,19 @@ def _get_rock_coords(map_: Map2d[str]) -> frozenset[tuple[int, int]]:
 
 def p2(input_str: str) -> int:
     map_ = Map2d([list(line) for line in input_str.splitlines()])
-    logger.debug("Initial map:\n%s", map_)
+    _logger.debug("Initial map:\n%s", map_)
     maps_after_spins: list[Map2d[str]] = []
     seen_rock_coords: dict[frozenset[tuple[int, int]], int] = dict()
     final_map: Map2d[str] | None = None
     for i in range(1, 1_000_000_000 + 1):
         map_ = _perform_spin(map_)
-        logger.info("Done spinning %d", i)
-        logger.debug("Map after spin %d:\n%s", i, map_)
+        _logger.info("Done spinning %d", i)
+        _logger.debug("Map after spin %d:\n%s", i, map_)
         rock_coords = _get_rock_coords(map_)
         seen = seen_rock_coords.get(rock_coords)
         if seen is not None:
             final_spin = seen + ((1_000_000_000 - seen) % (i - seen))
-            logger.info(
+            _logger.info(
                 "Found loop at %d matching spin %d -> final spin = %d",
                 i,
                 seen,
@@ -137,9 +137,9 @@ def p2(input_str: str) -> int:
 
         seen_rock_coords[rock_coords] = i
         maps_after_spins.append(map_)
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Load on spin %d: %d", i, _calculate_load(map_))
+        if _logger.isEnabledFor(logging.DEBUG):
+            _logger.debug("Load on spin %d: %d", i, _calculate_load(map_))
 
     assert final_map is not None
-    logger.debug("Final map:\n%s", final_map)
+    _logger.debug("Final map:\n%s", final_map)
     return _calculate_load(final_map)

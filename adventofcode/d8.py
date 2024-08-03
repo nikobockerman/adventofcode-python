@@ -34,7 +34,7 @@ def p1(input_str: str):
 
 
 @dataclass
-class MapData:
+class _MapData:
     map_nodes: dict[int, tuple[int, int]]
     start_locations: list[int]
     first_end_location: int
@@ -43,7 +43,7 @@ class MapData:
         return location >= self.first_end_location
 
 
-def create_map_data(map_nodes_list: list[tuple[str, tuple[str, str]]]) -> MapData:
+def _create_map_data(map_nodes_list: list[tuple[str, tuple[str, str]]]) -> _MapData:
     map_nodes_list = sorted(map_nodes_list, key=lambda x: x[0][2])
     locations_mapping = {
         location: index for index, (location, _) in enumerate(map_nodes_list)
@@ -83,13 +83,13 @@ def create_map_data(map_nodes_list: list[tuple[str, tuple[str, str]]]) -> MapDat
 
     first_end_location = get_first_end_location()
 
-    return MapData(map_nodes, start_locations, first_end_location)
+    return _MapData(map_nodes, start_locations, first_end_location)
 
 
-def get_verified_loop_length(
+def _get_verified_loop_length(
     path_before_loop: list[int],
     loop_path: list[int],
-    map_data: MapData,
+    map_data: _MapData,
 ) -> int:
     def get_index_of_last_end_location(path: list[int]) -> int:
         return next(
@@ -108,7 +108,9 @@ def get_verified_loop_length(
     return len(loop_path)
 
 
-def resolve_loop_length(start_location: int, directions: str, map_data: MapData) -> int:
+def _resolve_loop_length(
+    start_location: int, directions: str, map_data: _MapData
+) -> int:
     directions_len = len(directions)
     turns = itertools.cycle(directions)
     visit_keys: set[tuple[int, int]] = set()
@@ -133,7 +135,7 @@ def resolve_loop_length(start_location: int, directions: str, map_data: MapData)
     path_before_loop = path[:loop_start_ind]
     loop_path = path[loop_start_ind:-1]
 
-    return get_verified_loop_length(path_before_loop, loop_path, map_data)
+    return _get_verified_loop_length(path_before_loop, loop_path, map_data)
 
 
 def p2(input_str: str):
@@ -141,11 +143,11 @@ def p2(input_str: str):
     logging.debug(f"{directions=}")
     logging.debug(f"{map_nodes_list=}")
 
-    map_data = create_map_data(map_nodes_list)
+    map_data = _create_map_data(map_nodes_list)
     logging.debug(f"{map_data=}")
 
     path_lengths = [
-        resolve_loop_length(start_location, directions, map_data)
+        _resolve_loop_length(start_location, directions, map_data)
         for start_location in map_data.start_locations
     ]
 

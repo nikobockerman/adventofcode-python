@@ -1,7 +1,7 @@
 import logging
 from typing import Iterable
 
-STR_DIGITS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
+_STR_DIGITS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 
 
 def _find_first_and_last_int(input_str: str, use_texts: bool) -> tuple[str, str]:
@@ -12,7 +12,7 @@ def _find_first_and_last_int(input_str: str, use_texts: bool) -> tuple[str, str]
         if c.isdigit():
             val = c
         elif use_texts:
-            for digit_ind, str_digit in enumerate(STR_DIGITS):
+            for digit_ind, str_digit in enumerate(_STR_DIGITS):
                 if input_str.find(str_digit, ind, ind + len(str_digit)) >= 0:
                     val = str(digit_ind + 1)
                     break

@@ -6,39 +6,39 @@ from adventofcode.tooling.ranges import are_ranges_overlapping, partition_range
 
 
 @dataclass
-class RangeMap:
+class _RangeMap:
     destination_start: int
     source_start: int
     length: int
 
 
 @dataclass
-class InputMaps:
-    seed_to_soil_map: list[RangeMap] = field(default_factory=list, init=False)
-    soil_to_fertilizer_map: list[RangeMap] = field(default_factory=list, init=False)
-    fertilizer_to_water_map: list[RangeMap] = field(default_factory=list, init=False)
-    water_to_light_map: list[RangeMap] = field(default_factory=list, init=False)
-    light_to_temperature_map: list[RangeMap] = field(default_factory=list, init=False)
-    temperature_to_humidity_map: list[RangeMap] = field(
+class _InputMaps:
+    seed_to_soil_map: list[_RangeMap] = field(default_factory=list, init=False)
+    soil_to_fertilizer_map: list[_RangeMap] = field(default_factory=list, init=False)
+    fertilizer_to_water_map: list[_RangeMap] = field(default_factory=list, init=False)
+    water_to_light_map: list[_RangeMap] = field(default_factory=list, init=False)
+    light_to_temperature_map: list[_RangeMap] = field(default_factory=list, init=False)
+    temperature_to_humidity_map: list[_RangeMap] = field(
         default_factory=list, init=False
     )
-    humidity_to_location_map: list[RangeMap] = field(default_factory=list, init=False)
+    humidity_to_location_map: list[_RangeMap] = field(default_factory=list, init=False)
 
 
-def _parse_input(lines: list[str]) -> tuple[list[int], InputMaps]:
+def _parse_input(lines: list[str]) -> tuple[list[int], _InputMaps]:
     seeds = list(map(int, lines[0].strip().split(":")[1].strip().split()))
 
-    maps = InputMaps()
+    maps = _InputMaps()
 
-    def save_mappings(mappings: list[RangeMap], mapping_name: str) -> None:
+    def save_mappings(mappings: list[_RangeMap], mapping_name: str) -> None:
         prop_name = mapping_name.replace("-", "_").replace(" ", "_")
         setattr(maps, prop_name, mappings)
 
-    def parse_mapping(line: str) -> RangeMap:
-        return RangeMap(*map(int, line.strip().split()))
+    def parse_mapping(line: str) -> _RangeMap:
+        return _RangeMap(*map(int, line.strip().split()))
 
     mapping_name: str | None = None
-    mappings: list[RangeMap] | None = None
+    mappings: list[_RangeMap] | None = None
     for line in lines[2:]:
         if not line:
             assert mappings is not None
@@ -62,8 +62,8 @@ def _parse_input(lines: list[str]) -> tuple[list[int], InputMaps]:
     return seeds, maps
 
 
-def _get_location(maps: InputMaps, seed: int) -> int:
-    def get_destination(mappings: list[RangeMap], source: int) -> int:
+def _get_location(maps: _InputMaps, seed: int) -> int:
+    def get_destination(mappings: list[_RangeMap], source: int) -> int:
         for mapping in mappings:
             if source < mapping.source_start or source >= (
                 mapping.source_start + mapping.length

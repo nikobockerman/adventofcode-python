@@ -7,7 +7,7 @@ def _parse_input(lines: Iterable[str]) -> Iterable[list[int]]:
         yield [int(x) for x in line.strip().split()]
 
 
-def construct_tree_with_diffs(seq: list[int]) -> list[list[int]]:
+def _construct_tree_with_diffs(seq: list[int]) -> list[list[int]]:
     tree: list[list[int]] = [seq]
     seq_to_check = seq
     while True:
@@ -24,7 +24,7 @@ def p1(input_str: str) -> int:
     input_data = _parse_input(input_str.splitlines())
 
     def solve(seq: list[int]) -> int:
-        tree = construct_tree_with_diffs(seq)
+        tree = _construct_tree_with_diffs(seq)
 
         tree[-1].append(tree[-1][-1])
         for i in reversed(range(len(tree) - 1)):
@@ -39,7 +39,7 @@ def p2(input_str: str) -> int:
     input_data = _parse_input(input_str.splitlines())
 
     def solve(seq: list[int]) -> int:
-        tree = construct_tree_with_diffs(seq)
+        tree = _construct_tree_with_diffs(seq)
 
         tree[-1].insert(0, tree[-1][0])
         for i in reversed(range(len(tree) - 1)):

@@ -5,7 +5,7 @@ from typing import Iterable
 
 from adventofcode.tooling.map import Coord2d, Dir
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True, eq=False)
@@ -43,7 +43,7 @@ class _Path:
             max(self._south_east_corner.x, self._last_position.x),
             max(self._south_east_corner.y, self._last_position.y),
         )
-        logger.debug("Adding %s, %s -> %s", direction, count, self._last_position)
+        _logger.debug("Adding %s, %s -> %s", direction, count, self._last_position)
 
     def normalize(self) -> None:
         assert self.corners
@@ -60,9 +60,9 @@ class _Path:
             self._south_east_corner.x + x_adjustment,
             self._south_east_corner.y + y_adjustment,
         )
-        if logger.isEnabledFor(logging.DEBUG):
+        if _logger.isEnabledFor(logging.DEBUG):
             path = " -> ".join(str(coord) for coord in self.corners)
-            logger.debug("Normalized path: %s", path)
+            _logger.debug("Normalized path: %s", path)
 
 
 @dataclass
@@ -248,7 +248,7 @@ class _InsideCountGroups:
         assert rows_to_check[0] == 0
         assert rows_to_check[-1] == segments.height - 1
 
-        logger.debug("Rows to check: %s", rows_to_check)
+        _logger.debug("Rows to check: %s", rows_to_check)
 
         prev_line_with_vertices_only: tuple[int, int] | None = None
         for y in rows_to_check:
