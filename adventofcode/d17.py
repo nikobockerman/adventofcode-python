@@ -1,6 +1,6 @@
+import heapq
 import logging
 from dataclasses import dataclass, field
-from queue import PriorityQueue
 
 from adventofcode.tooling.map import Coord2d, Dir, Map2d
 
@@ -21,9 +21,20 @@ def _estimate_remaining_heat_loss(start: Coord2d, destination: Coord2d) -> float
     return start.distance_to(destination)
 
 
+class _PriorityQueue:
+    def __init__(self) -> None:
+        self._queue = list[_PathPosition]()
+
+    def put(self, item: _PathPosition) -> None:
+        heapq.heappush(self._queue, item)
+
+    def pop(self) -> _PathPosition:
+        return heapq.heappop(self._queue)
+
+
 def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -> int:
     map_ = Map2d((int(c) for c in line) for line in input_str.splitlines())
-    queue: PriorityQueue[_PathPosition] = PriorityQueue()
+    queue = _PriorityQueue()
     start_pos = Coord2d(map_.first_x, map_.first_y)
     destination = Coord2d(map_.last_x, map_.last_y)
     for start_dir in (Dir.S, Dir.E):
@@ -37,7 +48,7 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
             _estimate_remaining_heat_loss(new_next_coord, destination),
         )
         _logger.debug("Adding %s to queue", pos)
-        queue.put_nowait(pos)
+        queue.put(pos)
 
     visited_min_cache: dict[
         tuple[Coord2d, Dir], tuple[list[tuple[int, int]], list[tuple[int, int]]]
@@ -45,7 +56,7 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
 
     result: int | None = None
     while True:
-        pos = queue.get_nowait()
+        pos = queue.pop()
 
         _logger.debug("Processing cheapest: %s", pos)
 
@@ -142,7 +153,7 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
                 + _estimate_remaining_heat_loss(new_next_coord, destination),
             )
             _logger.debug("Adding %s to queue", new_pos)
-            queue.put_nowait(new_pos)
+            queue.put(new_pos)
 
     assert result is not None
     return result
