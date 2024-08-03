@@ -18,10 +18,6 @@ _PulseHigh = _PulseValue(True)
 _ModuleName = NewType("_ModuleName", str)
 
 
-def to_str(value: _PulseValue) -> str:
-    return "high" if value else "low"
-
-
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _PulseNew:
     value: _PulseValue
