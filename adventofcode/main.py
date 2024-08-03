@@ -2,7 +2,9 @@ import importlib
 import logging
 import pathlib
 import sys
-from typing import Any, Optional
+import time
+from dataclasses import dataclass
+from typing import Optional
 
 import typer
 from typing_extensions import Annotated
@@ -60,26 +62,40 @@ def main(
 
 def specific_problem(day: int, day_suffix: str, problem: int) -> int:
     try:
-        run_problem(day, day_suffix, problem)
+        result = run_problem(day, day_suffix, problem)
+        print(f"Duration: {result.duration:.3f}s")
+
+        if result.incorrect:
+            print(
+                f"Incorrect answer: {result.answer}. "
+                f"Correct is: {result.correct_answer}",
+                file=sys.stderr,
+            )
+            return 2
+        if result.correct:
+            print(f"Answer is still correct: {result.answer}")
+        else:
+            print(result.answer)
     except SolverNotFoundError as e:
         print(e, file=sys.stderr)
         return 1
-    except IncorrectAnswerError as e:
-        print(e, file=sys.stderr)
-        return 2
     else:
         return 0
 
 
 def one_of_many_problems(day: int, day_suffix: str, problem: int) -> bool:
-    try:
-        run_problem(day, day_suffix, problem, quiet=True)
-    except IncorrectAnswerError as e:
-        print(f"Day {day} Problem {problem}: FAIL: {e}")
-        return False
+    result = run_problem(day, day_suffix, problem)
+    msg = f"Day {day:2} Problem {problem}: "
+    msg += f"{result.duration:.3f}s: "
+    if result.incorrect:
+        msg += (
+            f"FAIL: Incorrect answer: {result.answer}. "
+            f"Correct is: {result.correct_answer}"
+        )
     else:
-        print(f"Day {day} Problem {problem}: PASS")
-        return True
+        msg += "PASS"
+    print(msg)
+    return not result.incorrect
 
 
 class SolverNotFoundError(RuntimeError):
@@ -96,12 +112,26 @@ class ProblemNotFoundError(SolverNotFoundError):
         super().__init__(f"Solver for problem {problem} not found")
 
 
-class IncorrectAnswerError(RuntimeError):
-    def __init__(self, answer: Any, correct_answer: Any) -> None:
-        super().__init__(f"Incorrect answer: {answer}. Correct is: {correct_answer}")
+@dataclass
+class _ProblemResult:
+    answer: str
+    duration: float
+    correct_answer: str | None
+
+    @property
+    def answer_known(self) -> bool:
+        return self.correct_answer is not None
+
+    @property
+    def correct(self) -> bool:
+        return self.answer_known and self.answer == self.correct_answer
+
+    @property
+    def incorrect(self) -> bool:
+        return self.answer_known and self.answer != self.correct_answer
 
 
-def run_problem(day: int, day_suffix: str, problem: int, *, quiet: bool = False) -> Any:
+def run_problem(day: int, day_suffix: str, problem: int) -> _ProblemResult:
     try:
         mod_name = f"adventofcode.d{day}{day_suffix}"
         mod = importlib.import_module(mod_name)
@@ -118,23 +148,15 @@ def run_problem(day: int, day_suffix: str, problem: int, *, quiet: bool = False)
     )
 
     try:
+        start_time = time.perf_counter()
         result = func(input_str)
+        duration = time.perf_counter() - start_time
     except AssertionError as e:
         logging.critical(f"{mod_name}.p{problem}: Assertion failed: %s", e)
         raise
 
-    def output(msg: str) -> None:
-        if not quiet:
-            print(msg)
-
     answer = ANSWERS.get(day, {}).get(problem)
-    if answer is not None:
-        if str(answer) != str(result):
-            raise IncorrectAnswerError(result, answer)
-
-        output(f"Answer is still correct: {result}")
-    else:
-        output(f"{result}")
+    return _ProblemResult(str(result), duration, str(answer))
 
 
 if __name__ == "__main__":
