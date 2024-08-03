@@ -113,15 +113,15 @@ class Coord2d:
             return Coord2d(self.x - distance, self.y)
         raise ValueError(direction)
 
-    def int_distance_to(self, other: "Coord2d") -> int:
+    def distance_to_int(self, other: "Coord2d") -> int:
         if self.y == other.y:
             return abs(self.x - other.x)
         if self.x == other.x:
             return abs(self.y - other.y)
-        return math.isqrt(abs(self.x - other.x) ** 2 + abs(self.y - other.y) ** 2)
+        return math.isqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
     def distance_to(self, other: "Coord2d") -> float:
-        return math.sqrt(float(abs(self.x - other.x) ** 2 + abs(self.y - other.y) ** 2))
+        return math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
     def __str__(self) -> str:
         return f"({self.x}, {self.y})"

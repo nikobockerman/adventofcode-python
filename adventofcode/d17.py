@@ -14,11 +14,11 @@ class _PathPosition:
     next_coord: Coord2d = field(compare=False)
     moves_straight: int = field(compare=False)
     heat_loss: int = field(compare=False)
-    estimated_total_heat_loss: float
+    estimated_total_heat_loss: int
 
 
-def _estimate_remaining_heat_loss(start: Coord2d, destination: Coord2d) -> float:
-    return start.distance_to(destination)
+def _estimate_remaining_heat_loss(start: Coord2d, destination: Coord2d) -> int:
+    return start.distance_to_int(destination)
 
 
 class _PriorityQueue:
