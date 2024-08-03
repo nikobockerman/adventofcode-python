@@ -42,6 +42,7 @@ def main(
     else:
         days = list(ANSWERS.keys()) if day is None else [day]
         all_passed = None
+        start = time.perf_counter()
         for day in days:
             problems = ANSWERS.get(day, {})
             for problem in problems:
@@ -49,12 +50,13 @@ def main(
                 if all_passed is None:
                     all_passed = passed
                 all_passed &= passed
+        duration = time.perf_counter() - start
         if all_passed is None:
             print("No answers known for requested day")
         elif all_passed:
-            print("Finished with all passing.")
+            print(f"Finished with all passing. Duration {duration:.3f}s")
         else:
-            print("Finished with failures.")
+            print(f"Finished with failures. Duration {duration:.3f}s")
             exit_code = 1
 
     sys.exit(exit_code)
