@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, assert_never, overload
+from typing import TYPE_CHECKING, assert_never, final, overload
 
 from .directions import CardinalDirection, RotationDirection
 
@@ -131,11 +131,13 @@ class Map2d[Map2dDataType]:
     def last_y(self) -> int:
         return self._last_y
 
+    @final
     def __get(self, x: int, y: int) -> Map2dDataType:
         if x < 0 or x > self._last_x or y < 0 or y > self._last_y:
             raise IndexError((x, y))
         return self._sequence_data[y][x]
 
+    @final
     def __get_or_default(
         self, x: int, y: int, default: Map2dDataType | None = None
     ) -> Map2dDataType | None:
@@ -181,6 +183,7 @@ class Map2d[Map2dDataType]:
             return self.__get_or_default(x, y, kwargs["default"])
         return self.__get(x, y)
 
+    @final
     def __iter_data_by_lines(  # noqa: PLR0912, optimized for performance
         # so can't reduce branching here which is done for sanitizing input values
         self,
@@ -227,6 +230,7 @@ class Map2d[Map2dDataType]:
                 ),
             )
 
+    @final
     def __iter_data_by_columns(
         self, first_x: int, first_y: int, last_x: int, last_y: int
     ) -> Iterable[tuple[int, Iterable[tuple[int, Map2dDataType]]]]:

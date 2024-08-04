@@ -1,3 +1,4 @@
+import cProfile
 import importlib
 import logging
 import pathlib
@@ -30,6 +31,7 @@ def main(
             "times.",
         ),
     ] = 0,
+    profile: Annotated[bool, typer.Option("--profile", "-p")] = False,
     day_suffix: Annotated[str, typer.Option("--day-suffix", "-s")] = "",
 ) -> None:
     level = {0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG}.get(
@@ -39,7 +41,7 @@ def main(
 
     exit_code: int = 0
     if day is not None and problem is not None:
-        exit_code = _specific_problem(day, day_suffix, problem)
+        exit_code = _specific_problem(day, day_suffix, problem, profile=profile)
     else:
         days = (ANSWERS.keys()) if day is None else [day]
         exit_code = _multiple_problems(days, day_suffix=day_suffix)
@@ -47,11 +49,16 @@ def main(
     sys.exit(exit_code)
 
 
-def _specific_problem(day: int, day_suffix: str, problem: int) -> int:
+def _specific_problem(day: int, day_suffix: str, problem: int, *, profile: bool) -> int:
     try:
-        result = _process_output(
-            _exec_problem(_get_problem_input(day, day_suffix, problem))
-        )
+        input_ = _get_problem_input(day, day_suffix, problem)
+        if profile:
+            with cProfile.Profile() as pr:
+                output = _exec_problem(input_)
+                pr.print_stats(sort="cumtime")
+        else:
+            output = _exec_problem(input_)
+        result = _process_output(output)
         print(f"Duration: {result.duration:.3f}s")
 
         if result.incorrect:
