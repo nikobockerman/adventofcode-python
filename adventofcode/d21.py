@@ -185,8 +185,15 @@ class _LocationToProcess:
         data: _LocationToProcessData,
         visit_counts: _VisitCounts,
     ) -> _LocationToProcess | None:
-        if x in [x_.x for x_ in data.visited[data_index]]:
-            return None
+        # x=18 - -40 => -40+18=-22
+        # y=72-5=67 - -40 => -40+67=27
+        # ...
+        # ..#
+        # ..#
+        ### Bug: First time visited with step == max_step-1 -> second visit with smaller step -> will not be processed further on first time and second time it gets skipped
+        # visited_xs = sorted([x_.x for x_ in data.visited[data_index]])
+        # if x in visited_xs:
+        #    return None
         symbol = data.map_rows[data_index][x]
         if symbol == "#":
             data.skipped[data_index].add(x)
@@ -196,8 +203,8 @@ class _LocationToProcess:
             assert_never(symbol)
 
         step_new = self.step + 1
-        data.visited[data_index].add(_LocationToProcess(y, x, step_new))
-        visit_counts.add(step_new)
+        # data.visited[data_index].add(_LocationToProcess(y, x, step_new))
+        # visit_counts.add(step_new)
         return _LocationToProcess(y, x, step_new)
 
     def process_neighbors(
@@ -238,9 +245,7 @@ def p2(input_str: str, steps: int = 26_501_365) -> int:
 
     # log_output_interval = steps // 10 if steps >= 10 else 1
 
-    visited_locations: dict[int, set[_LocationToProcess]] = {
-        map_.start.y: {_LocationToProcess(map_.start.y, map_.start.x, 0)}
-    }
+    visited_locations: dict[int, dict[int, int]] = {map_.start.y: {map_.start.x: 0}}
     skipped_locations: dict[int, set[int]] = dict()
     visit_counts = _VisitCounts()
     visit_counts.add(0)
@@ -280,7 +285,7 @@ def p2(input_str: str, steps: int = 26_501_365) -> int:
                 _MapRow(map_.get_row(y_, min_x - 1, max_x + 1), min_x - 1)
                 for y_ in range(y - 1, y + 2)
             ],
-            visited=get_related_rows(visited_locations, y),
+            visited=[set(), set(), set()],  # get_related_rows(visited_locations, y),
             skipped=get_related_rows(skipped_locations, y),
         )
 
@@ -298,8 +303,22 @@ def p2(input_str: str, steps: int = 26_501_365) -> int:
                 for new_loc_to_process in loc_to_process.process_neighbors(
                     process_data, visit_counts
                 ):
+                    if (
+                        y_visited := visited_locations.get(new_loc_to_process.y)
+                    ) is not None:
+                        if (
+                            earlier_step := y_visited.get(new_loc_to_process.x)
+                        ) is not None and earlier_step <= new_loc_to_process.step:
+                            continue
+                        y_visited[new_loc_to_process.x] = new_loc_to_process.step
+                    else:
+                        visited_locations[new_loc_to_process.y] = {
+                            new_loc_to_process.x: new_loc_to_process.step
+                        }
+
                     if new_loc_to_process.step >= steps:
                         continue
+
                     new_locations_to_process.append(new_loc_to_process)
 
             for y_, loc_to_processes in itertools.groupby(
@@ -319,12 +338,25 @@ def p2(input_str: str, steps: int = 26_501_365) -> int:
                     assert symbol_loc == "."
                     assert symbol_loc_map == "."
 
-    def _map_str(visited: dict[int, set[_LocationToProcess]]) -> Iterator[str]:
-        all_visited = set((Coord2d(x.x, y) for y, xs in visited.items() for x in xs))
-        min_x = min(x.x for x in all_visited)
-        max_x = max(x.x for x in all_visited)
-        min_y = min(x.y for x in all_visited)
-        max_y = max(x.y for x in all_visited)
+    all_visited = set(
+        (Coord2d(x, y) for y, xs in visited_locations.items() for x in xs.keys())
+    )
+    min_x = min(x.x for x in all_visited)
+    max_x = max(x.x for x in all_visited)
+    min_y = min(x.y for x in all_visited)
+    max_y = max(x.y for x in all_visited)
+    _logger.info("Min: %s, Max: %s", Coord2d(min_x, min_y), Coord2d(max_x, max_y))
+
+    # x=18 - -40 => -40+18=-22
+    # y=72-5=67 - -40 => -40+67=27
+    # ...
+    # ..#
+    # ..#
+    # assert "..." == "".join([map_.infinite_get(x, 26) for x in range(-23, -20)])  # noqa: SIM300
+    # assert "..#" == "".join([map_.infinite_get(x, 27) for x in range(-23, -20)])  # noqa: SIM300
+    # assert "..#" == "".join([map_.infinite_get(x, 28) for x in range(-23, -20)])  # noqa: SIM300
+
+    def _map_visited_str() -> Iterator[str]:
         for y in range(min_y, max_y + 1):
             row = ""
             for x in range(min_x, max_x + 1):
@@ -332,32 +364,35 @@ def p2(input_str: str, steps: int = 26_501_365) -> int:
                 if coord in all_visited:
                     row += "O"
                 else:
-                    row += "."
+                    row += map_.infinite_get(x, y)
             yield row
 
-    _logger.info("Visited: \n%s", "\n".join(_map_str(visited_locations)))
+    # _logger.info("Visited: \n%s", "\n".join(_map_visited_str()))
+    with open(f"p21d2-{steps}-wrong-visited.txt", "w") as f:
+        f.write("\n".join(_map_visited_str()))
+
+    # def _map_symbols() -> Iterator[str]:
+    #    for y in range(min_y, max_y + 1):
+    #        row = ""
+    #        for x in range(min_x, max_x + 1):
+    #            row += map_.infinite_get(x, y)
+    #        yield f"{y:3}: {row}"
+
+    # _logger.info("Map: \n%s", "\n".join(_map_symbols()))
 
     visited_counts = {
-        step: len(list(locs))
-        for step, locs in itertools.groupby(
-            sorted(
-                (x for xs in visited_locations.values() for x in xs),
-                key=lambda x: x.step,
-            ),
-            key=lambda x: x.step,
+        step: len(list(steps))
+        for step, steps in itertools.groupby(
+            sorted(step for xs in visited_locations.values() for step in xs.values())
         )
     }
-    visit_counts_ = visit_counts.visit_counts
+    # visit_counts_ = visit_counts.visit_counts
 
-    def _counts_str(c: dict[int, int]) -> Iterator[str]:
-        for step, count in sorted(c.items()):
-            yield f"{step}: {count}"
+    # def _counts_str(c: dict[int, int]) -> Iterator[str]:
+    #    for step, count in sorted(c.items()):
+    #        yield f"{step}: {count}"
 
-    _logger.info("Visited counts: %s", ", ".join(_counts_str(visited_counts)))
-    _logger.info("Visit counts  : %s", ", ".join(_counts_str(visit_counts_)))
+    # _logger.info("Visited counts: %s", ", ".join(_counts_str(visited_counts)))
+    # _logger.info("Visit counts  : %s", ", ".join(_counts_str(visit_counts_)))
 
-    return sum(
-        count
-        for step, count in visit_counts.visit_counts.items()
-        if step % 2 == steps % 2
-    )
+    return sum(count for step, count in visited_counts.items() if step % 2 == steps % 2)
