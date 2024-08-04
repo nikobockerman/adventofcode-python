@@ -207,7 +207,11 @@ def _get_problem_input(day: int, day_suffix: str, problem: int) -> _ProblemInput
 def _process_output(output: _ProblemOutput) -> _ProblemResult:
     answer = ANSWERS.get(output.day, {}).get(output.problem)
     return _ProblemResult(
-        output.day, output.problem, output.result, output.duration, str(answer)
+        output.day,
+        output.problem,
+        output.result,
+        output.duration,
+        str(answer) if answer is not None else None,
     )
 
 
