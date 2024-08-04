@@ -36,6 +36,7 @@ tuna = "^0.5.11"
 pyinstrument = "^4.6.1"
 pyright = "^1.1.373"
 joblib-stubs = "^1.4.2.3.20240619"
+pytest-benchmark = "^4.0.0"
 
 [tool.poetry.scripts]
 adventofcode = "adventofcode.main:app"
