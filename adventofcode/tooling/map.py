@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import math
 from enum import Enum, auto
-from typing import Callable, Generic, Iterable, Sequence, TypeVar, overload
+from typing import Callable, Iterable, Sequence, assert_never, overload
 
 
 class Dir(Enum):
@@ -9,7 +11,7 @@ class Dir(Enum):
     S = auto()
     W = auto()
 
-    def rotate_left(self) -> "Dir":
+    def rotate_left(self) -> Dir:
         if self is Dir.N:
             return Dir.W
         if self is Dir.E:
@@ -18,9 +20,9 @@ class Dir(Enum):
             return Dir.E
         if self is Dir.W:
             return Dir.S
-        raise ValueError(self)
+        assert_never(self)
 
-    def rotate_right(self) -> "Dir":
+    def rotate_right(self) -> Dir:
         if self is Dir.N:
             return Dir.E
         if self is Dir.E:
@@ -29,9 +31,9 @@ class Dir(Enum):
             return Dir.W
         if self is Dir.W:
             return Dir.N
-        raise ValueError(self)
+        assert_never(self)
 
-    def opposite(self) -> "Dir":
+    def opposite(self) -> Dir:
         if self is Dir.N:
             return Dir.S
         if self is Dir.E:
@@ -40,7 +42,7 @@ class Dir(Enum):
             return Dir.N
         if self is Dir.W:
             return Dir.E
-        raise ValueError(self)
+        assert_never(self)
 
     def __str__(self) -> str:
         return self.name
@@ -62,7 +64,7 @@ class RotationDir(Enum):
         return str(self)
 
 
-AllDirections = (Dir.N, Dir.E, Dir.S, Dir.W)
+AllDirections = tuple(d for d in Dir)
 
 
 class Coord2d:
@@ -80,7 +82,7 @@ class Coord2d:
     def __hash__(self) -> int:
         return hash((self.x, self.y))
 
-    def adjoin(self, direction: Dir) -> "Coord2d":
+    def adjoin(self, direction: Dir) -> Coord2d:
         if direction is Dir.N:
             return Coord2d(self.x, self.y - 1)
         if direction is Dir.E:
@@ -89,9 +91,9 @@ class Coord2d:
             return Coord2d(self.x, self.y + 1)
         if direction is Dir.W:
             return Coord2d(self.x - 1, self.y)
-        raise ValueError(direction)
+        assert_never(direction)
 
-    def dir_to(self, other: "Coord2d") -> Dir:
+    def dir_to(self, other: Coord2d) -> Dir:
         if other.x > self.x:
             return Dir.E
         if other.x < self.x:
@@ -102,7 +104,7 @@ class Coord2d:
             return Dir.N
         raise ValueError(other)
 
-    def get_relative(self, direction: Dir, distance: int = 1) -> "Coord2d":
+    def get_relative(self, direction: Dir, distance: int = 1) -> Coord2d:
         if direction is Dir.N:
             return Coord2d(self.x, self.y - distance)
         if direction is Dir.E:
@@ -111,16 +113,16 @@ class Coord2d:
             return Coord2d(self.x, self.y + distance)
         if direction is Dir.W:
             return Coord2d(self.x - distance, self.y)
-        raise ValueError(direction)
+        assert_never(direction)
 
-    def distance_to_int(self, other: "Coord2d") -> int:
+    def distance_to_int(self, other: Coord2d) -> int:
         if self.y == other.y:
             return abs(self.x - other.x)
         if self.x == other.x:
             return abs(self.y - other.y)
         return math.isqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
-    def distance_to(self, other: "Coord2d") -> float:
+    def distance_to(self, other: Coord2d) -> float:
         return math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
     def __str__(self) -> str:
@@ -140,10 +142,7 @@ class Map2dRectangularDataError(ValueError):
         super().__init__("data must be rectangular")
 
 
-Map2dDataType = TypeVar("Map2dDataType")
-
-
-class Map2d(Generic[Map2dDataType]):
+class Map2d[Map2dDataType]:
     __slots__ = ("_sequence_data", "_width", "_height", "_last_x", "_last_y")
 
     def __init__(
@@ -361,10 +360,10 @@ class Map2d(Generic[Map2dDataType]):
     def __str__(self) -> str:
         return "\n".join(self.str_lines())
 
-    def transpose(self) -> "Map2d[Map2dDataType]":
+    def transpose(self) -> Map2d[Map2dDataType]:
         return Map2d(list(zip(*self._sequence_data)))
 
-    def __rotate_once_clockwise(self) -> "Map2d[Map2dDataType]":
+    def __rotate_once_clockwise(self) -> Map2d[Map2dDataType]:
         return Map2d(
             (data for _, data in items)
             for _, items in self.__iter_data_by_columns(
@@ -372,7 +371,7 @@ class Map2d(Generic[Map2dDataType]):
             )
         )
 
-    def __rotate_once_counterclockwise(self) -> "Map2d[Map2dDataType]":
+    def __rotate_once_counterclockwise(self) -> Map2d[Map2dDataType]:
         return Map2d(
             (data for _, data in items)
             for _, items in self.__iter_data_by_columns(
@@ -380,7 +379,7 @@ class Map2d(Generic[Map2dDataType]):
             )
         )
 
-    def rotate(self, direction: RotationDir, count: int = 1) -> "Map2d[Map2dDataType]":
+    def rotate(self, direction: RotationDir, count: int = 1) -> Map2d[Map2dDataType]:
         if count <= 0:
             raise ValueError(count)
         map_ = self
