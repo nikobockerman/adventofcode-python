@@ -4,7 +4,9 @@ import logging
 from dataclasses import dataclass, field
 from typing import Iterable
 
-from adventofcode.tooling.map import AllDirections, Coord2d, Dir, Map2d
+from adventofcode.tooling.directions import CardinalDirection as Dir
+from adventofcode.tooling.directions import CardinalDirectionsAll
+from adventofcode.tooling.map import Coord2d, Map2d
 
 _logger = logging.getLogger(__name__)
 
@@ -339,7 +341,7 @@ def p2(input_str: str) -> int:
 
         for neighbor in (
             map_data.get(pipe.coord.adjoin(direction), None)
-            for direction in AllDirections
+            for direction in CardinalDirectionsAll
         ):
             if not neighbor:
                 continue

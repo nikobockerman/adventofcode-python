@@ -1,6 +1,7 @@
 import logging
 
-from adventofcode.tooling.map import Coord2d, Dir, Map2d
+from adventofcode.tooling.directions import CardinalDirection as Dir
+from adventofcode.tooling.map import Coord2d, Map2d
 
 _logger = logging.getLogger(__name__)
 
@@ -53,12 +54,20 @@ def _process_splitter_exit(
             continue
 
         if symbol == "/":
-            dir_ = dir_.rotate_right() if dir_ in (Dir.N, Dir.S) else dir_.rotate_left()
+            dir_ = (
+                dir_.rotate_clockwise()
+                if dir_ in (Dir.N, Dir.S)
+                else dir_.rotate_counterclockwise()
+            )
             coord = coord.adjoin(dir_)
             continue
 
         if symbol == "\\":
-            dir_ = dir_.rotate_left() if dir_ in (Dir.N, Dir.S) else dir_.rotate_right()
+            dir_ = (
+                dir_.rotate_counterclockwise()
+                if dir_ in (Dir.N, Dir.S)
+                else dir_.rotate_clockwise()
+            )
             coord = coord.adjoin(dir_)
             continue
 

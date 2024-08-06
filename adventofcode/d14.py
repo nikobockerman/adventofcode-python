@@ -1,6 +1,7 @@
 import logging
 
-from adventofcode.tooling.map import Coord2d, Dir, Map2d
+from adventofcode.tooling.directions import CardinalDirection as Dir
+from adventofcode.tooling.map import Coord2d, Map2d
 
 _logger = logging.getLogger(__name__)
 
