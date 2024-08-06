@@ -68,51 +68,43 @@ class _Map(Map2d[_MapSymbol]):
     def start(self) -> Coord2d:
         return self._start
 
+    def get_adjoin_garden_plots_for_location(
+        self, location: Coord2d
+    ) -> Iterator[Coord2d]:
+        for direction in AllDirections:
+            new_location = location.adjoin(direction)
+            try:
+                symbol = self.get(new_location)
+            except IndexError:
+                continue
+
+            if symbol == "#":
+                continue
+
+            if symbol == ".":
+                yield new_location
+            else:
+                assert_never(symbol)
+
+    def get_adjoin_garden_plots_for_locations(
+        self, locations: Iterable[Coord2d]
+    ) -> Iterator[Coord2d]:
+        for location in locations:
+            yield from self.get_adjoin_garden_plots_for_location(location)
+
 
 def p1(input_str: str, steps: int = 64) -> int:
     map_ = _Map(input_str.splitlines())
 
-    locations_before_step: set[Coord2d] = {map_.start}
+    locations_to_process: set[Coord2d] = {map_.start}
     for _ in range(steps):
-        locations_after_step: set[Coord2d] = set()
-        for location in locations_before_step:
-            for direction in AllDirections:
-                new_location = location.adjoin(direction)
-                try:
-                    symbol = map_.get(new_location)
-                except IndexError:
-                    continue
-                if symbol == "#":
-                    continue
-                if symbol == ".":
-                    locations_after_step.add(new_location)
-                else:
-                    assert_never(symbol)
-        locations_before_step = locations_after_step
-    return len(locations_before_step)
+        locations_to_process = set(
+            map_.get_adjoin_garden_plots_for_locations(locations_to_process)
+        )
+    return len(locations_to_process)
 
 
-class _InfiniteMap(Map2d[_MapSymbol]):
-    def __init__(self, data: Iterable[Sequence[str]]) -> None:
-        start: Coord2d | None = None
-        start_symbol_count = 0
-        map_data: list[list[_MapSymbol]] = []
-        for line_index, line in enumerate(data):
-            line_data: list[_MapSymbol] = []
-            for index, symbol in enumerate(map(_parse_symbol, line)):
-                if symbol == "S":
-                    start = Coord2d(index, line_index)
-                    start_symbol_count += 1
-                    line_data.append(".")
-                else:
-                    line_data.append(symbol)
-            map_data.append(line_data)
-        assert start_symbol_count == 1
-        assert start is not None
-
-        super().__init__(map_data)
-        self._start: Coord2d = start
-
+class _InfiniteMap(_Map):
     @property
     def start(self) -> Coord2d:
         return self._start
@@ -227,22 +219,43 @@ class _LocationToProcess:
             yield neighbor
 
 
+# TODO
+# 1. Process width-first from start until 2x2 squares with start in the middle have all
+#    garden plots visited
+# 2. Take the corner squares and extend them outbound from stars adjusting the step
+#    counts
+# 4. Keep extending until max step count in one extended square reaches steps, once that
+#    happens ignore such square
+# 5. Process the remaining outer bounds with the width-first algorighm
+#    (or complex if too slow)
+
+
+def _p2_step1_resolve_around_start(map_: _InfiniteMap) -> None:
+    # Validate assumptions
+    assert map_.width % 2 == 1
+    assert map_.height % 2 == 1
+    assert map_.width // 2 == map_.height // 2
+    assert map_.start.x == map_.width // 2
+    assert map_.start.y == map_.height // 2
+
+
 def p2(input_str: str, steps: int = 26_501_365) -> int:
     map_ = _InfiniteMap(input_str.splitlines())
 
-    if steps > 500:
-        steps = 500
+    # Step 1: START
+    _p2_step1_resolve_around_start(map_)
+    # Step 1: END
 
-    # if step % log_output_interval == 0 or step == steps - 1:  # noqa: SIM102
-    #        if _logger.isEnabledFor(logging.DEBUG):
-    #            _logger.info(
-    #                "Step %d: visited=%d, skipped=%d, processing: %d",
-    #                step,
-    #                len(visited_locations),
-    #                len(skipped_locations),
-    #                len(locations_to_process),
-    #            )
+    return 0
 
+    steps_remainder = steps % 2
+
+    if steps >= 100:
+        log_output_interval = steps // 100
+    elif steps >= 10:
+        log_output_interval = steps // 10
+    else:
+        log_output_interval = 1
     # log_output_interval = steps // 10 if steps >= 10 else 1
 
     visited_locations: dict[int, dict[int, int]] = {map_.start.y: {map_.start.x: 0}}
@@ -289,10 +302,23 @@ def p2(input_str: str, steps: int = 26_501_365) -> int:
             skipped=get_related_rows(skipped_locations, y),
         )
 
+    count = 0
+    next_print = 0
     to_process: dict[int, list[_LocationToProcess]] = {
         map_.start.y: [_LocationToProcess(map_.start.y, map_.start.x, 0)]
     }
     while to_process:
+        # if step % log_output_interval == 0 or step == steps - 1:  # noqa: SIM102
+        if count >= next_print:
+            next_print += log_output_interval
+            if _logger.isEnabledFor(logging.DEBUG):
+                _logger.info(
+                    "Processed=%d, visited=%d, skipped=%d, max_step=%d",
+                    count,
+                    sum(len(x) for x in visited_locations.values()),
+                    sum(len(x) for x in skipped_locations.values()),
+                    max(max(x.values()) for x in visited_locations.values()),
+                )
         rows_to_process = list(to_process.keys())
         for y in rows_to_process:
             locations_to_process = to_process.pop(y)
@@ -303,6 +329,7 @@ def p2(input_str: str, steps: int = 26_501_365) -> int:
                 for new_loc_to_process in loc_to_process.process_neighbors(
                     process_data, visit_counts
                 ):
+                    count += 1
                     if (
                         y_visited := visited_locations.get(new_loc_to_process.y)
                     ) is not None:
@@ -341,35 +368,34 @@ def p2(input_str: str, steps: int = 26_501_365) -> int:
     all_visited = set(
         (Coord2d(x, y) for y, xs in visited_locations.items() for x in xs.keys())
     )
+    possible_steps = set(
+        Coord2d(x, y)
+        for y, xs in visited_locations.items()
+        for x, step in xs.items()
+        if step % 2 == steps_remainder
+    )
     min_x = min(x.x for x in all_visited)
     max_x = max(x.x for x in all_visited)
     min_y = min(x.y for x in all_visited)
     max_y = max(x.y for x in all_visited)
     _logger.info("Min: %s, Max: %s", Coord2d(min_x, min_y), Coord2d(max_x, max_y))
 
-    # x=18 - -40 => -40+18=-22
-    # y=72-5=67 - -40 => -40+67=27
-    # ...
-    # ..#
-    # ..#
-    # assert "..." == "".join([map_.infinite_get(x, 26) for x in range(-23, -20)])  # noqa: SIM300
-    # assert "..#" == "".join([map_.infinite_get(x, 27) for x in range(-23, -20)])  # noqa: SIM300
-    # assert "..#" == "".join([map_.infinite_get(x, 28) for x in range(-23, -20)])  # noqa: SIM300
-
-    def _map_visited_str() -> Iterator[str]:
+    def _map_visited_str(visited: set[Coord2d]) -> Iterator[str]:
         for y in range(min_y, max_y + 1):
             row = ""
             for x in range(min_x, max_x + 1):
                 coord = Coord2d(x, y)
-                if coord in all_visited:
+                if coord in visited:
                     row += "O"
                 else:
                     row += map_.infinite_get(x, y)
             yield row
 
     # _logger.info("Visited: \n%s", "\n".join(_map_visited_str()))
-    with open(f"p21d2-{steps}-wrong-visited.txt", "w") as f:
-        f.write("\n".join(_map_visited_str()))
+    with open(f"p21d2-{steps}-all-visited.txt", "w") as f:
+        f.write("\n".join(_map_visited_str(all_visited)))
+    with open(f"p21d2-{steps}-possible-visited.txt", "w") as f:
+        f.write("\n".join(_map_visited_str(possible_steps)))
 
     # def _map_symbols() -> Iterator[str]:
     #    for y in range(min_y, max_y + 1):
@@ -395,4 +421,6 @@ def p2(input_str: str, steps: int = 26_501_365) -> int:
     # _logger.info("Visited counts: %s", ", ".join(_counts_str(visited_counts)))
     # _logger.info("Visit counts  : %s", ", ".join(_counts_str(visit_counts_)))
 
-    return sum(count for step, count in visited_counts.items() if step % 2 == steps % 2)
+    return sum(
+        count for step, count in visited_counts.items() if step % 2 == steps_remainder
+    )
