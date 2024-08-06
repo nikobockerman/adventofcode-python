@@ -3,7 +3,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Iterable
 
-from adventofcode.tooling.map import Coord2d, Dir
+from adventofcode.tooling.directions import CardinalDirection as Dir
+from adventofcode.tooling.map import Coord2d
 
 _logger = logging.getLogger(__name__)
 

@@ -1,11 +1,11 @@
 from typing import Iterable, Sequence
 
+from adventofcode.tooling.directions import RotationDirection
 from adventofcode.tooling.map import (
     Coord2d,
     Map2d,
     Map2dEmptyDataError,
     Map2dRectangularDataError,
-    RotationDir,
 )
 
 
@@ -83,50 +83,50 @@ def test_rotate():
             ["g", "h", "i"],
         ]
     )
-    assert map_.rotate(RotationDir.CW) == Map2d(
+    assert map_.rotate(RotationDirection.Clockwise) == Map2d(
         [
             ["g", "d", "a"],
             ["h", "e", "b"],
             ["i", "f", "c"],
         ]
     )
-    assert map_.rotate(RotationDir.CW, 2) == Map2d(
+    assert map_.rotate(RotationDirection.Clockwise, 2) == Map2d(
         [
             ["i", "h", "g"],
             ["f", "e", "d"],
             ["c", "b", "a"],
         ]
     )
-    assert map_.rotate(RotationDir.Clockwise, 3) == Map2d(
+    assert map_.rotate(RotationDirection.Clockwise, 3) == Map2d(
         [
             ["c", "f", "i"],
             ["b", "e", "h"],
             ["a", "d", "g"],
         ]
     )
-    assert map_.rotate(RotationDir.Clockwise, 4) == map_
-    assert map_.rotate(RotationDir.CCW, 1) == Map2d(
+    assert map_.rotate(RotationDirection.Clockwise, 4) == map_
+    assert map_.rotate(RotationDirection.Counterclockwise, 1) == Map2d(
         [
             ["c", "f", "i"],
             ["b", "e", "h"],
             ["a", "d", "g"],
         ]
     )
-    assert map_.rotate(RotationDir.CCW, 2) == Map2d(
+    assert map_.rotate(RotationDirection.Counterclockwise, 2) == Map2d(
         [
             ["i", "h", "g"],
             ["f", "e", "d"],
             ["c", "b", "a"],
         ]
     )
-    assert map_.rotate(RotationDir.Counterclockwise, 3) == Map2d(
+    assert map_.rotate(RotationDirection.Counterclockwise, 3) == Map2d(
         [
             ["g", "d", "a"],
             ["h", "e", "b"],
             ["i", "f", "c"],
         ]
     )
-    assert map_.rotate(RotationDir.Counterclockwise, 4) == map_
+    assert map_.rotate(RotationDirection.Counterclockwise, 4) == map_
 
 
 def test_iter_data_full():

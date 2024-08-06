@@ -1,70 +1,9 @@
 from __future__ import annotations
 
 import math
-from enum import Enum, auto
 from typing import Callable, Iterable, Sequence, assert_never, overload
 
-
-class Dir(Enum):
-    N = auto()
-    E = auto()
-    S = auto()
-    W = auto()
-
-    def rotate_left(self) -> Dir:
-        if self is Dir.N:
-            return Dir.W
-        if self is Dir.E:
-            return Dir.N
-        if self is Dir.S:
-            return Dir.E
-        if self is Dir.W:
-            return Dir.S
-        assert_never(self)
-
-    def rotate_right(self) -> Dir:
-        if self is Dir.N:
-            return Dir.E
-        if self is Dir.E:
-            return Dir.S
-        if self is Dir.S:
-            return Dir.W
-        if self is Dir.W:
-            return Dir.N
-        assert_never(self)
-
-    def opposite(self) -> Dir:
-        if self is Dir.N:
-            return Dir.S
-        if self is Dir.E:
-            return Dir.W
-        if self is Dir.S:
-            return Dir.N
-        if self is Dir.W:
-            return Dir.E
-        assert_never(self)
-
-    def __str__(self) -> str:
-        return self.name
-
-    def __repr__(self) -> str:
-        return str(self)
-
-
-class RotationDir(Enum):
-    Clockwise = auto()
-    CW = Clockwise
-    Counterclockwise = auto()
-    CCW = Counterclockwise
-
-    def __str__(self) -> str:
-        return self.name
-
-    def __repr__(self) -> str:
-        return str(self)
-
-
-AllDirections = tuple(d for d in Dir)
+from .directions import CardinalDirection, RotationDirection
 
 
 class Coord2d:
@@ -82,36 +21,36 @@ class Coord2d:
     def __hash__(self) -> int:
         return hash((self.x, self.y))
 
-    def adjoin(self, direction: Dir) -> Coord2d:
-        if direction is Dir.N:
+    def adjoin(self, direction: CardinalDirection) -> Coord2d:
+        if direction is CardinalDirection.N:
             return Coord2d(self.x, self.y - 1)
-        if direction is Dir.E:
+        if direction is CardinalDirection.E:
             return Coord2d(self.x + 1, self.y)
-        if direction is Dir.S:
+        if direction is CardinalDirection.S:
             return Coord2d(self.x, self.y + 1)
-        if direction is Dir.W:
+        if direction is CardinalDirection.W:
             return Coord2d(self.x - 1, self.y)
         assert_never(direction)
 
-    def dir_to(self, other: Coord2d) -> Dir:
+    def dir_to(self, other: Coord2d) -> CardinalDirection:
         if other.x > self.x:
-            return Dir.E
+            return CardinalDirection.E
         if other.x < self.x:
-            return Dir.W
+            return CardinalDirection.W
         if other.y > self.y:
-            return Dir.S
+            return CardinalDirection.S
         if other.y < self.y:
-            return Dir.N
+            return CardinalDirection.N
         raise ValueError(other)
 
-    def get_relative(self, direction: Dir, distance: int = 1) -> Coord2d:
-        if direction is Dir.N:
+    def get_relative(self, direction: CardinalDirection, distance: int = 1) -> Coord2d:
+        if direction is CardinalDirection.N:
             return Coord2d(self.x, self.y - distance)
-        if direction is Dir.E:
+        if direction is CardinalDirection.E:
             return Coord2d(self.x + distance, self.y)
-        if direction is Dir.S:
+        if direction is CardinalDirection.S:
             return Coord2d(self.x, self.y + distance)
-        if direction is Dir.W:
+        if direction is CardinalDirection.W:
             return Coord2d(self.x - distance, self.y)
         assert_never(direction)
 
@@ -379,17 +318,19 @@ class Map2d[Map2dDataType]:
             )
         )
 
-    def rotate(self, direction: RotationDir, count: int = 1) -> Map2d[Map2dDataType]:
+    def rotate(
+        self, direction: RotationDirection, count: int = 1
+    ) -> Map2d[Map2dDataType]:
         if count <= 0:
             raise ValueError(count)
         map_ = self
         for _ in range(count):
-            if direction is RotationDir.Clockwise:
+            if direction is RotationDirection.Clockwise:
                 map_ = map_.__rotate_once_clockwise()  # noqa: SLF001
-            elif direction is RotationDir.Counterclockwise:
+            elif direction is RotationDirection.Counterclockwise:
                 map_ = map_.__rotate_once_counterclockwise()  # noqa: SLF001
             else:
-                raise ValueError(direction)
+                assert_never(direction)
         return map_
 
     def __hash__(self) -> int:

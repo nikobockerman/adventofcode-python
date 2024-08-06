@@ -2,7 +2,8 @@ import heapq
 import logging
 from dataclasses import dataclass, field
 
-from adventofcode.tooling.map import Coord2d, Dir, Map2d
+from adventofcode.tooling.directions import CardinalDirection as Dir
+from adventofcode.tooling.map import Coord2d, Map2d
 
 _logger = logging.getLogger(__name__)
 
@@ -72,8 +73,8 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
 
         for new_dir in (
             pos.direction,
-            pos.direction.rotate_left(),
-            pos.direction.rotate_right(),
+            pos.direction.rotate_counterclockwise(),
+            pos.direction.rotate_clockwise(),
         ):
             if new_dir != pos.direction and pos.moves_straight < min_straight_moves:
                 continue
