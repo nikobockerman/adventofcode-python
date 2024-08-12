@@ -34,7 +34,7 @@ poethepoet = "^0.27.0"
 snakeviz = "^2.2.0"
 tuna = "^0.5.11"
 pyinstrument = "^4.7.2"
-pyright = "^1.1.373"
+pyright = "^1.1.375"
 joblib-stubs = "^1.4.2.3.20240619"
 
 [tool.poetry.scripts]
