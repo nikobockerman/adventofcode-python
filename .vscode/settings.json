@@ -9,5 +9,8 @@
         "editor.codeActionsOnSave": {
             "source.organizeImports": "explicit"
         }
-    }
+    },
+    "python.testing.pytestArgs": [
+        "--log-cli-level=debug"
+    ]
 }

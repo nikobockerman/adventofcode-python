@@ -14,9 +14,11 @@ from typing import (
     Sequence,
     assert_never,
     get_args,
+    override,
 )
 
-from adventofcode.tooling.map import AllDirections, Coord2d, Map2d
+from adventofcode.tooling.directions import CardinalDirectionsAll
+from adventofcode.tooling.map import Coord2d, Map2d
 
 _logger = logging.getLogger(__name__)
 
@@ -71,7 +73,7 @@ class _Map(Map2d[_MapSymbol]):
     def get_adjoin_garden_plots_for_location(
         self, location: Coord2d
     ) -> Iterator[Coord2d]:
-        for direction in AllDirections:
+        for direction in CardinalDirectionsAll:
             new_location = location.adjoin(direction)
             try:
                 symbol = self.get(new_location)
@@ -114,21 +116,49 @@ class _InfiniteMap(_Map):
         y_ = y % self.height
         return self.get((x_, y_))
 
-    def get_row(self, y: int, min_x: int, max_x: int) -> tuple[_MapSymbol, ...]:
+    def _iter_row(self, y: int, min_x: int, max_x: int) -> Iterator[_MapSymbol]:
         y_ = y % self.height
         start_x = min_x % self.width
         stop_x = max_x % self.width
-        if min_x < 0 or self.width <= max_x:
-            data = list[_MapSymbol]()
-            data.extend(self._sequence_data[y_][start_x:])
-            while min_x < max_x - self.width:
-                data.extend(self._sequence_data[y_])
-                min_x += self.width
-            data.extend(self._sequence_data[y_][: stop_x + 1])
-            data = tuple(data)
-        else:
-            data = self._sequence_data[y_][start_x : stop_x + 1]
-        return data
+
+        if min_x >= 0 and self.width > max_x:
+            yield from self._sequence_data[y_][start_x : stop_x + 1]
+            return
+
+        yield from self._sequence_data[y_][start_x:]
+        while min_x < max_x - self.width:
+            yield from self._sequence_data[y_]
+            min_x += self.width
+        yield from self._sequence_data[y_][: stop_x + 1]
+
+    def get_row(self, y: int, min_x: int, max_x: int) -> tuple[_MapSymbol, ...]:
+        return tuple(self._iter_row(y, min_x, max_x))
+
+    @override
+    def iter_data(
+        self,
+        first_corner: Coord2d | None = None,
+        last_corner: Coord2d | None = None,
+        *,
+        columns_first: bool = False,
+    ) -> Iterable[tuple[int, Iterable[tuple[int, _MapSymbol]]]]:
+        if columns_first is True:
+            raise NotImplementedError()
+
+        if first_corner is None or last_corner is None:
+            raise NotImplementedError()
+
+        if first_corner.x >= last_corner.x or first_corner.y >= last_corner.y:
+            raise NotImplementedError()
+
+        for y in range(first_corner.y, last_corner.y + 1):
+            yield (
+                y,
+                zip(
+                    range(first_corner.x, last_corner.x + 1),
+                    self._iter_row(y, first_corner.x, last_corner.x),
+                ),
+            )
 
 
 class _MapRow:
@@ -182,7 +212,8 @@ class _LocationToProcess:
         # ...
         # ..#
         # ..#
-        ### Bug: First time visited with step == max_step-1 -> second visit with smaller step -> will not be processed further on first time and second time it gets skipped
+        ### Bug: First time visited with step == max_step-1 -> second visit with
+        ### smaller step -> will not be processed further on first time and second time it gets skipped
         # visited_xs = sorted([x_.x for x_ in data.visited[data_index]])
         # if x in visited_xs:
         #    return None
@@ -219,18 +250,29 @@ class _LocationToProcess:
             yield neighbor
 
 
-# TODO
-# 1. Process width-first from start until 2x2 squares with start in the middle have all
-#    garden plots visited
-# 2. Take the corner squares and extend them outbound from stars adjusting the step
-#    counts
-# 4. Keep extending until max step count in one extended square reaches steps, once that
-#    happens ignore such square
-# 5. Process the remaining outer bounds with the width-first algorighm
-#    (or complex if too slow)
+@dataclass(slots=True)
+class _AreaSquare:
+    top_left_corner: Coord2d
+    bottom_right_corner: Coord2d
+    visits_at_step: dict[Coord2d, int]
 
 
-def _p2_step1_resolve_around_start(map_: _InfiniteMap) -> None:
+@dataclass(slots=True)
+class _ExtendableArea:
+    base: _AreaSquare
+    next_width: _AreaSquare
+    next_height: _AreaSquare
+
+
+@dataclass(slots=True)
+class _CornerAreas:
+    top_left: _ExtendableArea
+    top_right: _ExtendableArea
+    bottom_left: _ExtendableArea
+    bottom_right: _ExtendableArea
+
+
+def _p2_step1_resolve_around_start(map_: _InfiniteMap) -> _CornerAreas:
     # Validate assumptions
     assert map_.width % 2 == 1
     assert map_.height % 2 == 1
@@ -238,17 +280,265 @@ def _p2_step1_resolve_around_start(map_: _InfiniteMap) -> None:
     assert map_.start.x == map_.width // 2
     assert map_.start.y == map_.height // 2
 
+    @dataclass(slots=True)
+    class _AreaRange:
+        top_left: Coord2d
+        bottom_right: Coord2d
+
+        def width(self) -> int:
+            return self.bottom_right.x - self.top_left.x + 1
+
+        def height(self) -> int:
+            return self.bottom_right.y - self.top_left.y + 1
+
+        def contains(self, coord: Coord2d) -> bool:
+            return (
+                self.top_left.x <= coord.x <= self.bottom_right.x
+                and self.top_left.y <= coord.y <= self.bottom_right.y
+            )
+
+        def to_square(self) -> _AreaSquare:
+            return _AreaSquare(self.top_left, self.bottom_right, {})
+
+    inclusive_width = map_.width - 1
+    inclusive_height = map_.height - 1
+
+    top_left = _AreaRange(
+        Coord2d(map_.start.x - inclusive_width, map_.start.y - inclusive_height),
+        Coord2d(map_.start.x, map_.start.y),
+    )
+    top_left_left = _AreaRange(
+        Coord2d(top_left.top_left.x - map_.width, top_left.top_left.y),
+        Coord2d(top_left.top_left.x - 1, top_left.bottom_right.y),
+    )
+    top_left_up = _AreaRange(
+        Coord2d(top_left.top_left.x, top_left.top_left.y - map_.height),
+        Coord2d(top_left.bottom_right.x, top_left.top_left.y - 1),
+    )
+    top_right = _AreaRange(
+        Coord2d(map_.start.x, map_.start.y - inclusive_height),
+        Coord2d(map_.start.x + inclusive_width, map_.start.y),
+    )
+    top_right_right = _AreaRange(
+        Coord2d(top_right.bottom_right.x + 1, top_right.top_left.y),
+        Coord2d(top_right.bottom_right.x + map_.width, top_right.bottom_right.y),
+    )
+    top_right_up = _AreaRange(
+        Coord2d(top_right.top_left.x, top_right.top_left.y - map_.height),
+        Coord2d(top_right.bottom_right.x, top_right.top_left.y - 1),
+    )
+    bottom_left = _AreaRange(
+        Coord2d(map_.start.x - inclusive_width, map_.start.y),
+        Coord2d(map_.start.x, map_.start.y + inclusive_height),
+    )
+    bottom_left_left = _AreaRange(
+        Coord2d(bottom_left.top_left.x - map_.width, bottom_left.top_left.y),
+        Coord2d(bottom_left.top_left.x - 1, bottom_left.bottom_right.y),
+    )
+    bottom_left_down = _AreaRange(
+        Coord2d(bottom_left.top_left.x, bottom_left.bottom_right.y + 1),
+        Coord2d(bottom_left.bottom_right.x, bottom_left.bottom_right.y + map_.height),
+    )
+    bottom_right = _AreaRange(
+        Coord2d(map_.start.x, map_.start.y),
+        Coord2d(map_.start.x + inclusive_width, map_.start.y + inclusive_height),
+    )
+    bottom_right_right = _AreaRange(
+        Coord2d(bottom_right.bottom_right.x + 1, bottom_right.top_left.y),
+        Coord2d(bottom_right.bottom_right.x + map_.width, bottom_right.bottom_right.y),
+    )
+    bottom_right_down = _AreaRange(
+        Coord2d(bottom_right.top_left.x, bottom_right.bottom_right.y + 1),
+        Coord2d(bottom_right.bottom_right.x, bottom_right.bottom_right.y + map_.height),
+    )
+
+    assert map_.width == top_left.width()
+    assert map_.height == top_left.height()
+    assert map_.width == top_right.width()
+    assert map_.height == top_right.height()
+    assert map_.width == bottom_left.width()
+    assert map_.height == bottom_left.height()
+    assert map_.width == bottom_right.width()
+    assert map_.height == bottom_right.height()
+
+    assert top_left.width() == top_left_left.width()
+    assert top_left.height() == top_left_left.height()
+    assert top_left.width() == top_left_up.width()
+    assert top_left.height() == top_left_up.height()
+
+    assert top_right.width() == top_right_right.width()
+    assert top_right.height() == top_right_right.height()
+    assert top_right.width() == top_right_up.width()
+    assert top_right.height() == top_right_up.height()
+
+    assert bottom_left.width() == bottom_left_left.width()
+    assert bottom_left.height() == bottom_left_left.height()
+    assert bottom_left.width() == bottom_left_down.width()
+    assert bottom_left.height() == bottom_left_down.height()
+
+    assert bottom_right.width() == bottom_right_right.width()
+    assert bottom_right.height() == bottom_right_right.height()
+    assert bottom_right.width() == bottom_right_down.width()
+    assert bottom_right.height() == bottom_right_down.height()
+
+    required_visited_locations = set[Coord2d](
+        Coord2d(x, y)
+        for area in (
+            top_left,
+            top_left_left,
+            top_left_up,
+            top_right,
+            top_right_right,
+            top_right_up,
+            bottom_left,
+            bottom_left_left,
+            bottom_left_down,
+            bottom_right,
+            bottom_right_right,
+            bottom_right_down,
+        )
+        for y, xs in map_.iter_data(area.top_left, area.bottom_right)
+        for x, symbol in xs
+        if symbol == "."
+    )
+
+    min_x = top_left_left.top_left.x
+    max_x = top_right_right.bottom_right.x
+    min_y = top_left_up.top_left.y
+    max_y = bottom_right_down.bottom_right.y
+
+    def _map_visited_str(visited: set[Coord2d]) -> Iterator[str]:
+        for y in range(min_y, max_y + 1):
+            row = ""
+            for x in range(min_x, max_x + 1):
+                coord = Coord2d(x, y)
+                if coord in visited:
+                    row += "O"
+                else:
+                    row += map_.infinite_get(x, y)
+            yield row
+
+    visited_locations_at_step: dict[int, set[Coord2d]] = {0: {map_.start}}
+    visited_locations: set[Coord2d] = {map_.start}
+    locations_to_process: set[Coord2d] = {map_.start}
+    step = 0
+    while not required_visited_locations <= visited_locations:
+        step += 1
+        adjoin_locations = set(
+            map_.get_adjoin_garden_plots_for_locations(locations_to_process)
+        )
+        visited_locations_at_step[step] = adjoin_locations
+        visited_locations.update(adjoin_locations)
+        locations_to_process = adjoin_locations
+        _logger.debug("Visited: \n%s", "\n".join(_map_visited_str(visited_locations)))
+
+    areas = _CornerAreas(
+        top_left=_ExtendableArea(
+            base=top_left.to_square(),
+            next_width=top_left_left.to_square(),
+            next_height=top_left_up.to_square(),
+        ),
+        top_right=_ExtendableArea(
+            base=top_right.to_square(),
+            next_width=top_right_right.to_square(),
+            next_height=top_right_up.to_square(),
+        ),
+        bottom_left=_ExtendableArea(
+            base=bottom_left.to_square(),
+            next_width=bottom_left_left.to_square(),
+            next_height=bottom_left_down.to_square(),
+        ),
+        bottom_right=_ExtendableArea(
+            base=bottom_right.to_square(),
+            next_width=bottom_right_right.to_square(),
+            next_height=bottom_right_down.to_square(),
+        ),
+    )
+
+    area_pairs = list[tuple[_AreaRange, _AreaSquare]](
+        (
+            (top_left, areas.top_left.base),
+            (top_left_left, areas.top_left.next_width),
+            (top_left_up, areas.top_left.next_height),
+            (top_right, areas.top_right.base),
+            (top_right_right, areas.top_right.next_width),
+            (top_right_up, areas.top_right.next_height),
+            (bottom_left, areas.bottom_left.base),
+            (bottom_left_left, areas.bottom_left.next_width),
+            (bottom_left_down, areas.bottom_left.next_height),
+            (bottom_right, areas.bottom_right.base),
+            (bottom_right_right, areas.bottom_right.next_width),
+            (bottom_right_down, areas.bottom_right.next_height),
+        )
+    )
+
+    for step, visits in visited_locations_at_step.items():
+        for coord in visits:
+            for area_range, area_square in area_pairs:
+                if area_range.contains(coord):
+                    area_square.visits_at_step[coord] = step
+
+    return areas
+
+
+def _p2_step2_extend_areas(map_: _InfiniteMap, areas: _CornerAreas) -> None:
+    # 2. Take the corner squares and extend them outbound from stars adjusting the step
+    #    counts
+
+    # Extend top-left towards top once (TODO: Keep extending)
+    pass
+
+
+# TODO
+# 1. Process width-first from start until 4x4 squares with start in the middle have all
+#    garden plots visited
+# 2. Take the corner squares and extend them outbound from stars adjusting the step
+#    counts
+# 3. Keep extending until max step count in one extended square reaches steps, once that
+#    happens ignore such square
+# 4. Process the remaining outer bounds with the width-first algorighm
+#    (or complex if too slow)
+
 
 def p2(input_str: str, steps: int = 26_501_365) -> int:
     map_ = _InfiniteMap(input_str.splitlines())
 
     # Step 1: START
-    _p2_step1_resolve_around_start(map_)
+    corner_areas = _p2_step1_resolve_around_start(map_)
     # Step 1: END
 
-    return 0
+    # Step 2: START
+    _p2_step2_extend_areas(map_, corner_areas)
+    # Step 2: END
+
+    coords_and_steps = [
+        (coord, step)
+        for corner in (
+            corner_areas.top_left,
+            corner_areas.top_right,
+            corner_areas.bottom_left,
+            corner_areas.bottom_right,
+        )
+        for corner_square in (corner.base, corner.next_width, corner.next_height)
+        for coord, step in corner_square.visits_at_step.items()
+    ]
+
+    coords_with_steps = dict[Coord2d, set[int]]()
+    for coord, step in coords_and_steps:
+        steps_ = coords_with_steps.setdefault(coord, set())
+        steps_.add(step)
+    for coord_, steps_ in coords_with_steps.items():
+        if len(steps_) > 1:
+            raise AssertionError(f"{coord_} found in more than one step: {steps_}")  # noqa: TRY003
 
     steps_remainder = steps % 2
+    return sum(
+        1
+        for step_ in coords_with_steps.values()
+        if next(iter(step_)) % 2 == steps_remainder
+    )
+
+    return 0
 
     if steps >= 100:
         log_output_interval = steps // 100
