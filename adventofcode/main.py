@@ -4,7 +4,7 @@ import pathlib
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable
 
 import joblib
 import typer
@@ -17,8 +17,8 @@ app = typer.Typer()
 
 @app.command()
 def main(
-    day: Annotated[Optional[int], typer.Argument()] = None,
-    problem: Annotated[Optional[int], typer.Argument()] = None,
+    day: Annotated[int | None, typer.Argument()] = None,
+    problem: Annotated[int | None, typer.Argument()] = None,
     verbosity: Annotated[
         int,
         typer.Option(
