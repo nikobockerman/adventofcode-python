@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING, assert_never, final, overload
 
-from .directions import CardinalDirection, RotationDirection
+from .directions import CardinalDirection, CardinalDirectionsAll, RotationDirection
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
@@ -35,6 +35,10 @@ class Coord2d:
             return Coord2d(self.x - 1, self.y)
         assert_never(direction)
 
+    def adjoins(self) -> Iterable[tuple[CardinalDirection, Coord2d]]:
+        for direction in CardinalDirectionsAll:
+            yield direction, self.adjoin(direction)
+
     def dir_to(self, other: Coord2d) -> CardinalDirection:
         if other.x > self.x:
             return CardinalDirection.E
@@ -63,6 +67,9 @@ class Coord2d:
         if self.x == other.x:
             return abs(self.y - other.y)
         return math.isqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
+
+    def distance_to_cardinal(self, other: Coord2d) -> int:
+        return abs(self.x - other.x) + abs(self.y - other.y)
 
     def distance_to(self, other: Coord2d) -> float:
         return math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
@@ -131,19 +138,17 @@ class Map2d[Map2dDataType]:
     def last_y(self) -> int:
         return self._last_y
 
-    @final
-    def __get(self, x: int, y: int) -> Map2dDataType:
+    def _get(self, x: int, y: int) -> Map2dDataType:
         if x < 0 or x > self._last_x or y < 0 or y > self._last_y:
             raise IndexError((x, y))
         return self._sequence_data[y][x]
 
-    @final
-    def __get_or_default(
+    def _get_or_default(
         self, x: int, y: int, default: Map2dDataType | None = None
     ) -> Map2dDataType | None:
         if x < 0 or x > self._last_x or y < 0 or y > self._last_y:
             return default
-        return self.__get(x, y)
+        return self._get(x, y)
 
     @overload
     def get(self, coord: Coord2d, /) -> Map2dDataType: ...
@@ -178,10 +183,13 @@ class Map2d[Map2dDataType]:
             raise TypeError(args)
 
         if args:
-            return self.__get_or_default(x, y, args[0])
+            return self._get_or_default(x, y, args[0])
         if "default" in kwargs:
-            return self.__get_or_default(x, y, kwargs["default"])
-        return self.__get(x, y)
+            return self._get_or_default(x, y, kwargs["default"])
+        return self._get(x, y)
+
+    def get_by_xy(self, x: int, y: int) -> Map2dDataType:
+        return self._get(x, y)
 
     @final
     def __iter_data_by_lines(  # noqa: PLR0912, optimized for performance
