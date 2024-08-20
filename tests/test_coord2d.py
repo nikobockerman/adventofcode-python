@@ -40,9 +40,6 @@ def test_dir_to():
     assert Coord2d(1, 1).dir_to(Coord2d(2, 0)) in (Dir.E, Dir.N)
     assert Coord2d(1, 1).dir_to(Coord2d(0, 0)) in (Dir.W, Dir.N)
 
-    try:
-        Coord2d(1, 1).dir_to(Coord2d(1, 1))
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("Expected ValueError")  # noqa: TRY003
+    other = Coord2d(1, 1)
+    with pytest.raises(ValueError, match=str(other)):
+        Coord2d(1, 1).dir_to(other)

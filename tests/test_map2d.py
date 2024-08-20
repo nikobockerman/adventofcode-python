@@ -1,4 +1,4 @@
-from typing import Iterable, Sequence
+import pytest
 
 from adventofcode.tooling.directions import RotationDirection
 from adventofcode.tooling.map import (
@@ -10,36 +10,25 @@ from adventofcode.tooling.map import (
 
 
 def test_init_empty() -> None:
-    empty_iterables: Iterable[Iterable[Iterable[int]]] = ([], [[]], [[], []])
-    for empty_iterable in empty_iterables:
-        try:
-            Map2d(empty_iterable)
-        except Map2dEmptyDataError:
-            pass
-        else:
-            raise AssertionError("Expected Map2dEmptyDataError")  # noqa: TRY003
+    empty_sequences: tuple[list[list[int]], ...] = ([], [[]], [[], []])
+    for empty_sequence in empty_sequences:
+        it = iter(empty_sequence)
+        with pytest.raises(Map2dEmptyDataError):
+            Map2d(it)
 
-        empty_iterable_seq: Iterable[Sequence[int]] = [list(x) for x in empty_iterable]
-        try:
-            Map2d(empty_iterable_seq)
-        except Map2dEmptyDataError:
-            pass
-        else:
-            raise AssertionError("Expected Map2dEmptyDataError")  # noqa: TRY003
+        it_of_iterables = (iter(x) for x in empty_sequence)
+        with pytest.raises(Map2dEmptyDataError):
+            Map2d(it_of_iterables)
 
 
 def test_init_non_rectangular() -> None:
-    non_square_iterables: Iterable[Iterable[Iterable[int]]] = (
+    non_square_iterables = (
         [[1, 2], [3, 4, 5]],
         [[1, 2, 3], [4, 5]],
     )
     for non_square_iterable in non_square_iterables:
-        try:
+        with pytest.raises(Map2dRectangularDataError):
             Map2d(non_square_iterable)
-        except Map2dRectangularDataError:  # noqa: PERF203
-            pass
-        else:
-            raise AssertionError("Expected Map2dRectangularDataError")  # noqa: TRY003
 
 
 def test_transpose() -> None:

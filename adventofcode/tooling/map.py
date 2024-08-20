@@ -87,10 +87,11 @@ class Map2d[Map2dDataType]:
     def __init__(
         self,
         data: Iterable[Iterable[Map2dDataType]] | Iterable[Sequence[Map2dDataType]],
-    ):
-        if not data:
-            raise Map2dEmptyDataError()
+    ) -> None:
         self._sequence_data = tuple(tuple(row) for row in data)
+        if len(self._sequence_data) == 0:
+            raise Map2dEmptyDataError()
+
         self._height = len(self._sequence_data)
         assert self._height > 0
         self._width = len(self._sequence_data[0])
