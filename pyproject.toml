@@ -67,6 +67,7 @@ select = [
     "W",  # pycodestyle warnings
     "C4",  # flake8-comprehensions
     "EM",  # flake8-errmsg
+    "FA",  # flake8-future-annotations
     "PT",  # flake8-pytest-style
     "UP",  # alert you when better syntax is available in your python version
     "ANN",  # flake8-annotations
@@ -76,7 +77,9 @@ select = [
     "DTZ",  # flake8-datetimez
     "FLY",  # flynt
     "ICN",  # flake8-import-conventions
+    "INP",  # flake8-no-pep420
     "ISC",  # flake8-implicit-str-concat
+    "LOG",  # flake8-logging
     "PIE",  # flake8-pie
     "PTH",  # flake8-use-pathlib
     "PYI",  # flake8-pyi
@@ -84,6 +87,7 @@ select = [
     "RUF",  # the ruff developer's own rules
     "SIM",  # flake8-simplify
     "SLF",  # flake8-self
+    "T20",  # flake8-print
     "TCH",  # flake8-type-checking
     "TID",  # flake8-tidy-imports
     "TRY",  # tryceratops
@@ -97,6 +101,10 @@ ignore = [
     "ISC001",
     "S101"
 ]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = ["INP001"]
+"adventofcode/main.py" = ["T201"]
 
 
 [build-system]

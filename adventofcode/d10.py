@@ -368,7 +368,7 @@ def p2(input_str: str) -> int:
 
     if _logger.isEnabledFor(logging.DEBUG):
         for map_line in map_data.str_lines(get_symbol_for_pipe):
-            print(map_line)
+            _logger.debug(map_line)
 
     _logger.info("Calculating inside locations")
 
