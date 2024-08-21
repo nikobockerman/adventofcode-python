@@ -120,7 +120,7 @@ def p1(input_str: str) -> int:
                 elif rule.comparison == _Comparison.GT:
                     compare = _gt
                 else:
-                    raise AssertionError()
+                    raise AssertionError
 
                 if compare(part[rule.category], rule.value):
                     action = rule.action

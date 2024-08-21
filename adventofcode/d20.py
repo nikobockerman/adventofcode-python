@@ -87,7 +87,7 @@ class _Button(_Module):
     def process_pulse(self, pulse: _Pulse) -> Never:
         if __debug__:
             self._validate_incoming_pulse(pulse)
-        raise AssertionError()
+        raise AssertionError
 
 
 class _Broadcast(_Module):
@@ -105,7 +105,7 @@ class _Receiver(_Module):
     @override
     def add_receiving_module(self, output: _Module) -> Never:
         super().add_receiving_module(output)
-        raise AssertionError()
+        raise AssertionError
 
     @override
     def process_pulse(self, pulse: _Pulse) -> Iterator[_PulseNew]:

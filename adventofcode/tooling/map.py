@@ -93,7 +93,7 @@ class Map2d[Map2dDataType]:
     ) -> None:
         self._sequence_data = tuple(tuple(row) for row in data)
         if len(self._sequence_data) == 0:
-            raise Map2dEmptyDataError()
+            raise Map2dEmptyDataError
 
         self._height = len(self._sequence_data)
         assert self._height > 0
@@ -102,10 +102,10 @@ class Map2d[Map2dDataType]:
         self._last_y = self._height - 1
 
         if not all(len(row) == self._width for row in self._sequence_data):
-            raise Map2dRectangularDataError()
+            raise Map2dRectangularDataError
 
         if self._width == 0:
-            raise Map2dEmptyDataError()
+            raise Map2dEmptyDataError
 
     @property
     def height(self) -> int:

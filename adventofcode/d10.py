@@ -184,7 +184,7 @@ def p2(input_str: str) -> int:
                     return PathPipe(
                         pipe, {Dir.E: _Inside.Inside, Dir.W: _Inside.Outside}
                     )
-        raise AssertionError()
+        raise AssertionError
 
     first_path_pipe = create_first_path_pipe()
     _logger.debug("first_path_pipe=%s", first_path_pipe)
@@ -221,7 +221,7 @@ def p2(input_str: str) -> int:
                     NeighborCheckGroup([Dir.E]),
                 ]
             else:
-                raise AssertionError()
+                raise AssertionError
         elif pipe.symbol == "F":
             if path_dir is Dir.N:
                 neighbor_check_groups = [
@@ -234,7 +234,7 @@ def p2(input_str: str) -> int:
                     NeighborCheckGroup([Dir.S]),
                 ]
             else:
-                raise AssertionError()
+                raise AssertionError
         elif pipe.symbol == "7":
             if path_dir is Dir.N:
                 neighbor_check_groups = [
@@ -247,7 +247,7 @@ def p2(input_str: str) -> int:
                     NeighborCheckGroup([Dir.S]),
                 ]
             else:
-                raise AssertionError()
+                raise AssertionError
         elif pipe.symbol == "J":
             if path_dir is Dir.S:
                 neighbor_check_groups = [
@@ -260,9 +260,9 @@ def p2(input_str: str) -> int:
                     NeighborCheckGroup([Dir.N]),
                 ]
             else:
-                raise AssertionError()
+                raise AssertionError
         else:
-            raise AssertionError()
+            raise AssertionError
 
         assert len(neighbor_check_groups) == 2
 
@@ -351,7 +351,7 @@ def p2(input_str: str) -> int:
             if neighbor.inside in (_Inside.Inside, _Inside.Outside):
                 pipe.inside = neighbor.inside
                 return
-        raise AssertionError()
+        raise AssertionError
 
     for _, pipe_iter in map_data.iter_data():
         for _, pipe in pipe_iter:

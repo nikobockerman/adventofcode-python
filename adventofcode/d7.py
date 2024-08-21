@@ -41,7 +41,7 @@ class _Hand:
         for i in range(5):
             if self.card_values[i] != other.card_values[i]:
                 return self.card_values[i] < other.card_values[i]
-        raise AssertionError()
+        raise AssertionError
 
 
 def p1(input_str: str) -> int:

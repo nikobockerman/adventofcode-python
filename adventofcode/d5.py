@@ -231,4 +231,4 @@ def p2(input_str: str) -> int:
                 for seed_range in seed_ranges
             ):
                 return resolved_location_range.start
-    raise AssertionError()
+    raise AssertionError

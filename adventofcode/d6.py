@@ -45,7 +45,7 @@ def p2(input_str: str) -> int:
         for button_press_time in r:
             if _is_winning_scenario(button_press_time, max_time, distance_to_beat):
                 return button_press_time
-        raise AssertionError()
+        raise AssertionError
 
     first_button_press_time = first_possible_button_press_time(time, distance, True)
     last_button_press_time = first_possible_button_press_time(time, distance, False)
