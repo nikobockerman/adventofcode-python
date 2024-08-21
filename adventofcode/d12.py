@@ -28,7 +28,9 @@ class _ClassificationState:
 
 
 class _Classifier:
-    def __init__(self, data: _Data, prev_state: _ClassificationState | None = None):
+    def __init__(
+        self, data: _Data, prev_state: _ClassificationState | None = None
+    ) -> None:
         self._data = data
         self._completion_classification: bool | None = None
         self._completion_classification_done: bool = False

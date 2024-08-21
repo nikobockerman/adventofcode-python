@@ -17,9 +17,9 @@ broadcaster -> a
 """.strip()
 
 
-def test_p1_example1():
+def test_p1_example1() -> None:
     assert d20.p1(_example1_input) == 32000000
 
 
-def test_p1_example2():
+def test_p1_example2() -> None:
     assert d20.p1(_example2_input) == 11687500

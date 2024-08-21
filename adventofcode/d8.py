@@ -17,7 +17,7 @@ def _parse_input(lines: list[str]) -> tuple[str, list[tuple[str, tuple[str, str]
     return directions, turns
 
 
-def p1(input_str: str):
+def p1(input_str: str) -> int:
     directions, turns_list = _parse_input(input_str.splitlines())
 
     turns = dict(turns_list)
@@ -138,7 +138,7 @@ def _resolve_loop_length(
     return _get_verified_loop_length(path_before_loop, loop_path, map_data)
 
 
-def p2(input_str: str):
+def p2(input_str: str) -> int:
     directions, map_nodes_list = _parse_input(input_str.splitlines())
     logging.debug(f"{directions=}")
     logging.debug(f"{map_nodes_list=}")

@@ -64,7 +64,7 @@ def test_transpose() -> None:
     assert map_.transpose().transpose() == map_
 
 
-def test_rotate():
+def test_rotate() -> None:
     map_ = Map2d(
         [
             ["a", "b", "c"],
@@ -118,7 +118,7 @@ def test_rotate():
     assert map_.rotate(RotationDirection.Counterclockwise, 4) == map_
 
 
-def test_iter_data_full():
+def test_iter_data_full() -> None:
     map_ = Map2d(
         [
             ["a", "b", "c"],
@@ -203,7 +203,7 @@ def test_iter_data_full():
     ]
 
 
-def test_iter_data_partial():
+def test_iter_data_partial() -> None:
     map_ = Map2d(
         [
             ["a", "b", "c", "d"],
@@ -282,7 +282,7 @@ def test_iter_data_partial():
     ]
 
 
-def test_iter_data_completely_outside():
+def test_iter_data_completely_outside() -> None:
     map_ = Map2d(
         [
             ["a", "b"],
@@ -290,7 +290,7 @@ def test_iter_data_completely_outside():
         ]
     )
 
-    def verify_empty_iter_data(corner1: Coord2d, corner2: Coord2d):
+    def verify_empty_iter_data(corner1: Coord2d, corner2: Coord2d) -> None:
         assert list(map_.iter_data(corner1, corner2)) == []
         assert list(map_.iter_data(corner1, corner2, columns_first=True)) == []
         assert list(map_.iter_data(corner2, corner1)) == []
@@ -306,7 +306,7 @@ def test_iter_data_completely_outside():
     )
 
 
-def test_iter_partially_outside_left_top_corner():
+def test_iter_partially_outside_left_top_corner() -> None:
     map_ = Map2d(
         [
             ["a", "b", "c"],
@@ -350,7 +350,7 @@ def test_iter_partially_outside_left_top_corner():
     ]
 
 
-def test_iter_partially_outside_right_top_corner():
+def test_iter_partially_outside_right_top_corner() -> None:
     map_ = Map2d(
         [
             ["a", "b", "c"],

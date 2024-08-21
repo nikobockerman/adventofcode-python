@@ -1,15 +1,17 @@
+import pytest
+
 from adventofcode.tooling.directions import CardinalDirection as Dir
 from adventofcode.tooling.map import Coord2d
 
 
-def test_comparison():
+def test_comparison() -> None:
     assert Coord2d(3, 3) == Coord2d(3, 3)
     assert Coord2d(1, 2) == Coord2d(1, 2)
     assert Coord2d(1, 2) != Coord2d(2, 1)
     assert Coord2d(2, 2) != Coord2d(1, 1)
 
 
-def test_hash():
+def test_hash() -> None:
     assert hash(Coord2d(1, 1)) == hash(Coord2d(1, 1))
     assert hash(Coord2d(1, 2)) == hash(Coord2d(1, 2))
     assert hash(Coord2d(2, 1)) == hash(Coord2d(2, 1))
@@ -22,14 +24,14 @@ def test_hash():
     assert hash(Coord2d(2, 1)) != hash(Coord2d(2, 2))
 
 
-def test_adjoin():
+def test_adjoin() -> None:
     assert Coord2d(1, 1).adjoin(Dir.N) == Coord2d(1, 0)
     assert Coord2d(1, 1).adjoin(Dir.E) == Coord2d(2, 1)
     assert Coord2d(1, 1).adjoin(Dir.S) == Coord2d(1, 2)
     assert Coord2d(1, 1).adjoin(Dir.W) == Coord2d(0, 1)
 
 
-def test_dir_to():
+def test_dir_to() -> None:
     assert Coord2d(1, 1).dir_to(Coord2d(1, 0)) == Dir.N
     assert Coord2d(1, 1).dir_to(Coord2d(2, 1)) == Dir.E
     assert Coord2d(1, 1).dir_to(Coord2d(1, 2)) == Dir.S
