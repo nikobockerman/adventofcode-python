@@ -65,7 +65,9 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
 
         if pos.next_coord == destination:
             if result is None or new_heat_loss < result:
-                _logger.debug(f"Found new shortest path: {new_heat_loss=}")
+                _logger.debug(
+                    "Found new shortest path: new_heat_loss=%s", new_heat_loss
+                )
                 result = new_heat_loss
             elif new_heat_loss > result:
                 break

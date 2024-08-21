@@ -24,7 +24,7 @@ class _InputRow:
 def _parse_input(lines: Iterable[str]) -> list[_InputRow]:
     rows: list[_InputRow] = []
     for row_ind, line in enumerate(lines):
-        logging.debug(f"{row_ind}: {line=}")
+        logging.debug("%s: line=%s", row_ind, line)
         row = _InputRow()
 
         number: str | None = None
@@ -49,7 +49,7 @@ def _parse_input(lines: Iterable[str]) -> list[_InputRow]:
             row.numbers.append(_InputNumber(number, len(line) - 1 - len(number)))
             number = None
 
-        logging.debug(f"{row_ind}: {row=}")
+        logging.debug("%s: row=%s", row_ind, row)
         rows.append(row)
     return rows
 
@@ -89,10 +89,10 @@ def p1(input_str: str) -> int:
                 min(len(d), row_ind + 2),
             )
             if is_adjacent(number):
-                logging.debug(f"{input_number=}. Adjacent")
+                logging.debug("input_number=%s. Adjacent", input_number)
                 result += number.number
             else:
-                logging.debug(f"{input_number=}. NOT adjacent")
+                logging.debug("input_number=%s. NOT adjacent", input_number)
 
     return result
 

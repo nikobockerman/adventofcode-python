@@ -187,7 +187,7 @@ def p2(input_str: str) -> int:
         raise AssertionError()
 
     first_path_pipe = create_first_path_pipe()
-    _logger.debug(f"{first_path_pipe=}")
+    _logger.debug("first_path_pipe=%s", first_path_pipe)
 
     @dataclass
     class NeighborCheckGroup:

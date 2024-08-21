@@ -5,7 +5,7 @@ from collections.abc import Iterable
 def _parse_input(lines: Iterable[str]) -> Iterable[tuple[int, list[dict[str, int]]]]:
     for line in lines:
         g_id, rounds = line[5:].split(":")
-        logging.debug(f"{line=}")
+        logging.debug("line=%s", line)
 
         yield (
             int(g_id),

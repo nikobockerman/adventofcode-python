@@ -98,8 +98,8 @@ def _get_location(maps: _InputMaps, seed: int) -> int:
 
 def p1(input_str: str) -> int:
     seeds, maps = _parse_input(input_str.splitlines())
-    logging.debug(f"{seeds=}")
-    logging.debug(f"{maps=}")
+    logging.debug("seeds=%s", seeds)
+    logging.debug("maps=%s", maps)
 
     return min(_get_location(maps, seed) for seed in seeds)
 

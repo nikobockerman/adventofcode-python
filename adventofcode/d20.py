@@ -332,7 +332,7 @@ def p1(input_str: str) -> int:
             counts.update((pulse.value,))
             _extend_pulses(queue, button, pulse.to.process_pulse(pulse))
 
-    _logger.info(f"Counts: {counts}")
+    _logger.info("Counts: %s", counts)
 
     return math.prod(counts.values())
 
@@ -350,8 +350,8 @@ def p2(input_str: str) -> int:
 
     while True:
         _extend_pulses(queue, button, button.process_button_press())
-        if button.button_presses % 100_000 == 0:
-            _logger.info(f"Button presses: {button.button_presses:_}")
+        if button.button_presses % 100_000 == 0 and _logger.isEnabledFor(logging.INFO):
+            _logger.info(f"Button presses: {button.button_presses:_}")  # noqa: G004
 
         while queue:
             pulse = queue.popleft()

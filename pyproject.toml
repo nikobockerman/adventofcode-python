@@ -59,6 +59,7 @@ select = [
     "B",  # bugbear: security warnings
     "E",  # pycodestyle errors
     "F",  # pyflakes
+    "G",  # flake8-logging-format
     "I",  # isort
     "N",  # pep8-naming
     "S",  # bandit
