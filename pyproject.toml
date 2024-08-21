@@ -57,12 +57,18 @@ select = [
     "F",  # pyflakes
     "I",  # isort
     "N",  # pep8-naming
+    "S",  # bandit
     "Q",  # flake8-quotes
     "W",  # pycodestyle warnings
+    "C4",  # flake8-comprehensions
+    "EM",  # flake8-errmsg
     "PT",  # flake8-pytest-style
     "UP",  # alert you when better syntax is available in your python version
+    "ANN",  # flake8-annotations
     "ARG",  # flake8-unused-arguments
+    "COM",  # flake8-commas
     "ERA",  # flake8-eradicate
+    "DTZ",  # flake8-datetimez
     "FLY",  # flynt
     "ICN",  # flake8-import-conventions
     "ISC",  # flake8-implicit-str-concat
@@ -76,11 +82,15 @@ select = [
     "TCH",  # flake8-type-checking
     "TID",  # flake8-tidy-imports
     "TRY",  # tryceratops
+    "YTT",  # flake8-2020
     "PERF",  # perflint
     "SLOT",  # flake8-slots
 ]
 ignore = [
-    "ISC001"
+    "ANN101",
+    "COM812",
+    "ISC001",
+    "S101"
 ]
 
 
