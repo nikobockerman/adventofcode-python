@@ -126,81 +126,77 @@ def test_iter_data_full():
             ["g", "h", "i"],
         ]
     )
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
-        for y, data_iter in map_.iter_data()
-    ) == [
+    assert [(y, list(data_iter)) for y, data_iter in map_.iter_data()] == [
         (0, [(0, "a"), (1, "b"), (2, "c")]),
         (1, [(0, "d"), (1, "e"), (2, "f")]),
         (2, [(0, "g"), (1, "h"), (2, "i")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
-        for x, data_iter in map_.iter_data(columns_first=True)
-    ) == [
+    assert [
+        (x, list(data_iter)) for x, data_iter in map_.iter_data(columns_first=True)
+    ] == [
         (0, [(0, "a"), (1, "d"), (2, "g")]),
         (1, [(0, "b"), (1, "e"), (2, "h")]),
         (2, [(0, "c"), (1, "f"), (2, "i")]),
     ]
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(
             Coord2d(map_.last_x, map_.last_y), Coord2d(0, 0)
         )
-    ) == [
+    ] == [
         (2, [(2, "i"), (1, "h"), (0, "g")]),
         (1, [(2, "f"), (1, "e"), (0, "d")]),
         (0, [(2, "c"), (1, "b"), (0, "a")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(map_.last_x, map_.last_y), Coord2d(0, 0), columns_first=True
         )
-    ) == [
+    ] == [
         (2, [(2, "i"), (1, "f"), (0, "c")]),
         (1, [(2, "h"), (1, "e"), (0, "b")]),
         (0, [(2, "g"), (1, "d"), (0, "a")]),
     ]
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(
             Coord2d(0, map_.last_y), Coord2d(map_.last_x, 0)
         )
-    ) == [
+    ] == [
         (2, [(0, "g"), (1, "h"), (2, "i")]),
         (1, [(0, "d"), (1, "e"), (2, "f")]),
         (0, [(0, "a"), (1, "b"), (2, "c")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(0, map_.last_y), Coord2d(map_.last_x, 0), columns_first=True
         )
-    ) == [
+    ] == [
         (0, [(2, "g"), (1, "d"), (0, "a")]),
         (1, [(2, "h"), (1, "e"), (0, "b")]),
         (2, [(2, "i"), (1, "f"), (0, "c")]),
     ]
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(
             Coord2d(map_.last_x, 0), Coord2d(0, map_.last_y)
         )
-    ) == [
+    ] == [
         (0, [(2, "c"), (1, "b"), (0, "a")]),
         (1, [(2, "f"), (1, "e"), (0, "d")]),
         (2, [(2, "i"), (1, "h"), (0, "g")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(map_.last_x, 0), Coord2d(0, map_.last_y), columns_first=True
         )
-    ) == [
+    ] == [
         (2, [(0, "c"), (1, "f"), (2, "i")]),
         (1, [(0, "b"), (1, "e"), (2, "h")]),
         (0, [(0, "a"), (1, "d"), (2, "g")]),
@@ -217,70 +213,70 @@ def test_iter_data_partial():
         ]
     )
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(Coord2d(1, 1), Coord2d(2, 2))
-    ) == [
+    ] == [
         (1, [(1, "f"), (2, "g")]),
         (2, [(1, "j"), (2, "k")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(1, 1), Coord2d(2, 2), columns_first=True
         )
-    ) == [
+    ] == [
         (1, [(1, "f"), (2, "j")]),
         (2, [(1, "g"), (2, "k")]),
     ]
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(Coord2d(2, 2), Coord2d(1, 1))
-    ) == [
+    ] == [
         (2, [(2, "k"), (1, "j")]),
         (1, [(2, "g"), (1, "f")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(2, 2), Coord2d(1, 1), columns_first=True
         )
-    ) == [
+    ] == [
         (2, [(2, "k"), (1, "g")]),
         (1, [(2, "j"), (1, "f")]),
     ]
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(Coord2d(1, 2), Coord2d(2, 1))
-    ) == [
+    ] == [
         (2, [(1, "j"), (2, "k")]),
         (1, [(1, "f"), (2, "g")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(1, 2), Coord2d(2, 1), columns_first=True
         )
-    ) == [
+    ] == [
         (1, [(2, "j"), (1, "f")]),
         (2, [(2, "k"), (1, "g")]),
     ]
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(Coord2d(2, 1), Coord2d(1, 2))
-    ) == [
+    ] == [
         (1, [(2, "g"), (1, "f")]),
         (2, [(2, "k"), (1, "j")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(2, 1), Coord2d(1, 2), columns_first=True
         )
-    ) == [
+    ] == [
         (2, [(1, "g"), (2, "k")]),
         (1, [(1, "f"), (2, "j")]),
     ]
@@ -319,36 +315,36 @@ def test_iter_partially_outside_left_top_corner():
         ]
     )
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(Coord2d(-1, -1), Coord2d(1, 1))
-    ) == [
+    ] == [
         (0, [(0, "a"), (1, "b")]),
         (1, [(0, "d"), (1, "e")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(-1, -1), Coord2d(1, 1), columns_first=True
         )
-    ) == [
+    ] == [
         (0, [(0, "a"), (1, "d")]),
         (1, [(0, "b"), (1, "e")]),
     ]
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(Coord2d(1, 1), Coord2d(-1, -1))
-    ) == [
+    ] == [
         (1, [(1, "e"), (0, "d")]),
         (0, [(1, "b"), (0, "a")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(1, 1), Coord2d(-1, -1), columns_first=True
         )
-    ) == [
+    ] == [
         (1, [(1, "e"), (0, "b")]),
         (0, [(1, "d"), (0, "a")]),
     ]
@@ -363,36 +359,36 @@ def test_iter_partially_outside_right_top_corner():
         ]
     )
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(Coord2d(1, -1), Coord2d(map_.last_x + 1, 1))
-    ) == [
+    ] == [
         (0, [(1, "b"), (2, "c")]),
         (1, [(1, "e"), (2, "f")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(1, -1), Coord2d(map_.last_x + 1, 1), columns_first=True
         )
-    ) == [
+    ] == [
         (1, [(0, "b"), (1, "e")]),
         (2, [(0, "c"), (1, "f")]),
     ]
 
-    assert list(
-        (y, list((x, data) for x, data in data_iter))
+    assert [
+        (y, list(data_iter))
         for y, data_iter in map_.iter_data(Coord2d(1, 1), Coord2d(-1, -1))
-    ) == [
+    ] == [
         (1, [(1, "e"), (0, "d")]),
         (0, [(1, "b"), (0, "a")]),
     ]
-    assert list(
-        (x, list((y, data) for y, data in data_iter))
+    assert [
+        (x, list(data_iter))
         for x, data_iter in map_.iter_data(
             Coord2d(1, 1), Coord2d(-1, -1), columns_first=True
         )
-    ) == [
+    ] == [
         (1, [(1, "e"), (0, "b")]),
         (0, [(1, "d"), (0, "a")]),
     ]

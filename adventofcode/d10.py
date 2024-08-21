@@ -156,7 +156,7 @@ def p2(input_str: str) -> int:
     for p in path_by_pipes:
         p.inside = _Inside.InPath
 
-    coords_in_path = set(pipe.coord for pipe in path_by_pipes)
+    coords_in_path = {pipe.coord for pipe in path_by_pipes}
 
     @dataclass
     class PathPipe:

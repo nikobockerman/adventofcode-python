@@ -50,7 +50,7 @@ def p1(input_str: str) -> int:
     def classify_hand_type(cards: str) -> _HandType:
         assert len(cards) == 5
         value_counts = Counter[str](cards)
-        counts = list(map(lambda x: x[1], value_counts.most_common(2)))
+        counts = [x[1] for x in value_counts.most_common(2)]
 
         if counts[0] == 5:
             return _HandType.FiveOfAKind
@@ -102,7 +102,7 @@ def p2(input_str: str) -> int:
         if jokers == 5:
             return _HandType.FiveOfAKind
 
-        counts = list(map(lambda x: x[1], value_counts.most_common(2)))
+        counts = [x[1] for x in value_counts.most_common(2)]
         if counts[0] + jokers == 5:
             return _HandType.FiveOfAKind
         if counts[0] + jokers == 4:

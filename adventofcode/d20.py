@@ -200,7 +200,7 @@ type _AnyModule = (
 def _parse_module(line: str) -> tuple[_AnyModule, list[_ModuleName]]:
     name, outputs_str = map(str.strip, line.split("->"))
     name = _ModuleName(name)
-    outputs = list(map(lambda x: _ModuleName(x.strip()), outputs_str.split(",")))
+    outputs = [_ModuleName(x.strip()) for x in outputs_str.split(",")]
     if name == "broadcaster":
         return _Broadcast(name), outputs
 
@@ -276,9 +276,7 @@ def _parse_modules(
         t: list(g)
         for t, g in itertools.groupby(
             sorted(
-                list(
-                    map(lambda x: x[0], modules_with_output_modules),
-                ),
+                (x[0] for x in modules_with_output_modules),
                 key=lambda x: type(x).__name__,
             ),
             key=lambda x: type(x),
@@ -314,7 +312,7 @@ def _parse_modules(
 def _extend_pulses(
     queue: deque[_Pulse], button: _Button, pulses: Iterable[_PulseNew]
 ) -> None:
-    queue.extend(map(lambda new: _Pulse.create(new, button.button_presses), pulses))
+    queue.extend(_Pulse.create(new, button.button_presses) for new in pulses)
 
 
 def p1(input_str: str) -> int:

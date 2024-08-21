@@ -162,9 +162,9 @@ def _merge_value_range(
     left: list[range] | None, right: list[range] | None
 ) -> list[range] | None:
     if left is None:
-        return None if right is None else [r for r in right]
+        return None if right is None else list(right)
     if right is None:
-        return [r for r in left]
+        return list(left)
 
     right_iter = iter(right)
     try:

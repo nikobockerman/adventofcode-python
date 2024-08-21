@@ -36,7 +36,7 @@ def _find_consecutive_rows_or_columns(
         Coord2d(start_pos, 0) if find_column_not_row else Coord2d(0, start_pos)
     )
     for (i1, data1), (_, data2) in itertools.pairwise(
-        (i, list(sym for _, sym in sym_iter))
+        (i, [sym for _, sym in sym_iter])
         for i, sym_iter in map_.iter_data(
             first_corner, columns_first=find_column_not_row
         )

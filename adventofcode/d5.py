@@ -101,7 +101,7 @@ def p1(input_str: str) -> int:
     logging.debug(f"{seeds=}")
     logging.debug(f"{maps=}")
 
-    return min(map(lambda seed: _get_location(maps, seed), seeds))
+    return min(_get_location(maps, seed) for seed in seeds)
 
 
 def _resolve_overlap(

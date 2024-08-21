@@ -20,7 +20,7 @@ def _parse_input(lines: list[str]) -> tuple[str, list[tuple[str, tuple[str, str]
 def p1(input_str: str):
     directions, turns_list = _parse_input(input_str.splitlines())
 
-    turns = {location: (left, right) for location, (left, right) in turns_list}
+    turns = dict(turns_list)
 
     turns_to_take = itertools.cycle(directions)
     turn_count = 0

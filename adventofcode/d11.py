@@ -6,7 +6,7 @@ from adventofcode.tooling.map import Coord2d, Map2d
 
 class _InputMap(Map2d[str]):
     def __init__(self, data: Iterable[str]):
-        super().__init__([line for line in data])
+        super().__init__(list(data))
 
 
 def _calculate_distance(
