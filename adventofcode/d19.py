@@ -2,10 +2,11 @@ import itertools
 import logging
 import math
 import re
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import Enum
 from queue import Queue
-from typing import Iterable, Mapping, cast
+from typing import cast
 
 _logger = logging.getLogger(__name__)
 

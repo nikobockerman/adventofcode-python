@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import math
-from typing import Callable, Iterable, Sequence, assert_never, overload
+from typing import TYPE_CHECKING, assert_never, overload
 
 from .directions import CardinalDirection, RotationDirection
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
 
 
 class Coord2d:
@@ -301,7 +304,7 @@ class Map2d[Map2dDataType]:
         return "\n".join(self.str_lines())
 
     def transpose(self) -> Map2d[Map2dDataType]:
-        return Map2d(list(zip(*self._sequence_data)))
+        return Map2d(list(zip(*self._sequence_data, strict=True)))
 
     def __rotate_once_clockwise(self) -> Map2d[Map2dDataType]:
         return Map2d(

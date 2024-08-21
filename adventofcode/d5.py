@@ -1,6 +1,6 @@
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Iterable
 
 from adventofcode.tooling.ranges import are_ranges_overlapping, partition_range
 
@@ -189,7 +189,8 @@ def p2(input_str: str) -> int:
     seed_starts = seed_data[0::2]
     seed_lengths = seed_data[1::2]
     seed_ranges = [
-        range(start, start + length) for start, length in zip(seed_starts, seed_lengths)
+        range(start, start + length)
+        for start, length in zip(seed_starts, seed_lengths, strict=True)
     ]
 
     maps.humidity_to_location_map.sort(key=lambda m: m.destination_start)

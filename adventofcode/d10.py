@@ -1,8 +1,8 @@
 import enum
 import itertools
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Iterable
 
 from adventofcode.tooling.directions import CardinalDirection as Dir
 from adventofcode.tooling.directions import CardinalDirectionsAll
@@ -108,7 +108,7 @@ def p1(input_str: str) -> int:
     while neighbors_cur[0] != neighbors_cur[1]:
         neighbors_new = [
             next(n for n in _get_adjoin_pipes_on_path(cur, map_data) if n != prev)
-            for prev, cur in zip(neighbors_prev, neighbors_cur)
+            for prev, cur in zip(neighbors_prev, neighbors_cur, strict=True)
         ]
         neighbors_prev = neighbors_cur
         neighbors_cur = neighbors_new

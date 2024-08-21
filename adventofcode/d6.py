@@ -1,11 +1,11 @@
+from collections.abc import Iterable
 from functools import reduce
-from typing import Iterable
 
 
 def _parse_input(lines: list[str]) -> list[tuple[int, int]]:
     times = map(int, lines[0][5:].strip().split())
     distances = map(int, lines[1][9:].strip().split())
-    return list(zip(times, distances))
+    return list(zip(times, distances, strict=True))
 
 
 def _is_winning_scenario(

@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 _STR_DIGITS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 

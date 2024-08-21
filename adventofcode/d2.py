@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def _parse_input(lines: Iterable[str]) -> Iterable[tuple[int, list[dict[str, int]]]]:

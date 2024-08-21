@@ -1,7 +1,7 @@
 import itertools
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Iterable
 
 from adventofcode.tooling.directions import CardinalDirection as Dir
 from adventofcode.tooling.map import Coord2d

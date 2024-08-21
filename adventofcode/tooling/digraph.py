@@ -3,7 +3,10 @@ from __future__ import annotations
 import typing
 from dataclasses import dataclass
 from functools import cache
-from typing import Iterable, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 @runtime_checkable

@@ -1,9 +1,9 @@
 import enum
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import total_ordering
 from types import NotImplementedType
-from typing import Iterable
 
 
 def _parse_input(lines: Iterable[str]) -> Iterable[tuple[str, int]]:

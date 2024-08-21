@@ -1,5 +1,5 @@
 import contextlib
-from typing import Iterable
+from collections.abc import Iterable
 
 from adventofcode.tooling.map import Coord2d, Map2d
 

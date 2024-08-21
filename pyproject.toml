@@ -5,6 +5,10 @@ description = ""
 authors = ["Niko Böckerman <git.585wj@slmail.me>"]
 readme = "README.md"
 
+[project]
+name = "adventofcode"
+requires-python = ">=3.12"
+
 [tool.poe.tasks]
 mypy = "mypy ."
 pyright = "pyright"

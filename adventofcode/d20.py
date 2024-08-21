@@ -6,7 +6,10 @@ import math
 from abc import ABCMeta, abstractmethod
 from collections import Counter, deque
 from dataclasses import dataclass
-from typing import Iterable, Iterator, Never, NewType, override
+from typing import TYPE_CHECKING, Never, NewType, override
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 _logger = logging.getLogger(__name__)
 

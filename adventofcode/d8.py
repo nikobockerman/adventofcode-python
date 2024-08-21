@@ -1,8 +1,8 @@
 import itertools
 import logging
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 
 def _parse_input(lines: list[str]) -> tuple[str, list[tuple[str, tuple[str, str]]]]:

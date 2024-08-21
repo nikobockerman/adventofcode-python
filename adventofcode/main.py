@@ -3,12 +3,12 @@ import logging
 import pathlib
 import sys
 import time
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable
+from typing import Annotated, Any
 
 import joblib
 import typer
-from typing_extensions import Annotated
 
 from adventofcode.answers import ANSWERS
 
