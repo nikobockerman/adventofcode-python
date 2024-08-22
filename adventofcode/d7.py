@@ -44,6 +44,15 @@ class _Hand:
         raise AssertionError
 
 
+_HandTypeByCount: dict[int, _HandType | dict[int, _HandType]] = {
+    5: _HandType.FiveOfAKind,
+    4: _HandType.FourOfAKind,
+    3: {2: _HandType.FullHouse, 1: _HandType.ThreeOfAKind},
+    2: {2: _HandType.TwoPair, 1: _HandType.OnePair},
+    1: _HandType.HighCard,
+}
+
+
 def p1(input_str: str) -> int:
     d = _parse_input(input_str.splitlines())
 
@@ -51,20 +60,10 @@ def p1(input_str: str) -> int:
         assert len(cards) == 5
         value_counts = Counter[str](cards)
         counts = [x[1] for x in value_counts.most_common(2)]
-
-        if counts[0] == 5:
-            return _HandType.FiveOfAKind
-        if counts[0] == 4:
-            return _HandType.FourOfAKind
-        if counts[0] == 3:
-            if counts[1] == 2:
-                return _HandType.FullHouse
-            return _HandType.ThreeOfAKind
-        if counts[0] == 2:
-            if counts[1] == 2:
-                return _HandType.TwoPair
-            return _HandType.OnePair
-        return _HandType.HighCard
+        count1_type = _HandTypeByCount[counts[0]]
+        if isinstance(count1_type, _HandType):
+            return count1_type
+        return count1_type[counts[1]]
 
     def card_value(value: str) -> int:
         assert len(value) == 1
@@ -103,19 +102,10 @@ def p2(input_str: str) -> int:
             return _HandType.FiveOfAKind
 
         counts = [x[1] for x in value_counts.most_common(2)]
-        if counts[0] + jokers == 5:
-            return _HandType.FiveOfAKind
-        if counts[0] + jokers == 4:
-            return _HandType.FourOfAKind
-        if counts[0] + jokers == 3:
-            if counts[1] == 2:
-                return _HandType.FullHouse
-            return _HandType.ThreeOfAKind
-        if counts[0] + jokers == 2:
-            if counts[1] == 2:
-                return _HandType.TwoPair
-            return _HandType.OnePair
-        return _HandType.HighCard
+        count1_type = _HandTypeByCount[counts[0] + jokers]
+        if isinstance(count1_type, _HandType):
+            return count1_type
+        return count1_type[counts[1]]
 
     def card_value(value: str) -> int:
         assert len(value) == 1

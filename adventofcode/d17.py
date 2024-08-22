@@ -33,11 +33,8 @@ class _PriorityQueue:
         return heapq.heappop(self._queue)
 
 
-def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -> int:
-    map_ = Map2d((int(c) for c in line) for line in input_str.splitlines())
+def _create_prio_queue(start_pos: Coord2d, destination: Coord2d) -> _PriorityQueue:
     queue = _PriorityQueue()
-    start_pos = Coord2d(map_.first_x, map_.first_y)
-    destination = Coord2d(map_.last_x, map_.last_y)
     for start_dir in (Dir.S, Dir.E):
         new_next_coord = start_pos.adjoin(start_dir)
         pos = _PathPosition(
@@ -50,10 +47,112 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
         )
         _logger.debug("Adding %s to queue", pos)
         queue.put(pos)
+    return queue
 
+
+@dataclass
+class _ResolutionData:
+    min_straight_moves: int
+    max_straight_moves: int
+    map_: Map2d[int]
     visited_min_cache: dict[
         tuple[Coord2d, Dir], tuple[list[tuple[int, int]], list[tuple[int, int]]]
-    ] = {}
+    ] = field(default_factory=dict)
+
+
+def _get_next_position_in_direction(
+    pos: _PathPosition,
+    new_dir: Dir,
+    new_heat_loss: int,
+    destination: Coord2d,
+    data: _ResolutionData,
+) -> _PathPosition | None:
+    if new_dir != pos.direction and pos.moves_straight < data.min_straight_moves:
+        return None
+    if new_dir == pos.direction:
+        if pos.moves_straight >= data.max_straight_moves:
+            return None
+        new_moves_straight = pos.moves_straight + 1
+    else:
+        new_moves_straight = 1
+
+    _logger.debug("Processing move %s -> %s", pos.next_coord, new_dir)
+
+    cached_pos = data.visited_min_cache.get((pos.next_coord, new_dir))
+    if cached_pos is None:
+        if new_moves_straight >= data.min_straight_moves:
+            data.visited_min_cache[(pos.next_coord, new_dir)] = (
+                [(new_moves_straight, new_heat_loss)],
+                [],
+            )
+        else:
+            data.visited_min_cache[(pos.next_coord, new_dir)] = (
+                [],
+                [(new_moves_straight, new_heat_loss)],
+            )
+    else:
+        if new_moves_straight >= data.min_straight_moves:
+            cache_list = cached_pos[0]
+            cached_min = next(
+                (
+                    heat_loss
+                    for straight_so_far, heat_loss in cache_list
+                    if new_moves_straight >= straight_so_far
+                ),
+                None,
+            )
+        else:
+            cache_list = cached_pos[1]
+            cached_min = next(
+                (
+                    heat_loss
+                    for straight_so_far, heat_loss in cache_list
+                    if new_moves_straight == straight_so_far
+                ),
+                None,
+            )
+        if cached_min is not None and cached_min <= new_heat_loss:
+            _logger.debug(
+                "Already seen with better or equal heat loss: %d",
+                cached_min,
+            )
+            return None
+        cache_list.append((new_moves_straight, new_heat_loss))
+        cache_list.sort(key=lambda x: x[1])
+        _logger.debug(
+            "Cached before but with worse heat loss. New entries: %s",
+            cached_pos,
+        )
+
+    new_next_coord = pos.next_coord.adjoin(new_dir)
+
+    if (
+        new_next_coord.x < data.map_.first_x
+        or new_next_coord.x > data.map_.last_x
+        or new_next_coord.y < data.map_.first_y
+        or new_next_coord.y > data.map_.last_y
+    ):
+        _logger.debug("Outside of map")
+        return None
+
+    return _PathPosition(
+        pos.next_coord,
+        new_dir,
+        new_next_coord,
+        new_moves_straight,
+        new_heat_loss,
+        new_heat_loss + _estimate_remaining_heat_loss(new_next_coord, destination),
+    )
+
+
+def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -> int:
+    map_ = Map2d((int(c) for c in line) for line in input_str.splitlines())
+    start_pos = Coord2d(map_.first_x, map_.first_y)
+    destination = Coord2d(map_.last_x, map_.last_y)
+
+    queue = _create_prio_queue(start_pos, destination)
+
+    data = _ResolutionData(min_straight_moves, max_straight_moves, map_)
 
     result: int | None = None
     while True:
@@ -78,83 +177,12 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
             pos.direction.rotate_counterclockwise(),
             pos.direction.rotate_clockwise(),
         ):
-            if new_dir != pos.direction and pos.moves_straight < min_straight_moves:
-                continue
-            if new_dir == pos.direction:
-                if pos.moves_straight >= max_straight_moves:
-                    continue
-                new_moves_straight = pos.moves_straight + 1
-            else:
-                new_moves_straight = 1
-
-            _logger.debug("Processing move %s -> %s", pos.next_coord, new_dir)
-
-            cached_pos = visited_min_cache.get((pos.next_coord, new_dir))
-            if cached_pos is None:
-                if new_moves_straight >= min_straight_moves:
-                    visited_min_cache[(pos.next_coord, new_dir)] = (
-                        [(new_moves_straight, new_heat_loss)],
-                        [],
-                    )
-                else:
-                    visited_min_cache[(pos.next_coord, new_dir)] = (
-                        [],
-                        [(new_moves_straight, new_heat_loss)],
-                    )
-            else:
-                if new_moves_straight >= min_straight_moves:
-                    cache_list = cached_pos[0]
-                    cached_min = next(
-                        (
-                            heat_loss
-                            for straight_so_far, heat_loss in cache_list
-                            if new_moves_straight >= straight_so_far
-                        ),
-                        None,
-                    )
-                else:
-                    cache_list = cached_pos[1]
-                    cached_min = next(
-                        (
-                            heat_loss
-                            for straight_so_far, heat_loss in cache_list
-                            if new_moves_straight == straight_so_far
-                        ),
-                        None,
-                    )
-                if cached_min is not None and cached_min <= new_heat_loss:
-                    _logger.debug(
-                        "Already seen with better or equal heat loss: %d",
-                        cached_min,
-                    )
-                    continue
-                cache_list.append((new_moves_straight, new_heat_loss))
-                cache_list.sort(key=lambda x: x[1])
-                _logger.debug(
-                    "Cached before but with worse heat loss. New entries: %s",
-                    cached_pos,
-                )
-
-            new_next_coord = pos.next_coord.adjoin(new_dir)
-
-            if (
-                new_next_coord.x < map_.first_x
-                or new_next_coord.x > map_.last_x
-                or new_next_coord.y < map_.first_y
-                or new_next_coord.y > map_.last_y
-            ):
-                _logger.debug("Outside of map")
-                continue
-
-            new_pos = _PathPosition(
-                pos.next_coord,
-                new_dir,
-                new_next_coord,
-                new_moves_straight,
-                new_heat_loss,
-                new_heat_loss
-                + _estimate_remaining_heat_loss(new_next_coord, destination),
+            new_pos = _get_next_position_in_direction(
+                pos, new_dir, new_heat_loss, destination, data
             )
+            if new_pos is None:
+                continue
+
             _logger.debug("Adding %s to queue", new_pos)
             queue.put(new_pos)
 

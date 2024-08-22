@@ -68,6 +68,7 @@ select = [
     "C4",  # flake8-comprehensions
     "EM",  # flake8-errmsg
     "FA",  # flake8-future-annotations
+    "PL",  # pylint
     "PT",  # flake8-pytest-style
     "UP",  # alert you when better syntax is available in your python version
     "ANN",  # flake8-annotations
@@ -100,7 +101,8 @@ ignore = [
     "ANN101",
     "COM812",
     "ISC001",
-    "S101"
+    "PLR2004",
+    "S101",
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]

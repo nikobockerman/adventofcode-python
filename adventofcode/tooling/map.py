@@ -181,8 +181,13 @@ class Map2d[Map2dDataType]:
             return self.__get_or_default(x, y, kwargs["default"])
         return self.__get(x, y)
 
-    def __iter_data_by_lines(
-        self, first_x: int, first_y: int, last_x: int, last_y: int
+    def __iter_data_by_lines(  # noqa: PLR0912, optimized for performance
+        # so can't reduce branching here which is done for sanitizing input values
+        self,
+        first_x: int,
+        first_y: int,
+        last_x: int,
+        last_y: int,
     ) -> Iterable[tuple[int, Iterable[tuple[int, Map2dDataType]]]]:
         step_x = 1 if first_x <= last_x else -1
         step_y = 1 if first_y <= last_y else -1
@@ -198,13 +203,13 @@ class Map2d[Map2dDataType]:
             first_y = 0
         elif first_y > self._last_y:
             first_y = self._last_y
-        if last_y < 0:
-            last_y = 0
-        elif last_y > self._last_y:
-            last_y = self._last_y
-        if last_y == 0:
+        if last_y <= 0:
             slice_rows = self._sequence_data[first_y::step_y]
         else:
+            if last_y < 0:
+                last_y = 0
+            elif last_y > self._last_y:
+                last_y = self._last_y
             slice_rows = self._sequence_data[first_y : last_y + step_y : step_y]
 
         for row_ind, row in enumerate(slice_rows):
