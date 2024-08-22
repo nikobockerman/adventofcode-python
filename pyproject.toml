@@ -70,6 +70,7 @@ select = [
     "FA",  # flake8-future-annotations
     "PL",  # pylint
     "PT",  # flake8-pytest-style
+    "TD",  # flake8-todo
     "UP",  # alert you when better syntax is available in your python version
     "ANN",  # flake8-annotations
     "ARG",  # flake8-unused-arguments
@@ -81,6 +82,7 @@ select = [
     "INP",  # flake8-no-pep420
     "ISC",  # flake8-implicit-str-concat
     "LOG",  # flake8-logging
+    "PGH",  # pygrep-hooks
     "PIE",  # flake8-pie
     "PTH",  # flake8-use-pathlib
     "PYI",  # flake8-pyi
@@ -103,6 +105,8 @@ ignore = [
     "ISC001",
     "PLR2004",
     "S101",
+    "TD002",
+    "TD003"
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
