@@ -2,13 +2,10 @@
 
 set -ex
 
-WORKSPACE_DIR=$(pwd)
+# Install python tools to be available outside venv
+uv tool install poethepoet
 
-# Change some Poetry settings to make it more friendly in a container
-poetry config cache-dir "${WORKSPACE_DIR}"/.poetry_cache
-poetry config virtualenvs.in-project true
-
-# Now install all dependencies, including dev dependencies
-poetry install --with=dev --sync
+# Synchronize venv and dependencies
+uv sync
 
 echo "Done!"
