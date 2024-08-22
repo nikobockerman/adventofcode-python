@@ -2,10 +2,11 @@ import itertools
 import logging
 import math
 import re
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import Enum
 from queue import Queue
-from typing import Iterable, Mapping, cast
+from typing import cast
 
 _logger = logging.getLogger(__name__)
 
@@ -119,7 +120,7 @@ def p1(input_str: str) -> int:
                 elif rule.comparison == _Comparison.GT:
                     compare = _gt
                 else:
-                    raise AssertionError()
+                    raise AssertionError
 
                 if compare(part[rule.category], rule.value):
                     action = rule.action
@@ -162,9 +163,9 @@ def _merge_value_range(
     left: list[range] | None, right: list[range] | None
 ) -> list[range] | None:
     if left is None:
-        return None if right is None else [r for r in right]
+        return None if right is None else list(right)
     if right is None:
-        return [r for r in left]
+        return list(left)
 
     right_iter = iter(right)
     try:

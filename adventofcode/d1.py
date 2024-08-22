@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 _STR_DIGITS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 
@@ -35,9 +35,9 @@ def _int_chars_to_int(s1: str, s2: str) -> int:
 
 def _p1_ints(lines: Iterable[str], use_texts: bool) -> Iterable[int]:
     for line in lines:
-        logging.debug(f"{line=}")
+        logging.debug("line=%s", line)
         value = _int_chars_to_int(*_find_first_and_last_int(line, use_texts))
-        logging.debug(f"{value=}")
+        logging.debug("value=%s", value)
         yield value
 
 

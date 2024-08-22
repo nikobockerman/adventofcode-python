@@ -16,7 +16,7 @@ def p1(input_str: str) -> int:
     hash_sum = 0
     for step_str in input_str.split(","):
         h = _calculate_hash(step_str)
-        _logger.debug(f"{step_str=} -> {h=}")
+        _logger.debug("step_str=%s -> h=%s", step_str, h)
         hash_sum += h
 
     return hash_sum
@@ -37,8 +37,15 @@ def p2(input_str: str) -> int:
             assert 1 <= focal_length <= 9
 
         box = _calculate_hash(label)
-        _logger.debug(f"{step_str=} -> {label=} {operation=} {focal_length=} {box=}")
-        _logger.debug(f"Box contents before: {boxes[box]}")
+        _logger.debug(
+            "step_str=%s -> label=%s operation=%s focal_length=%s box=%s",
+            step_str,
+            label,
+            operation,
+            focal_length,
+            box,
+        )
+        _logger.debug("Box contents before: %s", boxes[box])
 
         if operation == "-":
             ind = next(
@@ -46,7 +53,7 @@ def p2(input_str: str) -> int:
                 -1,
             )
             if ind == -1:
-                _logger.debug(f"Label {label} not found in box {box}")
+                _logger.debug("Label %s not found in box %s", label, box)
             else:
                 del boxes[box][ind]
         else:
@@ -61,7 +68,7 @@ def p2(input_str: str) -> int:
             else:
                 boxes[box].append((label, focal_length))
 
-        _logger.debug(f"Box contents after : {boxes[box]}")
+        _logger.debug("Box contents after : %s", boxes[box])
 
     total_focusing_strength = 0
     for box, box_data in enumerate(boxes):
@@ -69,7 +76,13 @@ def p2(input_str: str) -> int:
             focusing_strength = (box + 1) * (ind + 1) * fl
             total_focusing_strength += focusing_strength
             _logger.debug(
-                f"{box=} {ind=} {label=} {fl=} {focusing_strength=} "
-                f"-> {total_focusing_strength=}"
+                "box=%s ind=%s label=%s fl=%s focusing_strength=%s "
+                "-> total_focusing_strength=%s",
+                box,
+                ind,
+                label,
+                fl,
+                focusing_strength,
+                total_focusing_strength,
             )
     return total_focusing_strength

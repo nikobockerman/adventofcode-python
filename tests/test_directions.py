@@ -1,19 +1,19 @@
 from adventofcode.tooling.directions import CardinalDirection, RotationDirection
 
 
-def test_cardinal_directions_str():
+def test_cardinal_directions_str() -> None:
     assert str(CardinalDirection.N) == "n"
     assert str(CardinalDirection.E) == "e"
     assert str(CardinalDirection.S) == "s"
     assert str(CardinalDirection.W) == "w"
 
 
-def test_rotation_directions_str():
+def test_rotation_directions_str() -> None:
     assert str(RotationDirection.Clockwise) == "clockwise"
     assert str(RotationDirection.Counterclockwise) == "counterclockwise"
 
 
-def test_cardinal_directions_rotate():
+def test_cardinal_directions_rotate() -> None:
     assert (
         CardinalDirection.N.rotate(RotationDirection.Clockwise) == CardinalDirection.E
     )
@@ -44,7 +44,7 @@ def test_cardinal_directions_rotate():
     )
 
 
-def test_cardinal_directions_opposite():
+def test_cardinal_directions_opposite() -> None:
     assert CardinalDirection.N.opposite() == CardinalDirection.S
     assert CardinalDirection.E.opposite() == CardinalDirection.W
     assert CardinalDirection.S.opposite() == CardinalDirection.N

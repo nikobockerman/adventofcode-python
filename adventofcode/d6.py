@@ -1,11 +1,11 @@
+from collections.abc import Iterable
 from functools import reduce
-from typing import Iterable
 
 
 def _parse_input(lines: list[str]) -> list[tuple[int, int]]:
     times = map(int, lines[0][5:].strip().split())
     distances = map(int, lines[1][9:].strip().split())
-    return list(zip(times, distances))
+    return list(zip(times, distances, strict=True))
 
 
 def _is_winning_scenario(
@@ -45,7 +45,7 @@ def p2(input_str: str) -> int:
         for button_press_time in r:
             if _is_winning_scenario(button_press_time, max_time, distance_to_beat):
                 return button_press_time
-        raise AssertionError()
+        raise AssertionError
 
     first_button_press_time = first_possible_button_press_time(time, distance, True)
     last_button_press_time = first_possible_button_press_time(time, distance, False)

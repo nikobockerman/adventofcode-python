@@ -5,6 +5,10 @@ description = ""
 authors = ["Niko Böckerman <git.585wj@slmail.me>"]
 readme = "README.md"
 
+[project]
+name = "adventofcode"
+requires-python = ">=3.12"
+
 [tool.poe.tasks]
 mypy = "mypy ."
 pyright = "pyright"
@@ -55,33 +59,59 @@ select = [
     "B",  # bugbear: security warnings
     "E",  # pycodestyle errors
     "F",  # pyflakes
+    "G",  # flake8-logging-format
     "I",  # isort
     "N",  # pep8-naming
+    "S",  # bandit
     "Q",  # flake8-quotes
     "W",  # pycodestyle warnings
+    "C4",  # flake8-comprehensions
+    "EM",  # flake8-errmsg
+    "FA",  # flake8-future-annotations
+    "PL",  # pylint
     "PT",  # flake8-pytest-style
+    "TD",  # flake8-todo
     "UP",  # alert you when better syntax is available in your python version
+    "ANN",  # flake8-annotations
     "ARG",  # flake8-unused-arguments
+    "COM",  # flake8-commas
     "ERA",  # flake8-eradicate
+    "DTZ",  # flake8-datetimez
     "FLY",  # flynt
     "ICN",  # flake8-import-conventions
+    "INP",  # flake8-no-pep420
     "ISC",  # flake8-implicit-str-concat
+    "LOG",  # flake8-logging
+    "PGH",  # pygrep-hooks
     "PIE",  # flake8-pie
     "PTH",  # flake8-use-pathlib
     "PYI",  # flake8-pyi
     "RET",  # flake8-return
+    "RSE",  # flake8-raise
     "RUF",  # the ruff developer's own rules
     "SIM",  # flake8-simplify
     "SLF",  # flake8-self
+    "T20",  # flake8-print
     "TCH",  # flake8-type-checking
     "TID",  # flake8-tidy-imports
     "TRY",  # tryceratops
+    "YTT",  # flake8-2020
     "PERF",  # perflint
     "SLOT",  # flake8-slots
 ]
 ignore = [
-    "ISC001"
+    "ANN101",
+    "COM812",
+    "ISC001",
+    "PLR2004",
+    "S101",
+    "TD002",
+    "TD003"
 ]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = ["INP001"]
+"adventofcode/main.py" = ["T201"]
 
 
 [build-system]

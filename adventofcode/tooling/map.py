@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import math
-from typing import Callable, Iterable, Sequence, assert_never, overload
+from typing import TYPE_CHECKING, assert_never, overload
 
 from .directions import CardinalDirection, RotationDirection
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
 
 
 class Coord2d:
@@ -87,10 +90,11 @@ class Map2d[Map2dDataType]:
     def __init__(
         self,
         data: Iterable[Iterable[Map2dDataType]] | Iterable[Sequence[Map2dDataType]],
-    ):
-        if not data:
-            raise Map2dEmptyDataError()
+    ) -> None:
         self._sequence_data = tuple(tuple(row) for row in data)
+        if len(self._sequence_data) == 0:
+            raise Map2dEmptyDataError
+
         self._height = len(self._sequence_data)
         assert self._height > 0
         self._width = len(self._sequence_data[0])
@@ -98,10 +102,10 @@ class Map2d[Map2dDataType]:
         self._last_y = self._height - 1
 
         if not all(len(row) == self._width for row in self._sequence_data):
-            raise Map2dRectangularDataError()
+            raise Map2dRectangularDataError
 
         if self._width == 0:
-            raise Map2dEmptyDataError()
+            raise Map2dEmptyDataError
 
     @property
     def height(self) -> int:
@@ -177,8 +181,13 @@ class Map2d[Map2dDataType]:
             return self.__get_or_default(x, y, kwargs["default"])
         return self.__get(x, y)
 
-    def __iter_data_by_lines(
-        self, first_x: int, first_y: int, last_x: int, last_y: int
+    def __iter_data_by_lines(  # noqa: PLR0912, optimized for performance
+        # so can't reduce branching here which is done for sanitizing input values
+        self,
+        first_x: int,
+        first_y: int,
+        last_x: int,
+        last_y: int,
     ) -> Iterable[tuple[int, Iterable[tuple[int, Map2dDataType]]]]:
         step_x = 1 if first_x <= last_x else -1
         step_y = 1 if first_y <= last_y else -1
@@ -194,13 +203,13 @@ class Map2d[Map2dDataType]:
             first_y = 0
         elif first_y > self._last_y:
             first_y = self._last_y
-        if last_y < 0:
-            last_y = 0
-        elif last_y > self._last_y:
-            last_y = self._last_y
-        if last_y == 0:
+        if last_y <= 0:
             slice_rows = self._sequence_data[first_y::step_y]
         else:
+            if last_y < 0:
+                last_y = 0
+            elif last_y > self._last_y:
+                last_y = self._last_y
             slice_rows = self._sequence_data[first_y : last_y + step_y : step_y]
 
         for row_ind, row in enumerate(slice_rows):
@@ -300,7 +309,7 @@ class Map2d[Map2dDataType]:
         return "\n".join(self.str_lines())
 
     def transpose(self) -> Map2d[Map2dDataType]:
-        return Map2d(list(zip(*self._sequence_data)))
+        return Map2d(list(zip(*self._sequence_data, strict=True)))
 
     def __rotate_once_clockwise(self) -> Map2d[Map2dDataType]:
         return Map2d(

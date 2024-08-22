@@ -1,5 +1,5 @@
 import itertools
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def _parse_input(lines: Iterable[str]) -> Iterable[list[int]]:

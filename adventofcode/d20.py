@@ -6,7 +6,10 @@ import math
 from abc import ABCMeta, abstractmethod
 from collections import Counter, deque
 from dataclasses import dataclass
-from typing import Iterable, Iterator, Never, NewType, override
+from typing import TYPE_CHECKING, Never, NewType, override
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 _logger = logging.getLogger(__name__)
 
@@ -84,7 +87,7 @@ class _Button(_Module):
     def process_pulse(self, pulse: _Pulse) -> Never:
         if __debug__:
             self._validate_incoming_pulse(pulse)
-        raise AssertionError()
+        raise AssertionError
 
 
 class _Broadcast(_Module):
@@ -102,7 +105,7 @@ class _Receiver(_Module):
     @override
     def add_receiving_module(self, output: _Module) -> Never:
         super().add_receiving_module(output)
-        raise AssertionError()
+        raise AssertionError
 
     @override
     def process_pulse(self, pulse: _Pulse) -> Iterator[_PulseNew]:
@@ -200,7 +203,7 @@ type _AnyModule = (
 def _parse_module(line: str) -> tuple[_AnyModule, list[_ModuleName]]:
     name, outputs_str = map(str.strip, line.split("->"))
     name = _ModuleName(name)
-    outputs = list(map(lambda x: _ModuleName(x.strip()), outputs_str.split(",")))
+    outputs = [_ModuleName(x.strip()) for x in outputs_str.split(",")]
     if name == "broadcaster":
         return _Broadcast(name), outputs
 
@@ -276,9 +279,7 @@ def _parse_modules(
         t: list(g)
         for t, g in itertools.groupby(
             sorted(
-                list(
-                    map(lambda x: x[0], modules_with_output_modules),
-                ),
+                (x[0] for x in modules_with_output_modules),
                 key=lambda x: type(x).__name__,
             ),
             key=lambda x: type(x),
@@ -314,7 +315,7 @@ def _parse_modules(
 def _extend_pulses(
     queue: deque[_Pulse], button: _Button, pulses: Iterable[_PulseNew]
 ) -> None:
-    queue.extend(map(lambda new: _Pulse.create(new, button.button_presses), pulses))
+    queue.extend(_Pulse.create(new, button.button_presses) for new in pulses)
 
 
 def p1(input_str: str) -> int:
@@ -331,7 +332,7 @@ def p1(input_str: str) -> int:
             counts.update((pulse.value,))
             _extend_pulses(queue, button, pulse.to.process_pulse(pulse))
 
-    _logger.info(f"Counts: {counts}")
+    _logger.info("Counts: %s", counts)
 
     return math.prod(counts.values())
 
@@ -349,8 +350,8 @@ def p2(input_str: str) -> int:
 
     while True:
         _extend_pulses(queue, button, button.process_button_press())
-        if button.button_presses % 100_000 == 0:
-            _logger.info(f"Button presses: {button.button_presses:_}")
+        if button.button_presses % 100_000 == 0 and _logger.isEnabledFor(logging.INFO):
+            _logger.info(f"Button presses: {button.button_presses:_}")  # noqa: G004
 
         while queue:
             pulse = queue.popleft()

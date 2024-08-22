@@ -3,7 +3,10 @@ from __future__ import annotations
 import typing
 from dataclasses import dataclass
 from functools import cache
-from typing import Iterable, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 @runtime_checkable
@@ -38,8 +41,8 @@ class Arc[Id: NodeId]:
 
 class DigraphCreator[Id: NodeId, N]:
     def __init__(self) -> None:
-        self._nodes: dict[Id, N] = dict()
-        self._arcs: list[DigraphArc[Id]] = list()
+        self._nodes: dict[Id, N] = {}
+        self._arcs: list[DigraphArc[Id]] = []
 
     def add_node(self, node_id: Id, node: N, /) -> None:
         if node_id in self._nodes:
@@ -61,11 +64,11 @@ class DigraphCreator[Id: NodeId, N]:
 def _get_arcs_to_node[Id: NodeId](
     node_id: Id, arcs: Iterable[DigraphArc[Id]]
 ) -> list[DigraphArc[Id]]:
-    return list(arc for arc in arcs if arc.to == node_id)
+    return [arc for arc in arcs if arc.to == node_id]
 
 
 @cache
 def _get_arcs_from_node[Id: NodeId](
     node_id: Id, arcs: Iterable[DigraphArc[Id]]
 ) -> list[DigraphArc[Id]]:
-    return list(arc for arc in arcs if arc.from_ == node_id)
+    return [arc for arc in arcs if arc.from_ == node_id]

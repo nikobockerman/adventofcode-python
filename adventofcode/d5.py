@@ -1,6 +1,6 @@
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Iterable
 
 from adventofcode.tooling.ranges import are_ranges_overlapping, partition_range
 
@@ -98,10 +98,10 @@ def _get_location(maps: _InputMaps, seed: int) -> int:
 
 def p1(input_str: str) -> int:
     seeds, maps = _parse_input(input_str.splitlines())
-    logging.debug(f"{seeds=}")
-    logging.debug(f"{maps=}")
+    logging.debug("seeds=%s", seeds)
+    logging.debug("maps=%s", maps)
 
-    return min(map(lambda seed: _get_location(maps, seed), seeds))
+    return min(_get_location(maps, seed) for seed in seeds)
 
 
 def _resolve_overlap(
@@ -189,7 +189,8 @@ def p2(input_str: str) -> int:
     seed_starts = seed_data[0::2]
     seed_lengths = seed_data[1::2]
     seed_ranges = [
-        range(start, start + length) for start, length in zip(seed_starts, seed_lengths)
+        range(start, start + length)
+        for start, length in zip(seed_starts, seed_lengths, strict=True)
     ]
 
     maps.humidity_to_location_map.sort(key=lambda m: m.destination_start)
@@ -230,4 +231,4 @@ def p2(input_str: str) -> int:
                 for seed_range in seed_ranges
             ):
                 return resolved_location_range.start
-    raise AssertionError()
+    raise AssertionError

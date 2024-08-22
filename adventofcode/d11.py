@@ -1,12 +1,12 @@
 import contextlib
-from typing import Iterable
+from collections.abc import Iterable
 
 from adventofcode.tooling.map import Coord2d, Map2d
 
 
 class _InputMap(Map2d[str]):
-    def __init__(self, data: Iterable[str]):
-        super().__init__([line for line in data])
+    def __init__(self, data: Iterable[str]) -> None:
+        super().__init__(list(data))
 
 
 def _calculate_distance(

@@ -1,9 +1,9 @@
 import enum
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import total_ordering
 from types import NotImplementedType
-from typing import Iterable
 
 
 def _parse_input(lines: Iterable[str]) -> Iterable[tuple[str, int]]:
@@ -41,7 +41,16 @@ class _Hand:
         for i in range(5):
             if self.card_values[i] != other.card_values[i]:
                 return self.card_values[i] < other.card_values[i]
-        raise AssertionError()
+        raise AssertionError
+
+
+_HandTypeByCount: dict[int, _HandType | dict[int, _HandType]] = {
+    5: _HandType.FiveOfAKind,
+    4: _HandType.FourOfAKind,
+    3: {2: _HandType.FullHouse, 1: _HandType.ThreeOfAKind},
+    2: {2: _HandType.TwoPair, 1: _HandType.OnePair},
+    1: _HandType.HighCard,
+}
 
 
 def p1(input_str: str) -> int:
@@ -50,21 +59,11 @@ def p1(input_str: str) -> int:
     def classify_hand_type(cards: str) -> _HandType:
         assert len(cards) == 5
         value_counts = Counter[str](cards)
-        counts = list(map(lambda x: x[1], value_counts.most_common(2)))
-
-        if counts[0] == 5:
-            return _HandType.FiveOfAKind
-        if counts[0] == 4:
-            return _HandType.FourOfAKind
-        if counts[0] == 3:
-            if counts[1] == 2:
-                return _HandType.FullHouse
-            return _HandType.ThreeOfAKind
-        if counts[0] == 2:
-            if counts[1] == 2:
-                return _HandType.TwoPair
-            return _HandType.OnePair
-        return _HandType.HighCard
+        counts = [x[1] for x in value_counts.most_common(2)]
+        count1_type = _HandTypeByCount[counts[0]]
+        if isinstance(count1_type, _HandType):
+            return count1_type
+        return count1_type[counts[1]]
 
     def card_value(value: str) -> int:
         assert len(value) == 1
@@ -102,20 +101,11 @@ def p2(input_str: str) -> int:
         if jokers == 5:
             return _HandType.FiveOfAKind
 
-        counts = list(map(lambda x: x[1], value_counts.most_common(2)))
-        if counts[0] + jokers == 5:
-            return _HandType.FiveOfAKind
-        if counts[0] + jokers == 4:
-            return _HandType.FourOfAKind
-        if counts[0] + jokers == 3:
-            if counts[1] == 2:
-                return _HandType.FullHouse
-            return _HandType.ThreeOfAKind
-        if counts[0] + jokers == 2:
-            if counts[1] == 2:
-                return _HandType.TwoPair
-            return _HandType.OnePair
-        return _HandType.HighCard
+        counts = [x[1] for x in value_counts.most_common(2)]
+        count1_type = _HandTypeByCount[counts[0] + jokers]
+        if isinstance(count1_type, _HandType):
+            return count1_type
+        return count1_type[counts[1]]
 
     def card_value(value: str) -> int:
         assert len(value) == 1

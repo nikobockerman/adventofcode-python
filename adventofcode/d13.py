@@ -1,6 +1,6 @@
 import itertools
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 from adventofcode.tooling.map import Coord2d, Map2d
 
@@ -21,7 +21,7 @@ def _compare_datas(
     data1: Iterable[str], data2: Iterable[str], allowed_mismatches: int
 ) -> int | None:
     mismatches = 0
-    for sym1, sym2 in zip(data1, data2):
+    for sym1, sym2 in zip(data1, data2, strict=False):
         if sym1 != sym2:
             mismatches += 1
             if mismatches > allowed_mismatches:
@@ -36,7 +36,7 @@ def _find_consecutive_rows_or_columns(
         Coord2d(start_pos, 0) if find_column_not_row else Coord2d(0, start_pos)
     )
     for (i1, data1), (_, data2) in itertools.pairwise(
-        (i, list(sym for _, sym in sym_iter))
+        (i, [sym for _, sym in sym_iter])
         for i, sym_iter in map_.iter_data(
             first_corner, columns_first=find_column_not_row
         )
@@ -77,6 +77,7 @@ def _check_if_datas_around_reflection_match(
     for (i1, data1_iter), (i2, data2_iter) in zip(
         map_.iter_data(before_first_corner, before_last_corner),
         map_.iter_data(after_first_corner),
+        strict=False,
     ):
         match_res = _compare_datas(
             map(_map_data_iter_to_data, data1_iter),

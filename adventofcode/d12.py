@@ -1,7 +1,8 @@
 import itertools
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Literal
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,9 @@ class _ClassificationState:
 
 
 class _Classifier:
-    def __init__(self, data: _Data, prev_state: _ClassificationState | None = None):
+    def __init__(
+        self, data: _Data, prev_state: _ClassificationState | None = None
+    ) -> None:
         self._data = data
         self._completion_classification: bool | None = None
         self._completion_classification_done: bool = False
@@ -42,7 +45,9 @@ class _Classifier:
     def classification_state(self) -> _ClassificationState | None:
         return self._classification_state
 
-    def _classify_completion(self) -> bool | None:
+    def _process_for_classification(
+        self,
+    ) -> Literal[False] | tuple[list[int], int, bool]:
         if self._prev_classification_state is not None:
             known_damaged_lengths = (
                 self._prev_classification_state.known_damaged_lengths[:]
@@ -53,12 +58,14 @@ class _Classifier:
                 + len(self._data.group_lengths)
                 - len(known_damaged_lengths)
                 - 1
-            )
-            if known_damaged_lengths:
-                min_remaining_length += (
+            ) + (
+                0
+                if not known_damaged_lengths
+                else (
                     self._data.group_lengths[known_damaged_index]
                     - known_damaged_lengths[known_damaged_index]
                 )
+            )
             prev_is_damaged = self._prev_classification_state.previous_was_damaged
             count = self._prev_classification_state.index_of_first_unknown
         else:
@@ -69,6 +76,7 @@ class _Classifier:
             prev_is_damaged = False
             known_damaged_index = -1
             count = 0
+
         for symbol, sym_iter in itertools.groupby(
             itertools.islice(self._data.records, count, None)
         ):
@@ -82,9 +90,10 @@ class _Classifier:
             if symbol == "#":
                 if not prev_is_damaged:
                     known_damaged_index += 1
-                    if known_damaged_index >= len(self._data.group_lengths):
-                        return False
-                    if length > self._data.group_lengths[known_damaged_index]:
+                    if (
+                        known_damaged_index >= len(self._data.group_lengths)
+                        or length > self._data.group_lengths[known_damaged_index]
+                    ):
                         return False
                     known_damaged_lengths.append(length)
                     prev_is_damaged = True
@@ -109,6 +118,15 @@ class _Classifier:
             if min_remaining_length > len(self._data.records) - count:
                 return False
 
+        return known_damaged_lengths, known_damaged_index, prev_is_damaged
+
+    def _classify_completion(self) -> bool | None:
+        result = self._process_for_classification()
+        if isinstance(result, bool):
+            return result
+
+        known_damaged_lengths, known_damaged_index, prev_is_damaged = result
+
         if known_damaged_lengths == self._data.group_lengths:
             if not self._first_unknown_index_resolved:
                 return True
@@ -121,22 +139,21 @@ class _Classifier:
             # No unknowns found -> records processed exhaustively
             return known_damaged_lengths == self._data.group_lengths
 
-        if prev_is_damaged:
-            if (
-                known_damaged_lengths[known_damaged_index]
-                == self._data.group_lengths[known_damaged_index]
-            ):
-                possible_next_symbols = "."
-            else:
-                possible_next_symbols = "#"
-        else:
-            possible_next_symbols = ".#"
+        def possible_next_symbols() -> str:
+            if prev_is_damaged:
+                if (
+                    known_damaged_lengths[known_damaged_index]
+                    == self._data.group_lengths[known_damaged_index]
+                ):
+                    return "."
+                return "#"
+            return ".#"
 
         self._classification_state = _ClassificationState(
             known_damaged_lengths,
             self._first_unknown_index,
             prev_is_damaged,
-            possible_next_symbols,
+            possible_next_symbols(),
         )
         return None
 

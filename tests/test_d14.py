@@ -14,9 +14,9 @@ O.#..O.#.#
 """.strip()
 
 
-def test_p1():
+def test_p1() -> None:
     assert d14.p1(_example_input) == 136
 
 
-def test_p2():
+def test_p2() -> None:
     assert d14.p2(_example_input) == 64

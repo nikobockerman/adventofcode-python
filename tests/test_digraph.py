@@ -53,7 +53,7 @@ def test_digraph_creator_multiple_inherited_classes() -> None:
 def test_digraph_get_arcs() -> None:
     digraph = Digraph[int, int](
         nodes={1: 11, 2: 22, 3: 33, 4: 44},
-        arcs=tuple((Arc(1, 2), Arc(1, 3), Arc(2, 3), Arc(3, 1))),
+        arcs=(Arc(1, 2), Arc(1, 3), Arc(2, 3), Arc(3, 1)),
     )
     assert digraph.get_arcs_from(1) == [Arc(1, 2), Arc(1, 3)]
     assert digraph.get_arcs_from(2) == [Arc(2, 3)]

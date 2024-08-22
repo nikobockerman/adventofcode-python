@@ -14,7 +14,7 @@ _example_input = """
 """.strip()
 
 
-def test_p1_example_1():
+def test_p1_example_1() -> None:
     assert d11.p1(_example_input) == 374
 
 

@@ -117,7 +117,7 @@ def p2(input_str: str) -> int:
     map_ = Map2d([list(line) for line in input_str.splitlines()])
     _logger.debug("Initial map:\n%s", map_)
     maps_after_spins: list[Map2d[str]] = []
-    seen_rock_coords: dict[frozenset[tuple[int, int]], int] = dict()
+    seen_rock_coords: dict[frozenset[tuple[int, int]], int] = {}
     final_map: Map2d[str] | None = None
     for i in range(1, 1_000_000_000 + 1):
         map_ = _perform_spin(map_)
