@@ -1,28 +1,16 @@
 from __future__ import annotations
 
-import collections.abc
 import itertools
 import logging
-import os
-import typing
 from collections import Counter
 from dataclasses import InitVar, dataclass, field
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    Literal,
-    NamedTuple,
-    Sequence,
-    assert_never,
-    get_args,
-    overload,
-    override,
-)
+from typing import TYPE_CHECKING, Literal, assert_never, get_args, overload, override
 
 from adventofcode.tooling.directions import CardinalDirection, CardinalDirectionsAll
 from adventofcode.tooling.map import Coord2d, Map2d
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator, Sequence
 
 _logger = logging.getLogger(__name__)
 
@@ -131,7 +119,7 @@ class _InfiniteMap(_Map):
         start_x = min_x % self.width
         stop_x = max_x % self.width
 
-        if min_x >= 0 and self.width > max_x:
+        if (max_x - min_x + 1) <= self.width and start_x <= stop_x:
             yield from self._sequence_data[y_][start_x : stop_x + 1]
             return
 
@@ -153,13 +141,13 @@ class _InfiniteMap(_Map):
         columns_first: bool = False,
     ) -> Iterable[tuple[int, Iterable[tuple[int, _MapSymbol]]]]:
         if columns_first is True:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         if first_corner is None or last_corner is None:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         if first_corner.x > last_corner.x or first_corner.y > last_corner.y:
-            raise NotImplementedError()
+            raise NotImplementedError
 
         for y in range(first_corner.y, last_corner.y + 1):
             yield (
@@ -167,10 +155,12 @@ class _InfiniteMap(_Map):
                 zip(
                     range(first_corner.x, last_corner.x + 1),
                     self._iter_row(y, first_corner.x, last_corner.x),
+                    strict=True,
                 ),
             )
 
 
+"""
 class _MapRow:
     def __init__(self, data: tuple[_MapSymbol, ...], start_x: int) -> None:
         self.data = data
@@ -217,16 +207,6 @@ class _LocationToProcess:
         data: _LocationToProcessData,
         visit_counts: _VisitCounts,
     ) -> _LocationToProcess | None:
-        # x=18 - -40 => -40+18=-22
-        # y=72-5=67 - -40 => -40+67=27
-        # ...
-        # ..#
-        # ..#
-        ### Bug: First time visited with step == max_step-1 -> second visit with
-        ### smaller step -> will not be processed further on first time and second time it gets skipped
-        # visited_xs = sorted([x_.x for x_ in data.visited[data_index]])
-        # if x in visited_xs:
-        #    return None
         symbol = data.map_rows[data_index][x]
         if symbol == "#":
             data.skipped[data_index].add(x)
@@ -236,8 +216,6 @@ class _LocationToProcess:
             assert_never(symbol)
 
         step_new = self.step + 1
-        # data.visited[data_index].add(_LocationToProcess(y, x, step_new))
-        # visit_counts.add(step_new)
         return _LocationToProcess(y, x, step_new)
 
     def process_neighbors(
@@ -258,300 +236,170 @@ class _LocationToProcess:
         neighbor = self._process_neighbor(self.x, self.y + 1, 2, data, visit_counts)
         if neighbor is not None:
             yield neighbor
+"""
 
 
 @dataclass(slots=True)
-class _AreaSquare:
+class _AreaSquareBasic:
     top_left_corner: Coord2d
     bottom_right_corner: Coord2d
-    visits_at_step: dict[Coord2d, int]
     min_steps: int
     max_steps: int
 
-    _possible_garden_plots_at_step: int | None = field(default=None, init=False)
+
+@dataclass(slots=True)
+class _AreaSquareFull(_AreaSquareBasic):
+    puzzle_max_steps: InitVar[int]
+    visits_at_step: InitVar[Counter[int]]
+
+    _puzzle_max_steps: int = field(init=False)
+    _possible_garden_plots_full: int = field(init=False)
+    _visits_at_step: Counter[int] = field(init=False)
+    _garden_plots_cache: dict[int, int] = field(default_factory=dict, init=False)
+
+    def __post_init__(
+        self, puzzle_max_steps: int, visits_at_step: Counter[int]
+    ) -> None:
+        self._puzzle_max_steps = puzzle_max_steps
+        self._visits_at_step = visits_at_step
+        self._possible_garden_plots_full = self._count_possible_garden_plots_at_step(
+            puzzle_max_steps
+        )
 
     def count_possible_garden_plots_at_step(self, step: int) -> int:
-        if self._possible_garden_plots_at_step is not None:
-            return self._possible_garden_plots_at_step
+        if step == self._puzzle_max_steps:
+            return self._possible_garden_plots_full
+        if step > self.max_steps:
+            rem_correct = self._puzzle_max_steps % 2
+            rem_step = step % 2
+            if rem_step != rem_correct:
+                return self._count_cached_possible_garden_plots_at_step(
+                    self._puzzle_max_steps - 1
+                )
+            return self._possible_garden_plots_full
+        if step < self.min_steps:
+            return 0
 
-        self._possible_garden_plots_at_step = 0
-        for steps in self.visits_at_step.values():
+        return self._count_cached_possible_garden_plots_at_step(step)
+
+    def _count_cached_possible_garden_plots_at_step(self, step: int) -> int:
+        if step in self._garden_plots_cache:
+            return self._garden_plots_cache[step]
+
+        possible_count = self._count_possible_garden_plots_at_step(step)
+        self._garden_plots_cache[step] = possible_count
+        return possible_count
+
+    def _count_possible_garden_plots_at_step(self, step: int) -> int:
+        possible_count = 0
+        for steps, count in self._visits_at_step.items():
             if steps <= step and steps % 2 == step % 2:
-                self._possible_garden_plots_at_step += 1
-        return self._possible_garden_plots_at_step
+                possible_count += count
+        return possible_count
 
 
-@dataclass(slots=True, frozen=True)
-class _AreaSquareResult:
-    top_left_coord: Coord2d
-    bottom_right_coord: Coord2d
+@dataclass(slots=True)
+class _AreaSquareExtended(_AreaSquareBasic):
+    full_origin: InitVar[_AreaSquareFull]
+
+    _full_origin: _AreaSquareFull = field(init=False)
+    _steps_offset: int = field(init=False)
+
+    def __post_init__(self, full_origin: _AreaSquareFull) -> None:
+        self._full_origin = full_origin
+        self._steps_offset = self.min_steps - self._full_origin.min_steps
+
+    def count_possible_garden_plots_at_step(self, step: int) -> int:
+        return self._full_origin.count_possible_garden_plots_at_step(
+            step - self._steps_offset
+        )
 
 
 @dataclass(slots=True, frozen=True)
 class _AreaResult:
-    area_square_result: _AreaSquareResult
     possible_garden_plots: int
-
-    # Next ones are for debugging purposes
-    possible_garden_plot_locations: set[Coord2d]
-    locations_with_step_le_max_step: dict[Coord2d, int]
-
-    step: InitVar[int]
-
-    def __post_init__(self, step: int) -> None:
-        locations_len = len(self.possible_garden_plot_locations)
-        possible_locs = list(
-            _get_possible_locations(self.locations_with_step_le_max_step.items(), step)
-        )
-        possible_len = len(possible_locs)
-        assert locations_len == self.possible_garden_plots
-        assert possible_len == self.possible_garden_plots
-
-
-def _get_locations_le_step(
-    locations_with_step: Iterable[tuple[Coord2d, int]], step: int
-) -> Iterator[tuple[Coord2d, int]]:
-    for coord, coord_step in locations_with_step:
-        if coord_step <= step:
-            yield coord, coord_step
-
-
-def _get_possible_locations(
-    locations_with_step: Iterable[tuple[Coord2d, int]], step: int
-) -> Iterator[Coord2d]:
-    steps_remainder = step % 2
-    for coord, coord_step in _get_locations_le_step(locations_with_step, step):
-        if coord_step % 2 == steps_remainder:
-            yield coord
 
 
 @dataclass(slots=True)
 class _ExtendableDirection:
-    base: _AreaSquare
-    next_: _AreaSquare
+    base: _AreaSquareFull | _AreaSquareExtended
+    next_: _AreaSquareFull | _AreaSquareExtended
 
-    def __post_init__(self) -> None:
-        max_increase = self.next_.max_steps - self.base.max_steps
-        min_increase = self.next_.min_steps - self.base.min_steps
-        # if self.base.top_left_corner != Coord2d(0, -11):
-        assert max_increase == min_increase
+    include_base_and_next: bool = field(default=True, kw_only=True)
 
-        y_increase = self.next_.top_left_corner.y - self.base.top_left_corner.y
-        x_increase = self.next_.top_left_corner.x - self.base.top_left_corner.x
+    def _get_full_square_area_results(self, step: int) -> tuple[int, int]:
+        result = 0
+        full_area_count = 0
 
-        assert self.next_.visits_at_step.keys() == {
-            Coord2d(b.x + x_increase, b.y + y_increase)
-            for b in self.base.visits_at_step
-        }
+        if self.base.max_steps <= step:
+            full_area_count += 1
+            if self.include_base_and_next:
+                result += self.base.count_possible_garden_plots_at_step(step)
 
-        step_diff_all: int | None = None
-        for base_coord, base_step in self.base.visits_at_step.items():
-            next_coord = Coord2d(base_coord.x + x_increase, base_coord.y + y_increase)
-            next_step = self.next_.visits_at_step[next_coord]
-            step_diff = next_step - base_step
-            if step_diff_all is None:
-                step_diff_all = step_diff
-            else:
-                assert step_diff_all == step_diff
-        assert step_diff_all == max_increase
-
-    def _get_full_square_area_results(
-        self,
-        step: int,
-        does_area_need_processing: Callable[[_AreaSquareResult], bool],
-    ) -> Iterator[_AreaResult]:
-        for area_square in (self.base, self.next_):
-            if area_square.max_steps > step:
-                continue
-
-            area = _AreaSquareResult(
-                area_square.top_left_corner, area_square.bottom_right_corner
-            )
-            if does_area_need_processing(area):
-                visits_le_step = dict(
-                    _get_locations_le_step(area_square.visits_at_step.items(), step)
-                )
-                possible_locs = set(
-                    _get_possible_locations(visits_le_step.items(), step)
-                )
-                yield _AreaResult(
-                    area, len(possible_locs), possible_locs, visits_le_step, step
-                )
-
-        if self.next_.max_steps > step:
-            return
+        if self.next_.max_steps <= step:
+            full_area_count += 1
+            if self.include_base_and_next:
+                result += self.next_.count_possible_garden_plots_at_step(step)
+        else:
+            return result, full_area_count
 
         max_steps_increase = self.next_.max_steps - self.base.max_steps
         full_followup_areas = (step - self.next_.max_steps) // max_steps_increase
 
-        x_increase = self.next_.top_left_corner.x - self.base.top_left_corner.x
-        y_increase = self.next_.top_left_corner.y - self.base.top_left_corner.y
-        step_increase = next(iter(self.next_.visits_at_step.values())) - next(
-            iter(self.base.visits_at_step.values())
-        )
-        assert step_increase == max_steps_increase
+        if full_followup_areas == 0:
+            return result, full_area_count
 
-        for i in range(1, full_followup_areas + 1):
-            x_increase_area = x_increase * i
-            y_increase_area = y_increase * i
-            step_increase_area = step_increase * i
-            area = _AreaSquareResult(
-                Coord2d(
-                    self.next_.top_left_corner.x + x_increase_area,
-                    self.next_.top_left_corner.y + y_increase_area,
-                ),
-                Coord2d(
-                    self.next_.bottom_right_corner.x + x_increase_area,
-                    self.next_.bottom_right_corner.y + y_increase_area,
-                ),
-            )
-            if does_area_need_processing(area):
-                visits_at_step = {
-                    Coord2d(
-                        next_coord.x + x_increase_area,
-                        next_coord.y + y_increase_area,
-                    ): next_step + step_increase_area
-                    for next_coord, next_step in self.next_.visits_at_step.items()
-                }
-                visits_le_step = dict(
-                    _get_locations_le_step(visits_at_step.items(), step)
-                )
-                possible_locs = set(
-                    _get_possible_locations(visits_le_step.items(), step)
-                )
-                yield _AreaResult(
-                    area, len(possible_locs), possible_locs, visits_le_step, step
-                )
+        full_area_count += full_followup_areas
+        next_counts = full_followup_areas // 2
+        base_counts = full_followup_areas - next_counts
+        result += base_counts * self.base.count_possible_garden_plots_at_step(step)
+        result += next_counts * self.next_.count_possible_garden_plots_at_step(step)
+
+        return result, full_area_count
 
     def _get_partial_square_area_results(
-        self,
-        step: int,
-        does_area_need_processing: Callable[[_AreaSquareResult], bool],
-        full_area_count: int,
-    ) -> Iterator[_AreaResult]:
-        if full_area_count == 0 and self.base.min_steps <= step:
-            assert step < self.base.max_steps
-            area_square_result = _AreaSquareResult(
-                self.base.top_left_corner, self.base.bottom_right_corner
-            )
-            if does_area_need_processing(area_square_result):
-                visits_le_step = dict(
-                    _get_locations_le_step(self.base.visits_at_step.items(), step)
-                )
-                yield _AreaResult(
-                    area_square_result,
-                    self.base.count_possible_garden_plots_at_step(step),
-                    set(_get_possible_locations(visits_le_step.items(), step)),
-                    visits_le_step,
-                    step,
-                )
+        self, step: int, full_area_count: int
+    ) -> Iterator[int]:
+        if (
+            full_area_count == 0
+            and self.base.min_steps <= step
+            and self.include_base_and_next
+        ):
+            yield self.base.count_possible_garden_plots_at_step(step)
 
-        if full_area_count == 1 and self.next_.min_steps <= step:
-            assert step < self.next_.max_steps
-            area_square_result = _AreaSquareResult(
-                self.next_.top_left_corner, self.next_.bottom_right_corner
-            )
-            if does_area_need_processing(area_square_result):
-                visits_le_step = dict(
-                    _get_locations_le_step(self.next_.visits_at_step.items(), step)
-                )
-                yield _AreaResult(
-                    area_square_result,
-                    self.next_.count_possible_garden_plots_at_step(step),
-                    set(_get_possible_locations(visits_le_step.items(), step)),
-                    visits_le_step,
-                    step,
-                )
+        if (
+            full_area_count <= 1
+            and self.next_.min_steps <= step
+            and self.include_base_and_next
+        ):
+            yield self.next_.count_possible_garden_plots_at_step(step)
 
-        full_followup_areas = full_area_count - 2
-        min_steps_increase = self.next_.min_steps - self.base.min_steps
+        step_increase = self.next_.min_steps - self.base.min_steps
 
-        min_last_followup_area = (
-            self.next_.min_steps + full_followup_areas * min_steps_increase
+        full_followup_areas = max(0, full_area_count - 2)
+        min_last_full_followup_area = (
+            self.next_.min_steps + full_followup_areas * step_increase
         )
-        # full, remainder = divmod(step - min_last_followup_area, min_steps_increase)
-        # partial_followup_areas = full
-        # if remainder > 0:
-        #    partial_followup_areas += 1
-        partial_followup_areas = (step - min_last_followup_area) // min_steps_increase
-        # assert partial_followup_areas >= 0
-        assert partial_followup_areas <= 2, "This might not be correct assumption"
+        partial_followup_areas = (step - min_last_full_followup_area) // step_increase
 
         if partial_followup_areas <= 0:
             return
 
-        y_increase = self.next_.top_left_corner.y - self.base.top_left_corner.y
-        x_increase = self.next_.top_left_corner.x - self.base.top_left_corner.x
-        step_increase = next(iter(self.next_.visits_at_step.values())) - next(
-            iter(self.base.visits_at_step.values())
-        )
+        for i in range(partial_followup_areas):
+            step_increase_area = step_increase * (full_followup_areas + i + 1)
 
-        for i in range(1, partial_followup_areas + 1):
-            x_increase_area = x_increase * (full_followup_areas + i)
-            y_increase_area = y_increase * (full_followup_areas + i)
-            step_increase_area = step_increase * (full_followup_areas + i)
-
-            area = _AreaSquareResult(
-                Coord2d(
-                    self.next_.top_left_corner.x + x_increase_area,
-                    self.next_.top_left_corner.y + y_increase_area,
-                ),
-                Coord2d(
-                    self.next_.bottom_right_corner.x + x_increase_area,
-                    self.next_.bottom_right_corner.y + y_increase_area,
-                ),
-            )
-            if not does_area_need_processing(area):
-                continue
-
-            steps_remainder = step % 2
-
-            counted_plots_for_partial_area = 0
-            locations_le_step = dict[Coord2d, int]()
-            for next_coord, next_step in self.next_.visits_at_step.items():
-                followup_coord = Coord2d(
-                    next_coord.x + x_increase_area,
-                    next_coord.y + y_increase_area,
+            counted_plots_for_partial_area = (
+                self.next_.count_possible_garden_plots_at_step(
+                    step - step_increase_area
                 )
-                followup_step = next_step + step_increase_area
-
-                if followup_step <= step:
-                    if followup_step % 2 == steps_remainder:
-                        counted_plots_for_partial_area += 1
-                    locations_le_step[followup_coord] = followup_step
-
-            yield _AreaResult(
-                area,
-                counted_plots_for_partial_area,
-                set(_get_possible_locations(locations_le_step.items(), step)),
-                locations_le_step,
-                step,
             )
+            yield counted_plots_for_partial_area
 
-    def get_all_area_results(
-        self,
-        step: int,
-        does_area_need_processing: Callable[[_AreaSquareResult], bool],
-    ) -> Iterator[_AreaResult]:
-        full_area_count = 0
-
-        def internal_does_area_need_processing(area: _AreaSquareResult) -> bool:
-            nonlocal full_area_count
-            full_area_count += 1
-            return does_area_need_processing(area)
-
-        for area in self._get_full_square_area_results(
-            step, internal_does_area_need_processing
-        ):
-            yield area
-
-        # partial_area_count = 0
-        for area in self._get_partial_square_area_results(
-            step, does_area_need_processing, full_area_count
-        ):
-            yield area
-            # partial_area_count += 1
-        # assert partial_area_count <= 1
+    def count_possible_garden_plots(self, step: int) -> int:
+        count, full_area_count = self._get_full_square_area_results(step)
+        for result in self._get_partial_square_area_results(step, full_area_count):
+            count += result
+        return count
 
 
 @dataclass(slots=True)
@@ -563,112 +411,32 @@ class _ExtendableArea:
     III | IV
     """
 
-    quadrant1: _AreaSquare
-    quadrant2: _AreaSquare
-    quadrant3: _AreaSquare
-    quadrant4: _AreaSquare
+    quadrant1: _AreaSquareFull
+    quadrant2: _AreaSquareFull
+    quadrant3: _AreaSquareFull
+    quadrant4: _AreaSquareFull
 
     base_quadrant: Literal[1, 2, 3, 4]
 
-    def __post_init__(self) -> None:
-        max_increase_area: int | None = None
-        min_increase_area: int | None = None
-        step_diff_area: int | None = None
-
-        for base, next_ in (
-            self._get_quadrant_pair_for_row(0),
-            self._get_quadrant_pair_for_row(1),
-            self._get_quadrant_pair_for_column(0),
-            self._get_quadrant_pair_for_column(1),
-        ):
-            max_increase = next_.max_steps - base.max_steps
-            min_increase = next_.min_steps - base.min_steps
-            assert max_increase == min_increase
-
-            if max_increase_area is None:
-                max_increase_area = max_increase
-            else:
-                assert max_increase_area == max_increase
-            if min_increase_area is None:
-                min_increase_area = min_increase
-            else:
-                assert min_increase_area == min_increase
-
-            y_increase = next_.top_left_corner.y - base.top_left_corner.y
-            x_increase = next_.top_left_corner.x - base.top_left_corner.x
-
-            assert next_.visits_at_step.keys() == {
-                Coord2d(b.x + x_increase, b.y + y_increase) for b in base.visits_at_step
-            }
-
-            for base_coord, base_step in base.visits_at_step.items():
-                next_coord = Coord2d(
-                    base_coord.x + x_increase, base_coord.y + y_increase
-                )
-                next_step = next_.visits_at_step[next_coord]
-                step_diff = next_step - base_step
-                if step_diff_area is None:
-                    step_diff_area = step_diff
-                else:
-                    assert step_diff_area == step_diff
-
     def _get_quadrant_pair_for_row(
         self, row: Literal[0, 1]
-    ) -> tuple[_AreaSquare, _AreaSquare]:
-        if self.base_quadrant == 1:
-            if row == 0:
-                return (self.quadrant1, self.quadrant2)
-            if row == 1:
-                return (self.quadrant4, self.quadrant3)
-            assert_never(row)
-        if self.base_quadrant == 2:
-            if row == 0:
-                return (self.quadrant2, self.quadrant1)
-            if row == 1:
-                return (self.quadrant3, self.quadrant4)
-            assert_never(row)
-        if self.base_quadrant == 3:
-            if row == 0:
-                return (self.quadrant3, self.quadrant4)
-            if row == 1:
-                return (self.quadrant2, self.quadrant1)
-            assert_never(row)
-        if self.base_quadrant == 4:
-            if row == 0:
-                return (self.quadrant4, self.quadrant3)
-            if row == 1:
-                return (self.quadrant1, self.quadrant2)
-            assert_never(row)
-        assert_never(self.base_quadrant)
+    ) -> tuple[_AreaSquareFull, _AreaSquareFull]:
+        return {
+            1: [(self.quadrant1, self.quadrant2), (self.quadrant4, self.quadrant3)],
+            2: [(self.quadrant2, self.quadrant1), (self.quadrant3, self.quadrant4)],
+            3: [(self.quadrant3, self.quadrant4), (self.quadrant2, self.quadrant1)],
+            4: [(self.quadrant4, self.quadrant3), (self.quadrant1, self.quadrant2)],
+        }[self.base_quadrant][row]
 
     def _get_quadrant_pair_for_column(
         self, column: Literal[0, 1]
-    ) -> tuple[_AreaSquare, _AreaSquare]:
-        if self.base_quadrant == 1:
-            if column == 0:
-                return (self.quadrant1, self.quadrant4)
-            if column == 1:
-                return (self.quadrant2, self.quadrant3)
-            assert_never(column)
-        if self.base_quadrant == 2:
-            if column == 0:
-                return (self.quadrant2, self.quadrant3)
-            if column == 1:
-                return (self.quadrant1, self.quadrant4)
-            assert_never(column)
-        if self.base_quadrant == 3:
-            if column == 0:
-                return (self.quadrant3, self.quadrant2)
-            if column == 1:
-                return (self.quadrant4, self.quadrant1)
-            assert_never(column)
-        if self.base_quadrant == 4:
-            if column == 0:
-                return (self.quadrant4, self.quadrant1)
-            if column == 1:
-                return (self.quadrant3, self.quadrant2)
-            assert_never(column)
-        assert_never(self.base_quadrant)
+    ) -> tuple[_AreaSquareFull, _AreaSquareFull]:
+        return {
+            1: [(self.quadrant1, self.quadrant4), (self.quadrant2, self.quadrant3)],
+            2: [(self.quadrant2, self.quadrant3), (self.quadrant1, self.quadrant4)],
+            3: [(self.quadrant3, self.quadrant2), (self.quadrant4, self.quadrant1)],
+            4: [(self.quadrant4, self.quadrant1), (self.quadrant3, self.quadrant2)],
+        }[self.base_quadrant][column]
 
     def _max_full_followup_areas_for_row(
         self, max_steps: int, *, row: Literal[0, 1] = 0
@@ -682,66 +450,60 @@ class _ExtendableArea:
     ) -> Iterator[_ExtendableDirection]:
         pair_row_0 = self._get_quadrant_pair_for_row(0)
         pair_row_1 = self._get_quadrant_pair_for_row(1)
-        for base, next_ in (
-            pair_row_0,
-            pair_row_1,
-            self._get_quadrant_pair_for_column(0),
-            self._get_quadrant_pair_for_column(1),
+        pair_column_0 = self._get_quadrant_pair_for_column(0)
+        for (base, next_), include_base_and_next in (
+            (pair_row_0, True),
+            (pair_row_1, True),
+            (pair_column_0, False),
+            (self._get_quadrant_pair_for_column(1), False),
         ):
             if base.min_steps > max_steps:
                 continue
-            yield _ExtendableDirection(base, next_)
+            yield _ExtendableDirection(
+                base, next_, include_base_and_next=include_base_and_next
+            )
 
         max_full_followup_areas = self._max_full_followup_areas_for_row(max_steps)
         if max_full_followup_areas <= 0:
             return
 
-        max_full_followup_areas_for_next_row = self._max_full_followup_areas_for_row(
-            max_steps, row=1
-        )
-
-        assert max_full_followup_areas >= max_full_followup_areas_for_next_row
-        assert max_full_followup_areas - 1 <= max_full_followup_areas_for_next_row
-
-        step_increase = next(iter(pair_row_0[1].visits_at_step.values())) - next(
-            iter(pair_row_0[0].visits_at_step.values())
-        )
         x_increase = pair_row_0[1].top_left_corner.x - pair_row_0[0].top_left_corner.x
         y_increase = pair_row_0[1].top_left_corner.y - pair_row_0[0].top_left_corner.y
-        min_increase = pair_row_0[1].min_steps - pair_row_0[0].min_steps
-        max_increase = pair_row_0[1].max_steps - pair_row_0[0].max_steps
+        step_increase = pair_row_0[1].min_steps - pair_row_0[0].min_steps
 
-        prev_row_0 = pair_row_0[1]
-        prev_row_1 = pair_row_1[1]
+        assert x_increase != 0
+        assert y_increase == 0
 
-        def create_next_area_square(prev: _AreaSquare) -> _AreaSquare:
-            return _AreaSquare(
+        def create_next_area_square(
+            column_offset_from_base: int, row: Literal[0, 1]
+        ) -> _AreaSquareExtended:
+            offset_from_base = column_offset_from_base + row
+            full_origin = pair_row_0[0] if offset_from_base % 2 == 0 else pair_row_1[0]
+
+            row_origin = pair_row_0[0] if row == 0 else pair_row_1[0]
+            next_x_increase = x_increase * column_offset_from_base
+            next_step_increase = step_increase * column_offset_from_base
+            return _AreaSquareExtended(
                 Coord2d(
-                    prev.top_left_corner.x + x_increase,
-                    prev.top_left_corner.y + y_increase,
+                    row_origin.top_left_corner.x + next_x_increase,
+                    row_origin.top_left_corner.y,
                 ),
                 Coord2d(
-                    prev.bottom_right_corner.x + x_increase,
-                    prev.bottom_right_corner.y + y_increase,
+                    row_origin.bottom_right_corner.x + next_x_increase,
+                    row_origin.bottom_right_corner.y,
                 ),
-                visits_at_step={
-                    Coord2d(
-                        prev_coord.x + x_increase, prev_coord.y + y_increase
-                    ): prev_step + step_increase
-                    for prev_coord, prev_step in prev.visits_at_step.items()
-                },
-                min_steps=prev.min_steps + min_increase,
-                max_steps=prev.max_steps + max_increase,
+                min_steps=row_origin.min_steps + next_step_increase,
+                max_steps=row_origin.max_steps + next_step_increase,
+                full_origin=full_origin,
             )
 
-        for _ in range(max_full_followup_areas):
-            next_row_0 = create_next_area_square(prev_row_0)
-            next_row_1 = create_next_area_square(prev_row_1)
+        for i in range(max_full_followup_areas):
+            next_row_0 = create_next_area_square(i + 2, 0)
+            next_row_1 = create_next_area_square(i + 2, 1)
 
-            yield _ExtendableDirection(next_row_0, next_row_1)
-
-            prev_row_0 = next_row_0
-            prev_row_1 = next_row_1
+            yield _ExtendableDirection(
+                next_row_0, next_row_1, include_base_and_next=False
+            )
 
 
 @dataclass(slots=True, kw_only=True)
@@ -754,8 +516,9 @@ class _AreasAroundStart:
     center_to_right: _ExtendableDirection
     center_to_bottom: _ExtendableDirection
     center_to_left: _ExtendableDirection
-    completed_non_extendable_areas: list[_AreaSquare] = field(default_factory=list)
+    completed_non_extendable_areas: list[_AreaSquareFull] = field(default_factory=list)
 
+    """
     def all_areas(self) -> Iterator[_AreaSquare]:
         for area in (
             self.top_left,
@@ -778,144 +541,37 @@ class _AreasAroundStart:
             yield direction.next_
 
         yield from self.completed_non_extendable_areas
+    """
 
     def get_all_extendable_directions(
         self, max_steps: int
     ) -> Iterator[_ExtendableDirection]:
-        yield self.center_to_top
         for area in (
+            self.bottom_right,
             self.top_left,
             self.top_right,
             self.bottom_left,
-            self.bottom_right,
         ):
             yield from area.get_all_extendable_directions(max_steps)
+        yield self.center_to_top
         yield self.center_to_right
         yield self.center_to_bottom
         yield self.center_to_left
 
     def get_non_extendable_area_results(self, step: int) -> Iterator[_AreaResult]:
         for area in self.completed_non_extendable_areas:
-            visits_le_step = dict(
-                _get_locations_le_step(area.visits_at_step.items(), step)
-            )
-            yield _AreaResult(
-                _AreaSquareResult(area.top_left_corner, area.bottom_right_corner),
-                area.count_possible_garden_plots_at_step(step),
-                set(_get_possible_locations(visits_le_step.items(), step)),
-                visits_le_step,
-                step,
-            )
-
-
-_map: _InfiniteMap | None = None
-
-
-def _map_of_visited_area(area: Any) -> Iterator[str]:
-    assert _map is not None
-    min_x = area.top_left.x
-    min_y = area.top_left.y
-    max_x = area.bottom_right.x
-    max_y = area.bottom_right.y
-    l = len(str(max(area.visits_at_step.values())))
-    yield f"Steps for area x:{min_x:d}-{max_x:d}, y={min_y:d}-{max_y:d}"
-    yield "-" * ((l + 1) * (max_x - min_x + 1))
-    for y in range(min_y, max_y + 1):
-        row = ""
-        for x in range(min_x, max_x + 1):
-            coord = Coord2d(x, y)
-            if coord == _map.start:
-                row += " " * l + "S"
-            elif coord in area.visits_at_step:
-                row += f" {area.visits_at_step[coord]:{l}d}"
-            else:
-                row += " " * l + "#"
-        yield row
-
-
-def _map_locations(visited: set[Coord2d]) -> Iterator[str]:
-    assert _map is not None
-    min_x = min(x.x for x in visited)
-    min_y = min(x.y for x in visited)
-    max_x = max(x.x for x in visited)
-    max_y = max(x.y for x in visited)
-    yield (
-        f"Count: {len(visited)}. "
-        f"Area: x={min_x:d} - {max_x:d}, y={min_y:d} - {max_y:d}"
-    )
-    yield "-" * (max_x - min_x + 1)
-    for y in range(min_y, max_y + 1):
-        row = ""
-        for x in range(min_x, max_x + 1):
-            coord = Coord2d(x, y)
-            if coord == _map.start:
-                v = "S"
-            elif coord in visited:
-                v = "O"
-            else:
-                v = _map.get_by_xy(x, y)
-            row += f"{v}"
-        yield row
-
-
-def _get_area_min_max(coords: Iterable[Coord2d]) -> tuple[int, int, int, int]:
-    min_x: int | None = None
-    max_x: int | None = None
-    min_y: int | None = None
-    max_y: int | None = None
-    for coord in coords:
-        if min_x is None or coord.x < min_x:
-            min_x = coord.x
-        if max_x is None or coord.x > max_x:
-            max_x = coord.x
-        if min_y is None or coord.y < min_y:
-            min_y = coord.y
-        if max_y is None or coord.y > max_y:
-            max_y = coord.y
-    assert min_x is not None
-    assert max_x is not None
-    assert min_y is not None
-    assert max_y is not None
-    return min_x, min_y, max_x, max_y
-
-
-def _map_overlay_visited_with_required(
-    visited: set[Coord2d], required: set[Coord2d]
-) -> Iterator[str]:
-    assert _map is not None
-    min_x, min_y, max_x, max_y = _get_area_min_max(itertools.chain(visited, required))
-    yield (
-        f"Visited: {len(visited)}. "
-        f"Required: {len(required)}. "
-        f"Area: x={min_x:d} - {max_x:d}, y={min_y:d} - {max_y:d}"
-    )
-    yield "-" * (max_x - min_x + 1)
-    for y in range(min_y, max_y + 1):
-        row = ""
-        for x in range(min_x, max_x + 1):
-            coord = Coord2d(x, y)
-            if coord == _map.start:
-                v = "S"
-            elif coord in visited:
-                v = "o" if coord in required else "v"
-            elif coord in required:
-                v = "X"
-            else:
-                v = _map.get_by_xy(x, y)
-                if v == "#":
-                    v = "_"
-            row += f"{v}"
-        yield row
+            yield _AreaResult(area.count_possible_garden_plots_at_step(step))
 
 
 def _p2_step1_resolve_around_start(
     map_: _InfiniteMap,
-) -> tuple[_AreasAroundStart, dict[Coord2d, int]]:
+    puzzle_max_steps: int,
+) -> _AreasAroundStart:
     @dataclass(slots=True)
     class _RangeArea:
         top_left: Coord2d
         bottom_right: Coord2d
-        visits_at_step: dict[Coord2d, int] = field(default_factory=dict, init=False)
+        _steps: Counter[int] = field(default_factory=Counter, init=False)
         _min_step: int | None = field(default=None, init=False)
         _max_step: int | None = field(default=None, init=False)
 
@@ -940,7 +596,8 @@ def _p2_step1_resolve_around_start(
                 if not self.contains(coord):
                     continue
 
-                self.visits_at_step[coord] = step
+                # self.visits_at_step[coord] = step
+                self._steps.update([step])
                 if self._min_step is None or step < self._min_step:
                     self._min_step = step
                 if self._max_step is None or step > self._max_step:
@@ -952,13 +609,14 @@ def _p2_step1_resolve_around_start(
                 and self.top_left.y <= coord.y <= self.bottom_right.y
             )
 
-        def to_square(self) -> _AreaSquare:
-            return _AreaSquare(
+        def to_square(self, puzzle_max_steps: int) -> _AreaSquareFull:
+            return _AreaSquareFull(
                 self.top_left,
                 self.bottom_right,
-                self.visits_at_step,
                 self.min_step,
                 self.max_step,
+                puzzle_max_steps,
+                self._steps,
             )
 
     class _RangeAreaQuadrants:
@@ -1005,12 +663,12 @@ def _p2_step1_resolve_around_start(
                 Coord2d(self.q3.bottom_right.x + map_.width, self.q3.bottom_right.y),
             )
 
-        def to_result(self) -> _ExtendableArea:
+        def to_result(self, puzzle_max_steps: int) -> _ExtendableArea:
             return _ExtendableArea(
-                self.q1.to_square(),
-                self.q2.to_square(),
-                self.q3.to_square(),
-                self.q4.to_square(),
+                self.q1.to_square(puzzle_max_steps),
+                self.q2.to_square(puzzle_max_steps),
+                self.q3.to_square(puzzle_max_steps),
+                self.q4.to_square(puzzle_max_steps),
                 self.base_quadrant,
             )
 
@@ -1019,6 +677,19 @@ def _p2_step1_resolve_around_start(
             yield self.q2
             yield self.q3
             yield self.q4
+
+    @dataclass(slots=True)
+    class _RangeAreaVectorArea(_RangeArea):
+        visits_at_step: dict[Coord2d, int] = field(default_factory=dict, init=False)
+
+        @override  # TODO: Refactor to avoid looping twice
+        def add_visits(self, step: int, visits: set[Coord2d]) -> None:
+            super(_RangeAreaVectorArea, self).add_visits(step, visits)
+            for coord in visits:
+                if not self.contains(coord):
+                    continue
+
+                self.visits_at_step[coord] = step
 
     class _RangeAreaVector:
         @overload
@@ -1032,17 +703,20 @@ def _p2_step1_resolve_around_start(
             pass
 
         @overload
-        def __init__(self, base: _RangeArea, next_: _RangeArea, /) -> None:
+        def __init__(
+            self, base: _RangeAreaVectorArea, next_: _RangeAreaVectorArea, /
+        ) -> None:
             pass
 
         def __init__(
             self,
-            map_or_base: _InfiniteMap | _RangeArea,
-            next_or_center: _RangeArea,
+            map_or_base: _InfiniteMap | _RangeAreaVectorArea,
+            next_or_center: _RangeArea | _RangeAreaVectorArea,
             direction_from_center: CardinalDirection | None = None,
         ) -> None:
-            if isinstance(map_or_base, _RangeArea):
+            if isinstance(map_or_base, _RangeAreaVectorArea):
                 self.base = map_or_base
+                assert isinstance(next_or_center, _RangeAreaVectorArea)
                 self.next = next_or_center
                 return
 
@@ -1050,42 +724,42 @@ def _p2_step1_resolve_around_start(
             center = next_or_center
             assert direction_from_center is not None
             if direction_from_center == CardinalDirection.N:
-                self.base = _RangeArea(
+                self.base = _RangeAreaVectorArea(
                     Coord2d(center.top_left.x, center.top_left.y - map_.height),
                     Coord2d(center.bottom_right.x, center.top_left.y - 1),
                 )
-                self.next = _RangeArea(
+                self.next = _RangeAreaVectorArea(
                     Coord2d(self.base.top_left.x, self.base.top_left.y - map_.height),
                     Coord2d(self.base.bottom_right.x, self.base.top_left.y - 1),
                 )
             elif direction_from_center == CardinalDirection.S:
-                self.base = _RangeArea(
+                self.base = _RangeAreaVectorArea(
                     Coord2d(center.top_left.x, center.bottom_right.y + 1),
                     Coord2d(center.bottom_right.x, center.bottom_right.y + map_.height),
                 )
-                self.next = _RangeArea(
+                self.next = _RangeAreaVectorArea(
                     Coord2d(self.base.top_left.x, self.base.bottom_right.y + 1),
                     Coord2d(
                         self.base.bottom_right.x, self.base.bottom_right.y + map_.height
                     ),
                 )
             elif direction_from_center == CardinalDirection.E:
-                self.base = _RangeArea(
+                self.base = _RangeAreaVectorArea(
                     Coord2d(center.bottom_right.x + 1, center.top_left.y),
                     Coord2d(center.bottom_right.x + map_.width, center.bottom_right.y),
                 )
-                self.next = _RangeArea(
+                self.next = _RangeAreaVectorArea(
                     Coord2d(self.base.bottom_right.x + 1, self.base.top_left.y),
                     Coord2d(
                         self.base.bottom_right.x + map_.width, self.base.bottom_right.y
                     ),
                 )
             elif direction_from_center == CardinalDirection.W:
-                self.base = _RangeArea(
+                self.base = _RangeAreaVectorArea(
                     Coord2d(center.top_left.x - map_.width, center.top_left.y),
                     Coord2d(center.top_left.x - 1, center.bottom_right.y),
                 )
-                self.next = _RangeArea(
+                self.next = _RangeAreaVectorArea(
                     Coord2d(self.base.top_left.x - map_.width, self.base.top_left.y),
                     Coord2d(self.base.top_left.x - 1, self.base.bottom_right.y),
                 )
@@ -1097,7 +771,7 @@ def _p2_step1_resolve_around_start(
             y_increase = self.next.top_left.y - self.base.top_left.y
             return _RangeAreaVector(
                 self.next,
-                _RangeArea(
+                _RangeAreaVectorArea(
                     Coord2d(
                         self.next.top_left.x + x_increase,
                         self.next.top_left.y + y_increase,
@@ -1113,15 +787,6 @@ def _p2_step1_resolve_around_start(
             max_diff = self.next.max_step - self.base.max_step
             min_diff = self.next.min_step - self.base.min_step
             if max_diff != min_diff:
-                # _logger.debug(
-                #    "\n%s",
-                #    "\n".join(
-                #        itertools.chain(
-                #            _map_of_visited_area(self.base),
-                #            _map_of_visited_area(self.next),
-                #        )
-                #    ),
-                # )
                 return False
 
             y_increase = self.next.top_left.y - self.base.top_left.y
@@ -1138,22 +803,14 @@ def _p2_step1_resolve_around_start(
                 if prev_step_diff is None:
                     prev_step_diff = step_diff
                 elif prev_step_diff != step_diff:
-                    # _logger.debug(
-                    #    "\n%s",
-                    #    "\n".join(
-                    #        itertools.chain(
-                    #            _map_of_visited_area(self.base),
-                    #            _map_of_visited_area(self.next),
-                    #        )
-                    #    ),
-                    # )
                     return False
 
             return True
 
-        def to_result(self) -> _ExtendableDirection:
+        def to_result(self, puzzle_max_steps: int) -> _ExtendableDirection:
             return _ExtendableDirection(
-                base=self.base.to_square(), next_=self.next.to_square()
+                base=self.base.to_square(puzzle_max_steps),
+                next_=self.next.to_square(puzzle_max_steps),
             )
 
         def all_areas(self) -> Iterator[_RangeArea]:
@@ -1173,25 +830,26 @@ def _p2_step1_resolve_around_start(
             self.center_to_right = _RangeAreaVector(map_, center, CardinalDirection.E)
             self.center_to_bottom = _RangeAreaVector(map_, center, CardinalDirection.S)
             self.center_to_left = _RangeAreaVector(map_, center, CardinalDirection.W)
-            self.completed_non_extendable_areas = list((center,))
+            self.completed_non_extendable_areas = [center]
 
         def add_visits(self, step: int, visits: set[Coord2d]) -> None:
             for area in self.all_areas():
                 area.add_visits(step, visits)
 
-        def to_result(self) -> _AreasAroundStart:
+        def to_result(self, puzzle_max_steps: int) -> _AreasAroundStart:
             return _AreasAroundStart(
-                top_left=self.top_left.to_result(),
-                top_right=self.top_right.to_result(),
-                bottom_left=self.bottom_left.to_result(),
-                bottom_right=self.bottom_right.to_result(),
-                center_to_top=self.center_to_top.to_result(),
-                center_to_right=self.center_to_right.to_result(),
-                center_to_bottom=self.center_to_bottom.to_result(),
-                center_to_left=self.center_to_left.to_result(),
-                completed_non_extendable_areas=list(
-                    area.to_square() for area in self.completed_non_extendable_areas
-                ),
+                top_left=self.top_left.to_result(puzzle_max_steps),
+                top_right=self.top_right.to_result(puzzle_max_steps),
+                bottom_left=self.bottom_left.to_result(puzzle_max_steps),
+                bottom_right=self.bottom_right.to_result(puzzle_max_steps),
+                center_to_top=self.center_to_top.to_result(puzzle_max_steps),
+                center_to_right=self.center_to_right.to_result(puzzle_max_steps),
+                center_to_bottom=self.center_to_bottom.to_result(puzzle_max_steps),
+                center_to_left=self.center_to_left.to_result(puzzle_max_steps),
+                completed_non_extendable_areas=[
+                    area.to_square(puzzle_max_steps)
+                    for area in self.completed_non_extendable_areas
+                ],
             )
 
         def all_areas(self) -> Iterator[_RangeArea]:
@@ -1233,10 +891,6 @@ def _p2_step1_resolve_around_start(
 
     range_areas = _RangeAreasAroundStart(map_)
 
-    for area in range_areas.all_areas():
-        assert map_.width == area.width()
-        assert map_.height == area.height()
-
     required_visited_locations = set[Coord2d](
         Coord2d(x, y)
         for area in range_areas.all_areas()
@@ -1249,55 +903,16 @@ def _p2_step1_resolve_around_start(
         )
     )
 
-    def get_visited_locations_at_step_with_duplicate_check(
-        visits_at_step: dict[int, set[Coord2d]],
-    ) -> dict[Coord2d, int]:
-        result: dict[Coord2d, int] = {}
-        for step, locations in visits_at_step.items():
-            for location in locations:
-                assert location not in result, "Duplicate step for location"
-                result[location] = step
-        return result
-
     visited_locations_at_step: dict[int, set[Coord2d]] = {0: {map_.start}}
     visited_locations: set[Coord2d] = {map_.start}
     locations_to_process: set[Coord2d] = {map_.start}
     remaining_locations_to_visit = set(required_visited_locations) - visited_locations
     range_areas.add_visits(0, visited_locations)
     step = 0
-    min_step: int | None = None
     cont = True
     while cont:
-        _logger.debug(
-            "Required distance: %s",
-            max(map_.start.distance_to_cardinal(x) for x in required_visited_locations),
-        )
-        _logger.debug(
-            "Required locations: \n%s",
-            "\n".join(_map_locations(required_visited_locations)),
-        )
-
-        # while not required_visited_locations <= visited_locations or (
-        #    min_step is not None and step < min_step
-        # ):
         while remaining_locations_to_visit:
             step += 1
-            # with open(f"visited-with-required-map-{step}.txt", "w") as f:
-            #    f.write(
-            #        "\n".join(
-            #            _map_overlay_visited_with_required(
-            #                visited_locations, required_visited_locations
-            #            )
-            #        )
-            #    )
-            # _logger.debug(
-            #    "Visited with required: \n%s",
-            #    "\n".join(
-            #        _map_overlay_visited_with_required(
-            #            visited_locations, required_visited_locations
-            #        )
-            #    ),
-            # )
             _logger.debug("Step: %s", step)
             adjoin_locations = set(
                 map_.get_adjoin_garden_plots_for_locations(locations_to_process)
@@ -1308,17 +923,6 @@ def _p2_step1_resolve_around_start(
             visited_locations.update(adjoin_locations)
             remaining_locations_to_visit -= adjoin_locations
             locations_to_process = adjoin_locations
-            # _logger.debug("Visited: \n%s", "\n".join(_map_visited_str(visited_locations)))
-        # _logger.debug(
-        #    "Initial visited: \n%s",
-        #    "\n".join(
-        #        _map_step_visited_str(
-        #            get_visited_locations_at_step_with_duplicate_check(
-        #                visited_locations_at_step
-        #            )
-        #        )
-        #    ),
-        # )
         new_areas = range_areas.check_complete()
         if not new_areas:
             cont = False
@@ -1342,231 +946,39 @@ def _p2_step1_resolve_around_start(
         )
         remaining_locations_to_visit = required_visited_locations - visited_locations
 
-    all_visited_locations_with_step: dict[Coord2d, int] = (
-        get_visited_locations_at_step_with_duplicate_check(visited_locations_at_step)
-    )
-
-    return range_areas.to_result(), all_visited_locations_with_step
+    return range_areas.to_result(puzzle_max_steps)
 
 
-_l: int = 3
-_min_x: int | None = None
-_min_y: int | None = None
-_max_x: int | None = None
-_max_y: int | None = None
-
-
-def _map_step_visited_str(visited: dict[Coord2d, int]) -> Iterator[str]:
-    assert _map is not None
-    global _min_x
-    global _min_y
-    global _max_x
-    global _max_y
-    min_x = min(x.x for x in visited)
-    max_x = max(x.x for x in visited)
-    min_y = min(x.y for x in visited)
-    max_y = max(x.y for x in visited)
-    _min_x = min_x
-    _min_y = min_y
-    _max_x = max_x
-    _max_y = max_y
-    assert len(str(max(visited.values()))) + 1 == _l
-    yield f"Steps for area x={min_x:d} - {max_x:d}, y={min_y:d} - {max_y:d}"
-    yield "-" * (_l * (max_x - min_x + 1))
-    for y in range(min_y, max_y + 1):
-        row = ""
-        for x in range(min_x, max_x + 1):
-            coord = Coord2d(x, y)
-            if coord == _map.start:
-                v = "S"
-            elif coord in visited:
-                v = visited[coord]
-            else:
-                v = _map.get_by_xy(x, y)
-            row += f"{v:>{_l}}"
-        yield row
-
-
-def _map_of_step_counts(areas: Iterable[_AreaResult]) -> Iterator[str]:
-    assert _map is not None
-    assert _min_x is not None
-    assert _min_y is not None
-    assert _max_x is not None
-    assert _max_y is not None
-    min_x = _min_x
-    min_y = _min_y
-    max_x = _max_x
-    max_y = _max_y
-    visited_locations_with_step: dict[Coord2d, int] = {}
-    for area in areas:
-        for location, step in area.locations_with_step_le_max_step.items():
-            assert (
-                location not in visited_locations_with_step
-            ), "Duplicate step for location"
-            visited_locations_with_step[location] = step
-    yield (
-        f"Step counts at requested step. Count: {len(visited_locations_with_step)}. "
-        f"Full area: x={min_x:d} - {max_x:d}, y={min_y:d} - {max_y:d}"
-    )
-    yield "-" * (_l * (max_x - min_x + 1))
-    for y in range(min_y, max_y + 1):
-        row = ""
-        for x in range(min_x, max_x + 1):
-            coord = Coord2d(x, y)
-            if coord == _map.start:
-                v = "S"
-            elif coord in visited_locations_with_step:
-                v = visited_locations_with_step[coord]
-            else:
-                v = _map.get_by_xy(x, y)
-            row += f"{v:>{_l}}"
-        yield row
-
-
-def _map_of_result(areas: Iterable[_AreaResult]) -> Iterator[str]:
-    assert _map is not None
-    assert _min_x is not None
-    assert _min_y is not None
-    assert _max_x is not None
-    assert _max_y is not None
-    min_x = _min_x
-    min_y = _min_y
-    max_x = _max_x
-    max_y = _max_y
-    areas = list(areas)
-    visited_locations: set[Coord2d] = set(
-        itertools.chain(*(a.possible_garden_plot_locations for a in areas))
-    )
-    yield (
-        f"Locations at requested step. Count: {len(visited_locations)}. "
-        f"Full area: x={min_x:d} - {max_x:d}, y={min_y:d} - {max_y:d}"
-    )
-    yield "-" * (_l * (max_x - min_x + 1))
-    for y in range(min_y, max_y + 1):
-        row = ""
-        for x in range(min_x, max_x + 1):
-            coord = Coord2d(x, y)
-            if coord == _map.start:
-                v = "+" if coord in visited_locations else "S"
-            elif coord in visited_locations:
-                v = "O"
-            else:
-                v = _map.get_by_xy(x, y)
-            row += f"{v:>{_l}}"
-        yield row
-
-
-def _p2_step2_extend_areas(
-    areas: _AreasAroundStart, step: int, initial_visits: dict[Coord2d, int]
-) -> int:
-    # 2. Take the corner squares and extend them outbound from stars adjusting the step
-    #    counts
-
-    # Extend top-left towards top once (TODO: Keep extending)
-    processed_areas: set[_AreaSquareResult] = set()
-
-    result_areas: list[_AreaResult] = []
-
-    def add_result_area(area: _AreaResult) -> None:
-        nonlocal result_areas
-        if area.possible_garden_plots > 0:
-            result_areas.append(area)
-
-    for area in areas.get_non_extendable_area_results(step):
-        add_result_area(area)
-
+def _p2_step2_extend_areas(areas: _AreasAroundStart, puzzle_max_steps: int) -> int:
     garden_plot_count = sum(
         area.possible_garden_plots
-        for area in areas.get_non_extendable_area_results(step)
+        for area in areas.get_non_extendable_area_results(puzzle_max_steps)
     )
 
-    # garden_plot_count = sum(
-    #    area.count_possible_garden_plots_at_step(map_, step)
-    #    for area in areas.completed_non_extendable_areas
-    # )
-    for extendable_direction in areas.get_all_extendable_directions(step):
-        for area_result in extendable_direction.get_all_area_results(
-            step, lambda area: area not in processed_areas
-        ):
-            processed_areas.add(area_result.area_square_result)
-            garden_plot_count += area_result.possible_garden_plots
-            add_result_area(area_result)
-
-    # with open("correct-step-counts.txt", "w") as f:
-    #    f.write("\n".join(_map_step_visited_str(initial_visits)))
-    # with open("result-step-counts.txt", "w") as f:
-    #    f.write("\n".join(_map_of_step_counts(result_areas)))
-    # with open("result-locations.txt", "w") as f:
-    #    f.write("\n".join(_map_of_result(result_areas)))
-    # _logger.debug("\n%s", "\n".join(_map_of_step_counts(result_areas)))
-    # _logger.debug("\n%s", "\n".join(_map_of_result(result_areas)))
-
-    initial_locs_with_steps_le = dict(
-        _get_locations_le_step(initial_visits.items(), step)
-    )
-    initial_locs_possible = set(
-        _get_possible_locations(initial_locs_with_steps_le.items(), step)
-    )
-    initial_result = len(initial_locs_possible)
-
-    locs_with_steps_le = dict(
-        itertools.chain(
-            *(a.locations_with_step_le_max_step.items() for a in result_areas)
-        )
-    )
-    locs_possible = set(_get_possible_locations(locs_with_steps_le.items(), step))
-    locs_result = len(locs_possible)
-    new_locs_possible = locs_possible - initial_locs_possible
-    missing_locs_possible = initial_locs_possible - locs_possible
-
-    _logger.info("Calculated result: %s", garden_plot_count)
-    _logger.info("Locs result: %s", locs_result)
-    if max(initial_locs_with_steps_le.values()) >= step:
-        _logger.info("Initial result: %s", initial_result)
-        _logger.info(
-            "New locs compared to initial: %s",
-            "\n".join(
-                str(x) for x in (sorted(new_locs_possible, key=lambda x: (x.x, x.y)))
-            ),
-        )
-        _logger.info(
-            "Missing locs compared to initial: %s",
-            "\n".join(
-                str(x)
-                for x in (sorted(missing_locs_possible, key=lambda x: (x.x, x.y)))
-            ),
+    for extendable_direction in areas.get_all_extendable_directions(puzzle_max_steps):
+        garden_plot_count += extendable_direction.count_possible_garden_plots(
+            puzzle_max_steps
         )
 
     return garden_plot_count
 
 
-# TODO
-# 1. Process width-first from start until 4x4 squares with start in the middle have all
-#    garden plots visited
-# 2. Take the corner squares and extend them outbound from stars adjusting the step
-#    counts
-# 3. Keep extending until max step count in one extended square reaches steps, once that
-#    happens ignore such square
-# 4. Process the remaining outer bounds with the width-first algorighm
-#    (or complex if too slow)
-
 REAL_STEPS = 26_501_365
 
 
-def p2(input_str: str, steps: int = 2000) -> int:
+def p2(input_str: str, puzzle_max_steps: int = 10_000_000) -> int:
     map_ = _InfiniteMap(input_str.splitlines())
-    global _map
-    _map = map_
     _logger.debug("Map size: w=%s, h=%s", map_.width, map_.height)
+    assert map_.width % 2 == 1
+    assert map_.height % 2 == 1
 
     # Step 1: START
-    areas_around_start, all_visits = _p2_step1_resolve_around_start(map_)
+    areas_around_start = _p2_step1_resolve_around_start(map_, puzzle_max_steps)
 
     # Step 1: END
 
     # Step 2: START
-    result = _p2_step2_extend_areas(areas_around_start, steps, all_visits)
-    return result
+    return _p2_step2_extend_areas(areas_around_start, puzzle_max_steps)
     # Step 2: END
 
     coords_and_steps = [
@@ -1739,12 +1151,6 @@ def p2(input_str: str, steps: int = 2000) -> int:
                 else:
                     row += map_.infinite_get(x, y)
             yield row
-
-    # _logger.info("Visited: \n%s", "\n".join(_map_visited_str()))
-    with open(f"p21d2-{steps}-all-visited.txt", "w") as f:
-        f.write("\n".join(_map_visited_str(all_visited)))
-    with open(f"p21d2-{steps}-possible-visited.txt", "w") as f:
-        f.write("\n".join(_map_visited_str(possible_steps)))
 
     # def _map_symbols() -> Iterator[str]:
     #    for y in range(min_y, max_y + 1):
