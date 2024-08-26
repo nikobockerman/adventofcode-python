@@ -49,13 +49,13 @@ files = [
 
 [[package]]
 name = "joblib-stubs"
-version = "1.4.2.3.20240619"
+version = "1.4.2.4.20240825"
 description = "joblib stubs"
 optional = false
-python-versions = ">=3"
+python-versions = ">=3.8"
 files = [
-    {file = "joblib_stubs-1.4.2.3.20240619-py3-none-any.whl", hash = "sha256:d9e9bad31473a026783bf5c249919b15cd42bbea0adeb16bf9cdb38f6bdfcda2"},
-    {file = "joblib_stubs-1.4.2.3.20240619.tar.gz", hash = "sha256:6100e50beed7ca951f162efbd78902b8cf7627da3d11b978a250d7b08ac3e67d"},
+    {file = "joblib_stubs-1.4.2.4.20240825-py3-none-any.whl", hash = "sha256:ff469cebb4f149148419824a8901adcccdcb4bcb4e6cfe47ceecc6ef8647ac49"},
+    {file = "joblib_stubs-1.4.2.4.20240825.tar.gz", hash = "sha256:dbbb5957fa8365dc8b01e916ab658db37783263b7fdc6d92e8ca6bb8875c3e72"},
 ]
 
 [package.dependencies]
@@ -491,4 +491,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "119e0a8153ecea9a2f79cae8c6a28d8d9f5652a95f80d650714b445bf04ccd43"
+content-hash = "ffd3c4532c1c9c0cf74bc3a23358f39e932ffea5ed45b18b6eddebe88daa6436"

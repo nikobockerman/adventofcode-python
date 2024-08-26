@@ -39,7 +39,7 @@ snakeviz = "^2.2.0"
 tuna = "^0.5.11"
 pyinstrument = "^4.7.2"
 pyright = "^1.1.377"
-joblib-stubs = "^1.4.2.3.20240619"
+joblib-stubs = "^1.4.2.4.20240825"
 
 [tool.poetry.scripts]
 adventofcode = "adventofcode.main:app"
