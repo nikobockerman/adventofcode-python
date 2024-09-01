@@ -241,8 +241,6 @@ class _LocationToProcess:
 
 @dataclass(slots=True)
 class _AreaSquareBasic:
-    top_left_corner: Coord2d
-    bottom_right_corner: Coord2d
     min_steps: int
     max_steps: int
 
@@ -357,22 +355,21 @@ class _ExtendableDirection:
 
         return result, full_area_count
 
-    def _get_partial_square_area_results(
-        self, step: int, full_area_count: int
-    ) -> Iterator[int]:
+    def _get_partial_square_area_results(self, step: int, full_area_count: int) -> int:
+        result = 0
         if (
             full_area_count == 0
             and self.base.min_steps <= step
             and self.include_base_and_next
         ):
-            yield self.base.count_possible_garden_plots_at_step(step)
+            result += self.base.count_possible_garden_plots_at_step(step)
 
         if (
             full_area_count <= 1
             and self.next_.min_steps <= step
             and self.include_base_and_next
         ):
-            yield self.next_.count_possible_garden_plots_at_step(step)
+            result += self.next_.count_possible_garden_plots_at_step(step)
 
         step_increase = self.next_.min_steps - self.base.min_steps
 
@@ -383,7 +380,7 @@ class _ExtendableDirection:
         partial_followup_areas = (step - min_last_full_followup_area) // step_increase
 
         if partial_followup_areas <= 0:
-            return
+            return result
 
         for i in range(partial_followup_areas):
             step_increase_area = step_increase * (full_followup_areas + i + 1)
@@ -393,12 +390,12 @@ class _ExtendableDirection:
                     step - step_increase_area
                 )
             )
-            yield counted_plots_for_partial_area
+            result += counted_plots_for_partial_area
+        return result
 
     def count_possible_garden_plots(self, step: int) -> int:
         count, full_area_count = self._get_full_square_area_results(step)
-        for result in self._get_partial_square_area_results(step, full_area_count):
-            count += result
+        count += self._get_partial_square_area_results(step, full_area_count)
         return count
 
 
@@ -467,12 +464,7 @@ class _ExtendableArea:
         if max_full_followup_areas <= 0:
             return
 
-        x_increase = pair_row_0[1].top_left_corner.x - pair_row_0[0].top_left_corner.x
-        y_increase = pair_row_0[1].top_left_corner.y - pair_row_0[0].top_left_corner.y
         step_increase = pair_row_0[1].min_steps - pair_row_0[0].min_steps
-
-        assert x_increase != 0
-        assert y_increase == 0
 
         def create_next_area_square(
             column_offset_from_base: int, row: Literal[0, 1]
@@ -481,17 +473,8 @@ class _ExtendableArea:
             full_origin = pair_row_0[0] if offset_from_base % 2 == 0 else pair_row_1[0]
 
             row_origin = pair_row_0[0] if row == 0 else pair_row_1[0]
-            next_x_increase = x_increase * column_offset_from_base
             next_step_increase = step_increase * column_offset_from_base
             return _AreaSquareExtended(
-                Coord2d(
-                    row_origin.top_left_corner.x + next_x_increase,
-                    row_origin.top_left_corner.y,
-                ),
-                Coord2d(
-                    row_origin.bottom_right_corner.x + next_x_increase,
-                    row_origin.bottom_right_corner.y,
-                ),
                 min_steps=row_origin.min_steps + next_step_increase,
                 max_steps=row_origin.max_steps + next_step_increase,
                 full_origin=full_origin,
@@ -570,7 +553,8 @@ def _p2_step1_resolve_around_start(
     @dataclass(slots=True)
     class _RangeArea:
         top_left: Coord2d
-        bottom_right: Coord2d
+        width: int
+        height: int
         _steps: Counter[int] = field(default_factory=Counter, init=False)
         _min_step: int | None = field(default=None, init=False)
         _max_step: int | None = field(default=None, init=False)
@@ -585,18 +569,11 @@ def _p2_step1_resolve_around_start(
             assert self._max_step is not None
             return self._max_step
 
-        def width(self) -> int:
-            return self.bottom_right.x - self.top_left.x + 1
-
-        def height(self) -> int:
-            return self.bottom_right.y - self.top_left.y + 1
-
         def add_visits(self, step: int, visits: set[Coord2d]) -> None:
             for coord in visits:
                 if not self.contains(coord):
                     continue
 
-                # self.visits_at_step[coord] = step
                 self._steps.update([step])
                 if self._min_step is None or step < self._min_step:
                     self._min_step = step
@@ -605,18 +582,13 @@ def _p2_step1_resolve_around_start(
 
         def contains(self, coord: Coord2d) -> bool:
             return (
-                self.top_left.x <= coord.x <= self.bottom_right.x
-                and self.top_left.y <= coord.y <= self.bottom_right.y
+                self.top_left.x <= coord.x < self.top_left.x + self.width
+                and self.top_left.y <= coord.y < self.top_left.y + self.height
             )
 
         def to_square(self, puzzle_max_steps: int) -> _AreaSquareFull:
             return _AreaSquareFull(
-                self.top_left,
-                self.bottom_right,
-                self.min_step,
-                self.max_step,
-                puzzle_max_steps,
-                self._steps,
+                self.min_step, self.max_step, puzzle_max_steps, self._steps
             )
 
     class _RangeAreaQuadrants:
@@ -643,24 +615,21 @@ def _p2_step1_resolve_around_start(
             else:
                 assert_never(quadrant_from_center)
 
-            self.q2 = _RangeArea(
-                top_left_coord,
-                Coord2d(
-                    top_left_coord.x + map_.width - 1,
-                    top_left_coord.y + map_.height - 1,
-                ),
-            )
+            self.q2 = _RangeArea(top_left_coord, map_.width, map_.height)
             self.q1 = _RangeArea(
                 Coord2d(self.q2.top_left.x + map_.width, self.q2.top_left.y),
-                Coord2d(self.q2.bottom_right.x + map_.width, self.q2.bottom_right.y),
+                map_.width,
+                map_.height,
             )
             self.q3 = _RangeArea(
                 Coord2d(self.q2.top_left.x, self.q2.top_left.y + map_.height),
-                Coord2d(self.q2.bottom_right.x, self.q2.bottom_right.y + map_.height),
+                map_.width,
+                map_.height,
             )
             self.q4 = _RangeArea(
                 Coord2d(self.q3.top_left.x + map_.width, self.q3.top_left.y),
-                Coord2d(self.q3.bottom_right.x + map_.width, self.q3.bottom_right.y),
+                map_.width,
+                map_.height,
             )
 
         def to_result(self, puzzle_max_steps: int) -> _ExtendableArea:
@@ -726,42 +695,50 @@ def _p2_step1_resolve_around_start(
             if direction_from_center == CardinalDirection.N:
                 self.base = _RangeAreaVectorArea(
                     Coord2d(center.top_left.x, center.top_left.y - map_.height),
-                    Coord2d(center.bottom_right.x, center.top_left.y - 1),
+                    map_.width,
+                    map_.height,
                 )
                 self.next = _RangeAreaVectorArea(
                     Coord2d(self.base.top_left.x, self.base.top_left.y - map_.height),
-                    Coord2d(self.base.bottom_right.x, self.base.top_left.y - 1),
+                    map_.width,
+                    map_.height,
                 )
             elif direction_from_center == CardinalDirection.S:
                 self.base = _RangeAreaVectorArea(
-                    Coord2d(center.top_left.x, center.bottom_right.y + 1),
-                    Coord2d(center.bottom_right.x, center.bottom_right.y + map_.height),
+                    Coord2d(center.top_left.x, center.top_left.y + center.height),
+                    map_.width,
+                    map_.height,
                 )
                 self.next = _RangeAreaVectorArea(
-                    Coord2d(self.base.top_left.x, self.base.bottom_right.y + 1),
                     Coord2d(
-                        self.base.bottom_right.x, self.base.bottom_right.y + map_.height
+                        self.base.top_left.x, self.base.top_left.y + self.base.height
                     ),
+                    map_.width,
+                    map_.height,
                 )
             elif direction_from_center == CardinalDirection.E:
                 self.base = _RangeAreaVectorArea(
-                    Coord2d(center.bottom_right.x + 1, center.top_left.y),
-                    Coord2d(center.bottom_right.x + map_.width, center.bottom_right.y),
+                    Coord2d(center.top_left.x + center.width, center.top_left.y),
+                    map_.width,
+                    map_.height,
                 )
                 self.next = _RangeAreaVectorArea(
-                    Coord2d(self.base.bottom_right.x + 1, self.base.top_left.y),
                     Coord2d(
-                        self.base.bottom_right.x + map_.width, self.base.bottom_right.y
+                        self.base.top_left.x + self.base.width, self.base.top_left.y
                     ),
+                    map_.width,
+                    map_.height,
                 )
             elif direction_from_center == CardinalDirection.W:
                 self.base = _RangeAreaVectorArea(
                     Coord2d(center.top_left.x - map_.width, center.top_left.y),
-                    Coord2d(center.top_left.x - 1, center.bottom_right.y),
+                    map_.width,
+                    map_.height,
                 )
                 self.next = _RangeAreaVectorArea(
                     Coord2d(self.base.top_left.x - map_.width, self.base.top_left.y),
-                    Coord2d(self.base.top_left.x - 1, self.base.bottom_right.y),
+                    map_.width,
+                    map_.height,
                 )
             else:
                 assert_never(direction_from_center)
@@ -776,10 +753,8 @@ def _p2_step1_resolve_around_start(
                         self.next.top_left.x + x_increase,
                         self.next.top_left.y + y_increase,
                     ),
-                    Coord2d(
-                        self.next.bottom_right.x + x_increase,
-                        self.next.bottom_right.y + y_increase,
-                    ),
+                    map_.width,
+                    map_.height,
                 ),
             )
 
@@ -824,7 +799,7 @@ def _p2_step1_resolve_around_start(
             self.bottom_left = _RangeAreaQuadrants(map_, 3)
             self.bottom_right = _RangeAreaQuadrants(map_, 4)
             center = _RangeArea(
-                Coord2d(map_.first_x, map_.first_y), Coord2d(map_.last_x, map_.last_y)
+                Coord2d(map_.first_x, map_.first_y), map_.width, map_.height
             )
             self.center_to_top = _RangeAreaVector(map_, center, CardinalDirection.N)
             self.center_to_right = _RangeAreaVector(map_, center, CardinalDirection.E)
@@ -894,7 +869,12 @@ def _p2_step1_resolve_around_start(
     required_visited_locations = set[Coord2d](
         Coord2d(x, y)
         for area in range_areas.all_areas()
-        for y, xs in map_.iter_data(area.top_left, area.bottom_right)
+        for y, xs in map_.iter_data(
+            area.top_left,
+            Coord2d(
+                area.top_left.x + area.width - 1, area.top_left.y + area.height - 1
+            ),
+        )
         for x, symbol in xs
         if symbol == "."
         and not all(
@@ -936,7 +916,12 @@ def _p2_step1_resolve_around_start(
         required_visited_locations |= set[Coord2d](
             Coord2d(x, y)
             for area in new_areas
-            for y, xs in map_.iter_data(area.top_left, area.bottom_right)
+            for y, xs in map_.iter_data(
+                area.top_left,
+                Coord2d(
+                    area.top_left.x + area.width - 1, area.top_left.y + area.height - 1
+                ),
+            )
             for x, symbol in xs
             if symbol == "."
             and not all(
