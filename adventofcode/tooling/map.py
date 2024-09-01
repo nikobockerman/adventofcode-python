@@ -258,10 +258,7 @@ class Map2d[Map2dDataType]:
 
             yield (
                 x,
-                (
-                    (y, self.__get(x, y))
-                    for y in range(first_y, last_y + step_y, step_y)
-                ),
+                ((y, self._get(x, y)) for y in range(first_y, last_y + step_y, step_y)),
             )
 
     def iter_data(

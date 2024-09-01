@@ -3,8 +3,17 @@ from __future__ import annotations
 import itertools
 import logging
 from collections import Counter
+from collections.abc import Collection
 from dataclasses import InitVar, dataclass, field
-from typing import TYPE_CHECKING, Literal, assert_never, get_args, overload, override
+from typing import (
+    TYPE_CHECKING,
+    Literal,
+    Self,
+    assert_never,
+    get_args,
+    overload,
+    override,
+)
 
 from adventofcode.tooling.directions import CardinalDirection, CardinalDirectionsAll
 from adventofcode.tooling.map import Coord2d, Map2d
@@ -129,8 +138,9 @@ class _InfiniteMap(_Map):
             min_x += self.width
         yield from self._sequence_data[y_][: stop_x + 1]
 
-    def get_row(self, y: int, min_x: int, max_x: int) -> tuple[_MapSymbol, ...]:
-        return tuple(self._iter_row(y, min_x, max_x))
+    def get_row(self, y: int) -> tuple[_MapSymbol, ...]:
+        data_y = y % self.height
+        return self._sequence_data[data_y]
 
     @override
     def iter_data(
@@ -160,83 +170,17 @@ class _InfiniteMap(_Map):
             )
 
 
-"""
 class _MapRow:
-    def __init__(self, data: tuple[_MapSymbol, ...], start_x: int) -> None:
+    def __init__(self, data: tuple[_MapSymbol, ...]) -> None:
         self.data = data
-        self.start_x = start_x
+        self._len = len(data)
 
     def __getitem__(self, x: int) -> _MapSymbol:
-        return self.data[x - self.start_x]
+        data_x = x % self._len
+        return self.data[data_x]
 
     def __repr__(self) -> str:
-        return f"MapRow({self.data!r}, {self.start_x})"
-
-
-class _VisitCounts:
-    def __init__(self) -> None:
-        self.visit_counts = Counter[int]()
-
-    def add(self, step: int) -> None:
-        self.visit_counts.update((step,))
-
-
-@dataclass
-class _LocationToProcessData:
-    map_rows: Sequence[_MapRow]
-    visited: Sequence[set[_LocationToProcess]]
-    skipped: Sequence[set[int]]
-
-    def __post_init__(self) -> None:
-        assert len(self.map_rows) == 3
-        assert len(self.visited) == 3
-        assert len(self.skipped) == 3
-
-
-class _LocationToProcess:
-    def __init__(self, y: int, x: int, step: int) -> None:
-        self.y = y
-        self.x = x
-        self.step = step
-
-    def _process_neighbor(
-        self,
-        x: int,
-        y: int,
-        data_index: int,
-        data: _LocationToProcessData,
-        visit_counts: _VisitCounts,
-    ) -> _LocationToProcess | None:
-        symbol = data.map_rows[data_index][x]
-        if symbol == "#":
-            data.skipped[data_index].add(x)
-            return None
-
-        if symbol != ".":
-            assert_never(symbol)
-
-        step_new = self.step + 1
-        return _LocationToProcess(y, x, step_new)
-
-    def process_neighbors(
-        self, data: _LocationToProcessData, visit_counts: _VisitCounts
-    ) -> Iterator[_LocationToProcess]:
-        neighbor = self._process_neighbor(self.x - 1, self.y, 1, data, visit_counts)
-        if neighbor is not None:
-            yield neighbor
-
-        neighbor = self._process_neighbor(self.x + 1, self.y, 1, data, visit_counts)
-        if neighbor is not None:
-            yield neighbor
-
-        neighbor = self._process_neighbor(self.x, self.y - 1, 0, data, visit_counts)
-        if neighbor is not None:
-            yield neighbor
-
-        neighbor = self._process_neighbor(self.x, self.y + 1, 2, data, visit_counts)
-        if neighbor is not None:
-            yield neighbor
-"""
+        return f"MapRow({self.data!r})"
 
 
 @dataclass(slots=True)
@@ -546,392 +490,695 @@ class _AreasAroundStart:
             yield _AreaResult(area.count_possible_garden_plots_at_step(step))
 
 
-def _p2_step1_resolve_around_start(
-    map_: _InfiniteMap,
-    puzzle_max_steps: int,
-) -> _AreasAroundStart:
-    @dataclass(slots=True)
-    class _RangeArea:
-        top_left: Coord2d
-        width: int
-        height: int
-        _steps: Counter[int] = field(default_factory=Counter, init=False)
-        _min_step: int | None = field(default=None, init=False)
-        _max_step: int | None = field(default=None, init=False)
+@dataclass(slots=True)
+class _ResolverSquare:
+    top_left: Coord2d
+    width: int
+    height: int
+    visits_at_step: dict[int, dict[int, int]] = field(default_factory=dict, init=False)
+    missing_visits: dict[int, set[int]] = field(init=False)
+    _min_step: int | None = field(default=None, init=False)
+    _max_step: int | None = field(default=None, init=False)
 
-        @property
-        def min_step(self) -> int:
-            assert self._min_step is not None
-            return self._min_step
+    map_: InitVar[_InfiniteMap]
 
-        @property
-        def max_step(self) -> int:
-            assert self._max_step is not None
-            return self._max_step
-
-        def add_visits(self, step: int, visits: set[Coord2d]) -> None:
-            for coord in visits:
-                if not self.contains(coord):
-                    continue
-
-                self._steps.update([step])
-                if self._min_step is None or step < self._min_step:
-                    self._min_step = step
-                if self._max_step is None or step > self._max_step:
-                    self._max_step = step
-
-        def contains(self, coord: Coord2d) -> bool:
-            return (
-                self.top_left.x <= coord.x < self.top_left.x + self.width
-                and self.top_left.y <= coord.y < self.top_left.y + self.height
-            )
-
-        def to_square(self, puzzle_max_steps: int) -> _AreaSquareFull:
-            return _AreaSquareFull(
-                self.min_step, self.max_step, puzzle_max_steps, self._steps
-            )
-
-    class _RangeAreaQuadrants:
-        def __init__(
-            self, map_: _InfiniteMap, quadrant_from_center: Literal[1, 2, 3, 4]
-        ) -> None:
-            self.base_quadrant: Literal[1, 2, 3, 4]
-            if quadrant_from_center == 1:
-                top_left_coord = Coord2d(
-                    map_.last_x + 1, map_.first_y - 2 * map_.height
-                )
-                self.base_quadrant = 3
-            elif quadrant_from_center == 2:
-                top_left_coord = Coord2d(
-                    map_.first_x - 2 * map_.width, map_.first_y - 2 * map_.height
-                )
-                self.base_quadrant = 4
-            elif quadrant_from_center == 3:
-                top_left_coord = Coord2d(map_.first_x - 2 * map_.width, map_.last_y + 1)
-                self.base_quadrant = 1
-            elif quadrant_from_center == 4:
-                top_left_coord = Coord2d(map_.last_x + 1, map_.last_y + 1)
-                self.base_quadrant = 2
-            else:
-                assert_never(quadrant_from_center)
-
-            self.q2 = _RangeArea(top_left_coord, map_.width, map_.height)
-            self.q1 = _RangeArea(
-                Coord2d(self.q2.top_left.x + map_.width, self.q2.top_left.y),
-                map_.width,
-                map_.height,
-            )
-            self.q3 = _RangeArea(
-                Coord2d(self.q2.top_left.x, self.q2.top_left.y + map_.height),
-                map_.width,
-                map_.height,
-            )
-            self.q4 = _RangeArea(
-                Coord2d(self.q3.top_left.x + map_.width, self.q3.top_left.y),
-                map_.width,
-                map_.height,
-            )
-
-        def to_result(self, puzzle_max_steps: int) -> _ExtendableArea:
-            return _ExtendableArea(
-                self.q1.to_square(puzzle_max_steps),
-                self.q2.to_square(puzzle_max_steps),
-                self.q3.to_square(puzzle_max_steps),
-                self.q4.to_square(puzzle_max_steps),
-                self.base_quadrant,
-            )
-
-        def all_ranges(self) -> Iterator[_RangeArea]:
-            yield self.q1
-            yield self.q2
-            yield self.q3
-            yield self.q4
-
-    @dataclass(slots=True)
-    class _RangeAreaVectorArea(_RangeArea):
-        visits_at_step: dict[Coord2d, int] = field(default_factory=dict, init=False)
-
-        @override  # TODO: Refactor to avoid looping twice
-        def add_visits(self, step: int, visits: set[Coord2d]) -> None:
-            super(_RangeAreaVectorArea, self).add_visits(step, visits)
-            for coord in visits:
-                if not self.contains(coord):
-                    continue
-
-                self.visits_at_step[coord] = step
-
-    class _RangeAreaVector:
-        @overload
-        def __init__(
-            self,
-            map_: _InfiniteMap,
-            center: _RangeArea,
-            direction_from_center: CardinalDirection,
-            /,
-        ) -> None:
-            pass
-
-        @overload
-        def __init__(
-            self, base: _RangeAreaVectorArea, next_: _RangeAreaVectorArea, /
-        ) -> None:
-            pass
-
-        def __init__(
-            self,
-            map_or_base: _InfiniteMap | _RangeAreaVectorArea,
-            next_or_center: _RangeArea | _RangeAreaVectorArea,
-            direction_from_center: CardinalDirection | None = None,
-        ) -> None:
-            if isinstance(map_or_base, _RangeAreaVectorArea):
-                self.base = map_or_base
-                assert isinstance(next_or_center, _RangeAreaVectorArea)
-                self.next = next_or_center
-                return
-
-            map_ = map_or_base
-            center = next_or_center
-            assert direction_from_center is not None
-            if direction_from_center == CardinalDirection.N:
-                self.base = _RangeAreaVectorArea(
-                    Coord2d(center.top_left.x, center.top_left.y - map_.height),
-                    map_.width,
-                    map_.height,
-                )
-                self.next = _RangeAreaVectorArea(
-                    Coord2d(self.base.top_left.x, self.base.top_left.y - map_.height),
-                    map_.width,
-                    map_.height,
-                )
-            elif direction_from_center == CardinalDirection.S:
-                self.base = _RangeAreaVectorArea(
-                    Coord2d(center.top_left.x, center.top_left.y + center.height),
-                    map_.width,
-                    map_.height,
-                )
-                self.next = _RangeAreaVectorArea(
-                    Coord2d(
-                        self.base.top_left.x, self.base.top_left.y + self.base.height
-                    ),
-                    map_.width,
-                    map_.height,
-                )
-            elif direction_from_center == CardinalDirection.E:
-                self.base = _RangeAreaVectorArea(
-                    Coord2d(center.top_left.x + center.width, center.top_left.y),
-                    map_.width,
-                    map_.height,
-                )
-                self.next = _RangeAreaVectorArea(
-                    Coord2d(
-                        self.base.top_left.x + self.base.width, self.base.top_left.y
-                    ),
-                    map_.width,
-                    map_.height,
-                )
-            elif direction_from_center == CardinalDirection.W:
-                self.base = _RangeAreaVectorArea(
-                    Coord2d(center.top_left.x - map_.width, center.top_left.y),
-                    map_.width,
-                    map_.height,
-                )
-                self.next = _RangeAreaVectorArea(
-                    Coord2d(self.base.top_left.x - map_.width, self.base.top_left.y),
-                    map_.width,
-                    map_.height,
-                )
-            else:
-                assert_never(direction_from_center)
-
-        def get_next(self) -> _RangeAreaVector:
-            x_increase = self.next.top_left.x - self.base.top_left.x
-            y_increase = self.next.top_left.y - self.base.top_left.y
-            return _RangeAreaVector(
-                self.next,
-                _RangeAreaVectorArea(
-                    Coord2d(
-                        self.next.top_left.x + x_increase,
-                        self.next.top_left.y + y_increase,
-                    ),
-                    map_.width,
-                    map_.height,
+    def __post_init__(self, map_: _InfiniteMap) -> None:
+        self.missing_visits = {
+            y: {x for x, symbol in x_symbol_iter if symbol == "."}
+            for y, x_symbol_iter in map_.iter_data(
+                self.top_left,
+                Coord2d(
+                    self.top_left.x + self.width - 1,
+                    self.top_left.y + self.height - 1,
                 ),
             )
+        }
 
-        def is_extendable(self) -> bool:
-            max_diff = self.next.max_step - self.base.max_step
-            min_diff = self.next.min_step - self.base.min_step
-            if max_diff != min_diff:
-                return False
+    @property
+    def min_step(self) -> int:
+        assert self._min_step is not None
+        return self._min_step
 
-            y_increase = self.next.top_left.y - self.base.top_left.y
-            x_increase = self.next.top_left.x - self.base.top_left.x
+    @property
+    def max_step(self) -> int:
+        assert self._max_step is not None
+        return self._max_step
 
-            prev_step_diff: int | None = None
-            for base_coord, base_step in self.base.visits_at_step.items():
-                next_coord = Coord2d(
-                    base_coord.x + x_increase, base_coord.y + y_increase
-                )
-                next_step = self.next.visits_at_step[next_coord]
+    @overload
+    def is_inside(self, y: int) -> bool: ...
+
+    @overload
+    def is_inside(self, y: int, x: int) -> bool: ...
+
+    def is_inside(self, y: int, x: int | None = None) -> bool:
+        if y < self.top_left.y or y >= self.top_left.y + self.height:
+            return False
+
+        if x is None:
+            return True
+
+        return x >= self.top_left.x and x < self.top_left.x + self.width
+
+    def add_visits(self, y: int, x_and_steps: Iterable[tuple[int, int]]) -> None:
+        if y < self.top_left.y or y >= self.top_left.y + self.height:
+            return
+
+        for x, step in x_and_steps:
+            if x < self.top_left.x or x >= self.top_left.x + self.width:
+                continue
+
+            visits_xs = self.visits_at_step.get(y)
+            if visits_xs is None:
+                visits_xs = {}
+                self.visits_at_step[y] = visits_xs
+
+            if (missing_xs := self.missing_visits.get(y)) and x in missing_xs:
+                missing_xs.remove(x)
+                if not missing_xs:
+                    del self.missing_visits[y]
+                visits_xs[x] = step
+            else:
+                prev_step = visits_xs[x]
+                if prev_step > step:
+                    visits_xs[x] = step
+
+            if self._min_step is None or step < self._min_step:
+                self._min_step = step
+            if self._max_step is None or step > self._max_step:
+                self._max_step = step
+
+    def to_square(self, puzzle_max_steps: int) -> _AreaSquareFull:
+        return _AreaSquareFull(
+            self.min_step,
+            self.max_step,
+            puzzle_max_steps,
+            Counter(
+                step for xs in self.visits_at_step.values() for step in xs.values()
+            ),
+        )
+
+
+class _ResolverQuadrants:
+    def __init__(
+        self, map_: _InfiniteMap, quadrant_from_center: Literal[1, 2, 3, 4]
+    ) -> None:
+        self.base_quadrant: Literal[1, 2, 3, 4]
+        if quadrant_from_center == 1:
+            top_left_coord = Coord2d(map_.last_x + 1, map_.first_y - 2 * map_.height)
+            self.base_quadrant = 3
+        elif quadrant_from_center == 2:
+            top_left_coord = Coord2d(
+                map_.first_x - 2 * map_.width, map_.first_y - 2 * map_.height
+            )
+            self.base_quadrant = 4
+        elif quadrant_from_center == 3:
+            top_left_coord = Coord2d(map_.first_x - 2 * map_.width, map_.last_y + 1)
+            self.base_quadrant = 1
+        elif quadrant_from_center == 4:
+            top_left_coord = Coord2d(map_.last_x + 1, map_.last_y + 1)
+            self.base_quadrant = 2
+        else:
+            assert_never(quadrant_from_center)
+
+        self.q2 = _ResolverSquare(top_left_coord, map_.width, map_.height, map_)
+        self.q1 = _ResolverSquare(
+            Coord2d(self.q2.top_left.x + map_.width, self.q2.top_left.y),
+            map_.width,
+            map_.height,
+            map_,
+        )
+        self.q3 = _ResolverSquare(
+            Coord2d(self.q2.top_left.x, self.q2.top_left.y + map_.height),
+            map_.width,
+            map_.height,
+            map_,
+        )
+        self.q4 = _ResolverSquare(
+            Coord2d(self.q3.top_left.x + map_.width, self.q3.top_left.y),
+            map_.width,
+            map_.height,
+            map_,
+        )
+
+    @overload
+    def is_inside(self, y: int) -> bool: ...
+    @overload
+    def is_inside(self, y: int, x: int) -> bool: ...
+
+    def is_inside(self, y: int, x: int | None = None) -> bool:
+        if y < self.q2.top_left.y or y >= self.q4.top_left.y + self.q4.height:
+            return False
+
+        if x is None:
+            return True
+
+        return x >= self.q2.top_left.x and x < self.q1.top_left.x + self.q1.width
+
+    def add_visits(self, y: int, x_and_steps: Collection[tuple[int, int]]) -> None:
+        if not self.is_inside(y):
+            return
+
+        for square in self.all_squares():
+            square.add_visits(y, x_and_steps)
+
+    def to_result(self, puzzle_max_steps: int) -> _ExtendableArea:
+        return _ExtendableArea(
+            self.q1.to_square(puzzle_max_steps),
+            self.q2.to_square(puzzle_max_steps),
+            self.q3.to_square(puzzle_max_steps),
+            self.q4.to_square(puzzle_max_steps),
+            self.base_quadrant,
+        )
+
+    def all_squares(self) -> Iterator[_ResolverSquare]:
+        yield self.q1
+        yield self.q2
+        yield self.q3
+        yield self.q4
+
+
+class _ResolverVector:
+    __slots__ = ("base", "next", "_min_y", "_max_y", "_min_x", "_max_x")
+
+    @overload
+    def __init__(
+        self,
+        map_: _InfiniteMap,
+        center: _ResolverSquare,
+        direction_from_center: CardinalDirection,
+        /,
+    ) -> None:
+        pass
+
+    @overload
+    def __init__(self, base: _ResolverSquare, next_: _ResolverSquare, /) -> None:
+        pass
+
+    def __init__(
+        self,
+        map_or_base: _InfiniteMap | _ResolverSquare,
+        next_or_center: _ResolverSquare,
+        direction_from_center: CardinalDirection | None = None,
+    ) -> None:
+        if isinstance(map_or_base, _ResolverSquare):
+            self.base = map_or_base
+            assert isinstance(next_or_center, _ResolverSquare)
+            self.next = next_or_center
+            self._update_bounds()
+            return
+
+        map_ = map_or_base
+        center = next_or_center
+        assert direction_from_center is not None
+        if direction_from_center == CardinalDirection.N:
+            self.base = _ResolverSquare(
+                Coord2d(center.top_left.x, center.top_left.y - map_.height),
+                map_.width,
+                map_.height,
+                map_,
+            )
+            self.next = _ResolverSquare(
+                Coord2d(self.base.top_left.x, self.base.top_left.y - map_.height),
+                map_.width,
+                map_.height,
+                map_,
+            )
+        elif direction_from_center == CardinalDirection.S:
+            self.base = _ResolverSquare(
+                Coord2d(center.top_left.x, center.top_left.y + center.height),
+                map_.width,
+                map_.height,
+                map_,
+            )
+            self.next = _ResolverSquare(
+                Coord2d(self.base.top_left.x, self.base.top_left.y + self.base.height),
+                map_.width,
+                map_.height,
+                map_,
+            )
+        elif direction_from_center == CardinalDirection.E:
+            self.base = _ResolverSquare(
+                Coord2d(center.top_left.x + center.width, center.top_left.y),
+                map_.width,
+                map_.height,
+                map_,
+            )
+            self.next = _ResolverSquare(
+                Coord2d(self.base.top_left.x + self.base.width, self.base.top_left.y),
+                map_.width,
+                map_.height,
+                map_,
+            )
+        elif direction_from_center == CardinalDirection.W:
+            self.base = _ResolverSquare(
+                Coord2d(center.top_left.x - map_.width, center.top_left.y),
+                map_.width,
+                map_.height,
+                map_,
+            )
+            self.next = _ResolverSquare(
+                Coord2d(self.base.top_left.x - map_.width, self.base.top_left.y),
+                map_.width,
+                map_.height,
+                map_,
+            )
+        else:
+            assert_never(direction_from_center)
+        self._update_bounds()
+
+    def _update_bounds(self) -> None:
+        self._min_y = min(self.base.top_left.y, self.next.top_left.y)
+        self._max_y = max(
+            self.base.top_left.y + self.base.height - 1,
+            self.next.top_left.y + self.next.height - 1,
+        )
+        self._min_x = min(self.base.top_left.x, self.next.top_left.x)
+        self._max_x = max(
+            self.base.top_left.x + self.base.width - 1,
+            self.next.top_left.x + self.next.width - 1,
+        )
+
+    def get_next(self, map_: _InfiniteMap) -> _ResolverVector:
+        x_increase = self.next.top_left.x - self.base.top_left.x
+        y_increase = self.next.top_left.y - self.base.top_left.y
+        return _ResolverVector(
+            self.next,
+            _ResolverSquare(
+                Coord2d(
+                    self.next.top_left.x + x_increase,
+                    self.next.top_left.y + y_increase,
+                ),
+                map_.width,
+                map_.height,
+                map_,
+            ),
+        )
+
+    @overload
+    def is_inside(self, y: int) -> bool: ...
+    @overload
+    def is_inside(self, y: int, x: int) -> bool: ...
+    def is_inside(self, y: int, x: int | None = None) -> bool:
+        min_y = min(self.base.top_left.y, self.next.top_left.y)
+        if y < min_y:
+            return False
+
+        max_y = max(
+            self.base.top_left.y + self.base.height - 1,
+            self.next.top_left.y + self.next.height - 1,
+        )
+        if y > max_y:
+            return False
+
+        if x is None:
+            return True
+
+        return any(square.is_inside(y, x) for square in self.all_squares())
+
+    def add_visits(self, y: int, x_and_steps: Collection[tuple[int, int]]) -> None:
+        for square in self.all_squares():
+            square.add_visits(y, x_and_steps)
+
+    def is_extendable(self) -> bool:
+        max_diff = self.next.max_step - self.base.max_step
+        min_diff = self.next.min_step - self.base.min_step
+        if max_diff != min_diff:
+            return False
+
+        y_increase = self.next.top_left.y - self.base.top_left.y
+        x_increase = self.next.top_left.x - self.base.top_left.x
+
+        prev_step_diff: int | None = None
+
+        for (base_y, base_x_and_steps), (next_y, next_x_and_steps) in zip(
+            sorted(self.base.visits_at_step.items(), key=lambda x: x[0]),
+            sorted(self.next.visits_at_step.items(), key=lambda x: x[0]),
+            strict=True,
+        ):
+            assert base_y + y_increase == next_y
+            for (base_x, base_step), (next_x, next_step) in zip(
+                sorted(base_x_and_steps.items(), key=lambda x: x[0]),
+                sorted(next_x_and_steps.items(), key=lambda x: x[0]),
+                strict=True,
+            ):
+                assert base_x + x_increase == next_x
+
                 step_diff = next_step - base_step
-
                 if prev_step_diff is None:
                     prev_step_diff = step_diff
                 elif prev_step_diff != step_diff:
                     return False
 
-            return True
+        assert prev_step_diff is not None
+        return True
 
-        def to_result(self, puzzle_max_steps: int) -> _ExtendableDirection:
-            return _ExtendableDirection(
-                base=self.base.to_square(puzzle_max_steps),
-                next_=self.next.to_square(puzzle_max_steps),
-            )
-
-        def all_areas(self) -> Iterator[_RangeArea]:
-            yield self.base
-            yield self.next
-
-    class _RangeAreasAroundStart:
-        def __init__(self, map_: _InfiniteMap) -> None:
-            self.top_left = _RangeAreaQuadrants(map_, 2)
-            self.top_right = _RangeAreaQuadrants(map_, 1)
-            self.bottom_left = _RangeAreaQuadrants(map_, 3)
-            self.bottom_right = _RangeAreaQuadrants(map_, 4)
-            center = _RangeArea(
-                Coord2d(map_.first_x, map_.first_y), map_.width, map_.height
-            )
-            self.center_to_top = _RangeAreaVector(map_, center, CardinalDirection.N)
-            self.center_to_right = _RangeAreaVector(map_, center, CardinalDirection.E)
-            self.center_to_bottom = _RangeAreaVector(map_, center, CardinalDirection.S)
-            self.center_to_left = _RangeAreaVector(map_, center, CardinalDirection.W)
-            self.completed_non_extendable_areas = [center]
-
-        def add_visits(self, step: int, visits: set[Coord2d]) -> None:
-            for area in self.all_areas():
-                area.add_visits(step, visits)
-
-        def to_result(self, puzzle_max_steps: int) -> _AreasAroundStart:
-            return _AreasAroundStart(
-                top_left=self.top_left.to_result(puzzle_max_steps),
-                top_right=self.top_right.to_result(puzzle_max_steps),
-                bottom_left=self.bottom_left.to_result(puzzle_max_steps),
-                bottom_right=self.bottom_right.to_result(puzzle_max_steps),
-                center_to_top=self.center_to_top.to_result(puzzle_max_steps),
-                center_to_right=self.center_to_right.to_result(puzzle_max_steps),
-                center_to_bottom=self.center_to_bottom.to_result(puzzle_max_steps),
-                center_to_left=self.center_to_left.to_result(puzzle_max_steps),
-                completed_non_extendable_areas=[
-                    area.to_square(puzzle_max_steps)
-                    for area in self.completed_non_extendable_areas
-                ],
-            )
-
-        def all_areas(self) -> Iterator[_RangeArea]:
-            yield from self.top_left.all_ranges()
-            yield from self.top_right.all_ranges()
-            yield from self.bottom_left.all_ranges()
-            yield from self.bottom_right.all_ranges()
-
-            for vector in self.all_vectors():
-                yield from vector.all_areas()
-
-            yield from self.completed_non_extendable_areas
-
-        def all_vectors(self) -> Iterator[_RangeAreaVector]:
-            yield self.center_to_top
-            yield self.center_to_right
-            yield self.center_to_bottom
-            yield self.center_to_left
-
-        def check_complete(self) -> list[_RangeArea]:
-            new_areas: list[_RangeArea] = []
-            if not self.center_to_top.is_extendable():
-                self.completed_non_extendable_areas.append(self.center_to_top.base)
-                self.center_to_top = self.center_to_top.get_next()
-                new_areas.append(self.center_to_top.next)
-            if not self.center_to_right.is_extendable():
-                self.completed_non_extendable_areas.append(self.center_to_right.base)
-                self.center_to_right = self.center_to_right.get_next()
-                new_areas.append(self.center_to_right.next)
-            if not self.center_to_bottom.is_extendable():
-                self.completed_non_extendable_areas.append(self.center_to_bottom.base)
-                self.center_to_bottom = self.center_to_bottom.get_next()
-                new_areas.append(self.center_to_bottom.next)
-            if not self.center_to_left.is_extendable():
-                self.completed_non_extendable_areas.append(self.center_to_left.base)
-                self.center_to_left = self.center_to_left.get_next()
-                new_areas.append(self.center_to_left.next)
-            return new_areas
-
-    range_areas = _RangeAreasAroundStart(map_)
-
-    required_visited_locations = set[Coord2d](
-        Coord2d(x, y)
-        for area in range_areas.all_areas()
-        for y, xs in map_.iter_data(
-            area.top_left,
-            Coord2d(
-                area.top_left.x + area.width - 1, area.top_left.y + area.height - 1
-            ),
+    def to_result(self, puzzle_max_steps: int) -> _ExtendableDirection:
+        return _ExtendableDirection(
+            base=self.base.to_square(puzzle_max_steps),
+            next_=self.next.to_square(puzzle_max_steps),
         )
-        for x, symbol in xs
-        if symbol == "."
-        and not all(
-            map_.get_by_xy(adjoin.x, adjoin.y) == "#"
-            for _, adjoin in Coord2d(x, y).adjoins()
-        )
+
+    def all_squares(self) -> Iterator[_ResolverSquare]:
+        yield self.base
+        yield self.next
+
+
+class _ResolverAroundStart:
+    __slots__ = (
+        "top_left",
+        "top_right",
+        "bottom_left",
+        "bottom_right",
+        "center_to_top",
+        "center_to_right",
+        "center_to_bottom",
+        "center_to_left",
+        "completed_non_extendable_areas",
+        "_min_y",
+        "_max_y",
+        "_min_x",
+        "_max_x",
     )
 
-    visited_locations_at_step: dict[int, set[Coord2d]] = {0: {map_.start}}
-    visited_locations: set[Coord2d] = {map_.start}
-    locations_to_process: set[Coord2d] = {map_.start}
-    remaining_locations_to_visit = set(required_visited_locations) - visited_locations
-    range_areas.add_visits(0, visited_locations)
-    step = 0
-    cont = True
-    while cont:
-        while remaining_locations_to_visit:
-            step += 1
-            _logger.debug("Step: %s", step)
-            adjoin_locations = set(
-                map_.get_adjoin_garden_plots_for_locations(locations_to_process)
-            )
-            adjoin_locations -= visited_locations
-            range_areas.add_visits(step, adjoin_locations)
-            visited_locations_at_step[step] = adjoin_locations
-            visited_locations.update(adjoin_locations)
-            remaining_locations_to_visit -= adjoin_locations
-            locations_to_process = adjoin_locations
-        new_areas = range_areas.check_complete()
-        if not new_areas:
-            cont = False
+    def __init__(self, map_: _InfiniteMap) -> None:
+        self.top_left = _ResolverQuadrants(map_, 2)
+        self.top_right = _ResolverQuadrants(map_, 1)
+        self.bottom_left = _ResolverQuadrants(map_, 3)
+        self.bottom_right = _ResolverQuadrants(map_, 4)
+        center = _ResolverSquare(
+            Coord2d(map_.first_x, map_.first_y), map_.width, map_.height, map_
+        )
+        self.center_to_top = _ResolverVector(map_, center, CardinalDirection.N)
+        self.center_to_right = _ResolverVector(map_, center, CardinalDirection.E)
+        self.center_to_bottom = _ResolverVector(map_, center, CardinalDirection.S)
+        self.center_to_left = _ResolverVector(map_, center, CardinalDirection.W)
+        self.completed_non_extendable_areas = [center]
+
+        self._update_bounds()
+
+    def _update_bounds(self) -> None:
+        self._min_y = min(
+            s.top_left.y for s in (self.top_left.q2, self.center_to_top.next)
+        )
+        self._max_y = max(
+            s.top_left.y + s.height - 1
+            for s in (self.bottom_right.q4, self.center_to_bottom.next)
+        )
+        self._min_x = min(
+            s.top_left.x for s in (self.top_left.q2, self.center_to_left.next)
+        )
+        self._max_x = max(
+            s.top_left.x + s.width - 1
+            for s in (self.bottom_right.q4, self.center_to_right.next)
+        )
+
+    @overload
+    def is_inside(self, y: int) -> bool: ...
+
+    @overload
+    def is_inside(self, y: int, x: int) -> bool: ...
+
+    def is_inside(self, y: int, x: int | None = None) -> bool:
+        if y < self._min_y or y > self._max_y:
+            return False
+
+        if x is None:
+            return True
+
+        return any(area.is_inside(y, x) for area in self.all_areas())
+
+    def add_visits(self, y: int, x_and_steps: Collection[tuple[int, int]]) -> None:
+        for area in self.all_areas():
+            area.add_visits(y, x_and_steps)
+
+    def to_result(self, puzzle_max_steps: int) -> _AreasAroundStart:
+        return _AreasAroundStart(
+            top_left=self.top_left.to_result(puzzle_max_steps),
+            top_right=self.top_right.to_result(puzzle_max_steps),
+            bottom_left=self.bottom_left.to_result(puzzle_max_steps),
+            bottom_right=self.bottom_right.to_result(puzzle_max_steps),
+            center_to_top=self.center_to_top.to_result(puzzle_max_steps),
+            center_to_right=self.center_to_right.to_result(puzzle_max_steps),
+            center_to_bottom=self.center_to_bottom.to_result(puzzle_max_steps),
+            center_to_left=self.center_to_left.to_result(puzzle_max_steps),
+            completed_non_extendable_areas=[
+                area.to_square(puzzle_max_steps)
+                for area in self.completed_non_extendable_areas
+            ],
+        )
+
+    def all_areas(
+        self,
+    ) -> Iterator[_ResolverSquare | _ResolverVector | _ResolverQuadrants]:
+        yield self.top_left
+        yield self.top_right
+        yield self.bottom_left
+        yield self.bottom_right
+        yield self.center_to_top
+        yield self.center_to_right
+        yield self.center_to_bottom
+        yield self.center_to_left
+        yield from self.completed_non_extendable_areas
+
+    def all_squares(self) -> Iterator[_ResolverSquare]:
+        for area in self.all_areas():
+            if isinstance(area, _ResolverSquare):
+                yield area
+            else:
+                yield from area.all_squares()
+
+    def all_vectors(self) -> Iterator[_ResolverVector]:
+        yield self.center_to_top
+        yield self.center_to_right
+        yield self.center_to_bottom
+        yield self.center_to_left
+
+    def needs_processing(self) -> bool:
+        return any(square.missing_visits for square in self.all_squares())
+
+    def check_if_complete(self, map_: _InfiniteMap) -> list[_ResolverSquare]:
+        new_squares: list[_ResolverSquare] = []
+        if not self.center_to_top.is_extendable():
+            self.completed_non_extendable_areas.append(self.center_to_top.base)
+            self.center_to_top = self.center_to_top.get_next(map_)
+            new_squares.append(self.center_to_top.next)
+        if not self.center_to_right.is_extendable():
+            self.completed_non_extendable_areas.append(self.center_to_right.base)
+            self.center_to_right = self.center_to_right.get_next(map_)
+            new_squares.append(self.center_to_right.next)
+        if not self.center_to_bottom.is_extendable():
+            self.completed_non_extendable_areas.append(self.center_to_bottom.base)
+            self.center_to_bottom = self.center_to_bottom.get_next(map_)
+            new_squares.append(self.center_to_bottom.next)
+        if not self.center_to_left.is_extendable():
+            self.completed_non_extendable_areas.append(self.center_to_left.base)
+            self.center_to_left = self.center_to_left.get_next(map_)
+            new_squares.append(self.center_to_left.next)
+        if new_squares:
+            self._update_bounds()
+        return new_squares
+
+
+def _is_garden_plot(x: int, map_row: _MapRow) -> bool:
+    symbol = map_row[x]
+    if symbol == "#":
+        return False
+
+    if symbol != ".":
+        assert_never(symbol)
+
+    return True
+
+
+@dataclass(slots=True, frozen=True)
+class _NeighborVisit:
+    y_offset: Literal[-1, 0, 1]
+    x_offset: Literal[-1, 0, 1]
+
+
+def _get_neighbor_visits(
+    x: int,
+    neighbor_step: int,
+    map_rows: list[_MapRow],
+    known_steps_rows: list[dict[int, int]],
+) -> Iterator[_NeighborVisit]:
+    assert len(map_rows) == 3
+    for y_offset, x_offset, data_ind in (
+        (0, -1, 1),
+        (0, 1, 1),
+        (-1, 0, 0),
+        (1, 0, 2),
+    ):
+        if (
+            prev_step := known_steps_rows[data_ind].get(x + x_offset)
+        ) is not None and prev_step <= neighbor_step:
             continue
 
-        _logger.debug("New areas: %s", len(new_areas))
-        for step, locations in visited_locations_at_step.items():
-            for area in new_areas:
-                area.add_visits(step, locations)
+        map_row = map_rows[data_ind]
+        if _is_garden_plot(x + x_offset, map_row):
+            assert y_offset in (-1, 0, 1)
+            assert x_offset in (-1, 0, 1)
+            yield _NeighborVisit(y_offset, x_offset)
 
-        required_visited_locations |= set[Coord2d](
-            Coord2d(x, y)
-            for area in new_areas
-            for y, xs in map_.iter_data(
-                area.top_left,
-                Coord2d(
-                    area.top_left.x + area.width - 1, area.top_left.y + area.height - 1
-                ),
-            )
-            for x, symbol in xs
-            if symbol == "."
-            and not all(
-                map_.get_by_xy(adjoin.x, adjoin.y) == "#"
-                for _, adjoin in Coord2d(x, y).adjoins()
-            )
-        )
-        remaining_locations_to_visit = required_visited_locations - visited_locations
 
-    return range_areas.to_result(puzzle_max_steps)
+class _ResolverInsidePoints:
+    __slots__ = ("points", "_min_y", "_max_y", "_min_x", "_max_x")
+
+    def __init__(self, resolver: _ResolverAroundStart) -> None:
+        self.points: dict[int, set[int]] = {}
+        for square in resolver.all_squares():
+            for y, points in square.missing_visits.items():
+                self.points.setdefault(y, set()).update(points)
+
+        self._update_bounds()
+
+    def _update_bounds(self) -> None:
+        self._min_y = min(self.points)
+        self._max_y = max(self.points)
+        self._min_x = min(min(points) for points in self.points.values())
+        self._max_x = max(max(points) for points in self.points.values())
+
+    def add_square(self, square: _ResolverSquare) -> None:
+        for y, points in square.missing_visits.items():
+            self.points.setdefault(y, set()).update(points)
+        self._update_bounds()
+
+    # def _is_possibly_inside_by_bounds_y(self, y: int) -> bool:
+    #    return self._min_y <= y <= self._max_y
+
+    def is_possibly_inside(self, y: int) -> bool:
+        # return self._is_possibly_inside_by_bounds_y(y)
+        return y in self.points
+
+    def is_inside(self, y: int, x: int) -> bool:
+        #        if not self._is_possibly_inside_by_bounds_y(y):
+        #            return False
+
+        x_points = self.points.get(y)
+        if x_points is None:
+            return False
+        return x in x_points
+
+
+def _p2_step1_resolve_around_start(
+    map_: _InfiniteMap,
+    puzzle_max_steps: int,
+) -> _AreasAroundStart:
+    resolver = _ResolverAroundStart(map_)
+    inside_points = _ResolverInsidePoints(resolver)
+
+    ready_to_process: dict[int, list[tuple[int, int]]] = {
+        map_.start.y: [(map_.start.x, 0)]
+    }
+    ready_to_process_outside: dict[int, list[tuple[int, int]]] = {}
+    known_steps: dict[int, dict[int, int]] = {map_.start.y: {map_.start.x: 0}}
+
+    resolver.add_visits(map_.start.y, [(map_.start.x, 0)])
+
+    def get_or_create_known_step_row(
+        known_steps: dict[int, dict[int, int]], y: int
+    ) -> dict[int, int]:
+        row = known_steps.get(y)
+        if row is None:
+            known_steps[y] = row = {}
+        return row
+
+    def get_or_create_row_list[T](container: dict[int, list[T]], y: int) -> list[T]:
+        row = container.get(y)
+        if row is None:
+            container[y] = row = []
+        return row
+
+    while True:
+        while ready_to_process:
+            # if not resolver.needs_processing():
+            #    break
+            rows_to_process = list(ready_to_process.keys())
+            for y in rows_to_process:
+                x_and_step_to_process = ready_to_process.pop(y)
+                if not x_and_step_to_process:
+                    continue
+
+                map_rows = [_MapRow(map_.get_row(y_)) for y_ in range(y - 1, y + 2)]
+                known_steps_rows = [
+                    get_or_create_known_step_row(known_steps, y_)
+                    for y_ in range(y - 1, y + 2)
+                ]
+
+                new_locations_to_process: list[list[tuple[int, int]]] = [
+                    [] for _ in range(3)
+                ]
+                for x, step in x_and_step_to_process:
+                    neighbor_step = step + 1
+                    for neighbor_visit in _get_neighbor_visits(
+                        x, neighbor_step, map_rows, known_steps_rows
+                    ):
+                        neighbor_y_ind = neighbor_visit.y_offset + 1
+                        neighbor_x = x + neighbor_visit.x_offset
+
+                        known_steps_rows[neighbor_y_ind][neighbor_x] = neighbor_step
+                        new_locations_to_process[neighbor_y_ind].append(
+                            (neighbor_x, neighbor_step)
+                        )
+
+                for new_y_ind in range(3):
+                    new_y = y + new_y_ind - 1
+                    new_x_and_step_to_process = new_locations_to_process[new_y_ind]
+                    if not new_x_and_step_to_process:
+                        continue
+
+                    if not inside_points.is_possibly_inside(new_y):
+                        get_or_create_row_list(ready_to_process_outside, new_y).extend(
+                            new_x_and_step_to_process
+                        )
+                        continue
+
+                    ready_to_process_row = get_or_create_row_list(
+                        ready_to_process, new_y
+                    )
+                    outside_to_process_row = get_or_create_row_list(
+                        ready_to_process_outside, new_y
+                    )
+                    for new_x, step in new_x_and_step_to_process:
+                        if not inside_points.is_inside(new_y, new_x):
+                            outside_to_process_row.append((new_x, step))
+                        else:
+                            ready_to_process_row.append((new_x, step))
+                    # resolver.add_visits(new_y, new_x_and_step_to_process)
+
+        for y, x_and_step in known_steps.items():
+            x_and_steps_list = list(x_and_step.items())
+            resolver.add_visits(y, x_and_steps_list)
+        new_squares = resolver.check_if_complete(map_)
+        if not new_squares:
+            break
+
+        _logger.debug("New squares: %s", len(new_squares))
+        # for y, x_and_step in known_steps.items():
+        #    x_and_steps_list = list(x_and_step.items())
+        #    for new_square in new_squares:
+        #        new_square.add_visits(y, x_and_steps_list)
+        for new_square in new_squares:
+            inside_points.add_square(new_square)
+            new_to_process = [
+                (y, x_and_step)
+                for y, x_and_step in ready_to_process_outside.items()
+                if new_square.is_inside(y)
+            ]
+            for y, x_and_step in new_to_process:
+                new_x_and_steps = [
+                    (x, step) for x, step in x_and_step if new_square.is_inside(y, x)
+                ]
+                get_or_create_row_list(ready_to_process, y).extend(new_x_and_steps)
+                # new_square.add_visits(y, new_x_and_steps)
+
+                x_inside = {x for x, _ in new_x_and_steps}
+                new_ready_to_process_outside_row = [
+                    (x, step) for x, step in x_and_step if x not in x_inside
+                ]
+                ready_to_process_outside[y] = new_ready_to_process_outside_row
+
+    return resolver.to_result(puzzle_max_steps)
 
 
 def _p2_step2_extend_areas(areas: _AreasAroundStart, puzzle_max_steps: int) -> int:
