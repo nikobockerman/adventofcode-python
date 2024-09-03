@@ -14,7 +14,7 @@ mypy = "mypy ."
 pyright = "pyright"
 ruff-check = "ruff check"
 ruff-check-format = "ruff format --check"
-lint = ["ruff-check", "ruff-check-format", "pyright", "mypy"]
+lint = ["ruff-check", "ruff-check-format", "shellcheck", "pyright", "mypy"]
 
 format = "ruff format"
 ruff-fix = "ruff check --fix-only"
@@ -24,6 +24,15 @@ test = "pytest"
 runall = "adventofcode"
 validate = ["lint", "test", "runall"]
 
+[tool.poe.tasks.shellcheck]
+shell = """
+if [ ! $(command -v shellcheck) ]; then
+    echo "shellcheck is not installed"
+    exit 0
+fi
+
+shellcheck $(git ls-files | grep '\\..*sh')
+"""
 
 [tool.poetry.dependencies]
 python = "^3.12"

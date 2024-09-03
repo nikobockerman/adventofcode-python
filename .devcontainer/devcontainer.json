@@ -5,7 +5,8 @@
         "ghcr.io/devcontainers-contrib/features/mypy:2": {},
         "ghcr.io/devcontainers-contrib/features/poetry:2": {},
         "ghcr.io/devcontainers-contrib/features/shfmt:1.0.0": {},
-        "ghcr.io/lukewiwa/features/shellcheck:0": {}
+        "ghcr.io/lukewiwa/features/shellcheck:0": {},
+        "ghcr.io/devcontainers/features/node:1": {}
     },
     "postCreateCommand": "bash ./.devcontainer/post-install.sh",
     "portsAttributes": {
