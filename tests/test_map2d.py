@@ -1,8 +1,8 @@
 import pytest
 
+from adventofcode.tooling.coordinates import Coord2d
 from adventofcode.tooling.directions import RotationDirection
 from adventofcode.tooling.map import (
-    Coord2d,
     Map2d,
     Map2dEmptyDataError,
     Map2dRectangularDataError,

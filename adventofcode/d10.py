@@ -4,9 +4,10 @@ import logging
 from collections.abc import Collection, Iterable
 from dataclasses import dataclass, field
 
+from adventofcode.tooling.coordinates import Coord2d
 from adventofcode.tooling.directions import CardinalDirection as Dir
 from adventofcode.tooling.directions import CardinalDirectionsAll
-from adventofcode.tooling.map import Coord2d, Map2d
+from adventofcode.tooling.map import Map2d
 
 _logger = logging.getLogger(__name__)
 

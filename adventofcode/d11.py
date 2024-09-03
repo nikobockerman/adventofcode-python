@@ -1,7 +1,8 @@
 import contextlib
 from collections.abc import Iterable
 
-from adventofcode.tooling.map import Coord2d, Map2d
+from adventofcode.tooling.coordinates import Coord2d
+from adventofcode.tooling.map import Map2d
 
 
 class _InputMap(Map2d[str]):

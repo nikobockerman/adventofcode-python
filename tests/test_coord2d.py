@@ -1,7 +1,7 @@
 import pytest
 
+from adventofcode.tooling.coordinates import Coord2d
 from adventofcode.tooling.directions import CardinalDirection as Dir
-from adventofcode.tooling.map import Coord2d
 
 
 def test_comparison() -> None:

@@ -2,7 +2,8 @@ import itertools
 import logging
 from collections.abc import Iterable
 
-from adventofcode.tooling.map import Coord2d, Map2d
+from adventofcode.tooling.coordinates import Coord2d
+from adventofcode.tooling.map import Map2d
 
 
 def _parse_maps(input_str: str) -> Iterable[Map2d[str]]:
