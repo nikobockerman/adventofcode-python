@@ -45,7 +45,7 @@ def calculate_distance_between_galaxies(input_str: str, expansion_distance: int)
             empty_x_indices.remove(x)
         with contextlib.suppress(KeyError):
             empty_y_indices.remove(y)
-        galaxy_coords.append(Coord2d(x, y))
+        galaxy_coords.append(Coord2d(y, x))
 
     return sum(
         _calculate_distance(

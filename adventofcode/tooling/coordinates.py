@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import math
-from typing import assert_never
+from typing import NewType, assert_never
 
 from adventofcode.tooling.directions import CardinalDirection
 
+X = NewType("X", int)
+Y = NewType("Y", int)
+
 
 class Coord2d:
-    __slots__ = ("x", "y")
+    __slots__ = ("y", "x")
 
-    def __init__(self, x: int, y: int) -> None:
-        self.x = x
+    def __init__(self, y: Y, x: X) -> None:
         self.y = y
+        self.x = x
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Coord2d):
@@ -23,13 +26,13 @@ class Coord2d:
 
     def adjoin(self, direction: CardinalDirection) -> Coord2d:
         if direction is CardinalDirection.N:
-            return Coord2d(self.x, self.y - 1)
+            return Coord2d(Y(self.y - 1), self.x)
         if direction is CardinalDirection.E:
-            return Coord2d(self.x + 1, self.y)
+            return Coord2d(self.y, X(self.x + 1))
         if direction is CardinalDirection.S:
-            return Coord2d(self.x, self.y + 1)
+            return Coord2d(Y(self.y + 1), self.x)
         if direction is CardinalDirection.W:
-            return Coord2d(self.x - 1, self.y)
+            return Coord2d(self.y, X(self.x - 1))
         assert_never(direction)
 
     def dir_to(self, other: Coord2d) -> CardinalDirection:
@@ -45,13 +48,13 @@ class Coord2d:
 
     def get_relative(self, direction: CardinalDirection, distance: int = 1) -> Coord2d:
         if direction is CardinalDirection.N:
-            return Coord2d(self.x, self.y - distance)
+            return Coord2d(Y(self.y - distance), self.x)
         if direction is CardinalDirection.E:
-            return Coord2d(self.x + distance, self.y)
+            return Coord2d(self.y, X(self.x + distance))
         if direction is CardinalDirection.S:
-            return Coord2d(self.x, self.y + distance)
+            return Coord2d(Y(self.y + distance), self.x)
         if direction is CardinalDirection.W:
-            return Coord2d(self.x - distance, self.y)
+            return Coord2d(self.y, X(self.x - distance))
         assert_never(direction)
 
     def distance_to_int(self, other: Coord2d) -> int:

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, assert_never, overload
+from typing import TYPE_CHECKING, Literal, assert_never, overload
 
-from .coordinates import Coord2d
+from .coordinates import X, Y
 from .directions import RotationDirection
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ class Map2dRectangularDataError(ValueError):
 
 
 class Map2d[Map2dDataType]:
-    __slots__ = ("_sequence_data", "_width", "_height", "_last_x", "_last_y")
+    __slots__ = ("_sequence_data", "_width", "_height", "_br_y", "_br_x")
 
     def __init__(
         self,
@@ -33,8 +33,8 @@ class Map2d[Map2dDataType]:
         self._height = len(self._sequence_data)
         assert self._height > 0
         self._width = len(self._sequence_data[0])
-        self._last_x = self._width - 1
-        self._last_y = self._height - 1
+        self._br_y = Y(self._height - 1)
+        self._br_x = X(self._width - 1)
 
         if not all(len(row) == self._width for row in self._sequence_data):
             raise Map2dRectangularDataError
@@ -51,104 +51,73 @@ class Map2d[Map2dDataType]:
         return self._width
 
     @property
-    def first_x(self) -> int:
-        return 0
+    def tl_y(self) -> Y:
+        return Y(0)
 
     @property
-    def first_y(self) -> int:
-        return 0
+    def tl_x(self) -> X:
+        return X(0)
 
     @property
-    def last_x(self) -> int:
-        return self._last_x
+    def br_y(self) -> Y:
+        return self._br_y
 
     @property
-    def last_y(self) -> int:
-        return self._last_y
+    def br_x(self) -> X:
+        return self._br_x
 
-    def __get(self, x: int, y: int) -> Map2dDataType:
-        if x < 0 or x > self._last_x or y < 0 or y > self._last_y:
-            raise IndexError((x, y))
+    def contains(self, y: Y, x: X) -> bool:
+        return y >= 0 and y <= self._br_y and x >= 0 and x <= self._br_x
+
+    def get_bounded(self, y: Y, x: X) -> Map2dDataType:
+        if not self.contains(y, x):
+            raise IndexError((y, x))
         return self._sequence_data[y][x]
 
-    def __get_or_default(
-        self, x: int, y: int, default: Map2dDataType | None = None
+    def get(self, y: Y, x: X) -> Map2dDataType:
+        return self._sequence_data[y][x]
+
+    def get_or_default(
+        self, y: Y, x: X, default: Map2dDataType | None = None
     ) -> Map2dDataType | None:
-        if x < 0 or x > self._last_x or y < 0 or y > self._last_y:
+        if not self.contains(y, x):
             return default
-        return self.__get(x, y)
+        return self._sequence_data[y][x]
 
-    @overload
-    def get(self, coord: Coord2d, /) -> Map2dDataType: ...
-
-    @overload
-    def get(
-        self, coord: Coord2d, /, default: Map2dDataType | None = None
-    ) -> Map2dDataType | None: ...
-
-    @overload
-    def get(self, x_y: tuple[int, int], /) -> Map2dDataType: ...
-
-    @overload
-    def get(
-        self, x_y: tuple[int, int], /, default: Map2dDataType | None = None
-    ) -> Map2dDataType | None: ...
-
-    def get(
-        self,
-        first: Coord2d | tuple[int, int],
-        *args: Map2dDataType | None,
-        **kwargs: Map2dDataType | None,
-    ) -> Map2dDataType | None:
-        if isinstance(first, Coord2d):
-            x: int = first.x
-            y: int = first.y
-        else:
-            x = first[0]
-            y = first[1]
-
-        if len(args) > 1:
-            raise TypeError(args)
-
-        if args:
-            return self.__get_or_default(x, y, args[0])
-        if "default" in kwargs:
-            return self.__get_or_default(x, y, kwargs["default"])
-        return self.__get(x, y)
-
-    def __iter_data_by_lines(  # noqa: PLR0912, optimized for performance
+    def iter_data_by_lines(  # noqa: PLR0912, optimized for performance
         # so can't reduce branching here which is done for sanitizing input values
         self,
-        first_x: int,
-        first_y: int,
-        last_x: int,
-        last_y: int,
-    ) -> Iterable[tuple[int, Iterable[tuple[int, Map2dDataType]]]]:
-        step_x = 1 if first_x <= last_x else -1
+        first_y: Y,
+        first_x: X,
+        last_y: Y,
+        last_x: X,
+    ) -> Iterable[tuple[Y, Iterable[tuple[X, Map2dDataType]]]]:
         step_y = 1 if first_y <= last_y else -1
-        if first_x < 0:
-            first_x = 0
-        elif first_x > self._last_x:
-            first_x = self._last_x
-        if last_x < 0:
-            last_x = 0
-        elif last_x > self._last_x:
-            last_x = self._last_x
+        step_x = 1 if first_x <= last_x else -1
         if first_y < 0:
-            first_y = 0
-        elif first_y > self._last_y:
-            first_y = self._last_y
+            first_y = Y(0)
+        elif first_y > self._br_y:
+            first_y = self._br_y
+        if first_x < 0:
+            first_x = X(0)
+        elif first_x > self._br_x:
+            first_x = self._br_x
+        if last_x < 0:
+            last_x = X(0)
+        elif last_x > self._br_x:
+            last_x = self._br_x
+
         if last_y <= 0:
             slice_rows = self._sequence_data[first_y::step_y]
         else:
             if last_y < 0:
-                last_y = 0
-            elif last_y > self._last_y:
-                last_y = self._last_y
+                last_y = Y(0)
+            elif last_y > self._br_y:
+                last_y = self._br_y
             slice_rows = self._sequence_data[first_y : last_y + step_y : step_y]
 
         for row_ind, row in enumerate(slice_rows):
-            y = row_ind * step_y + first_y
+            y = Y(row_ind * step_y + first_y)
             if last_x <= 0:
                 slice_row_datas = row[first_x::step_x]
             else:
@@ -157,70 +126,116 @@ class Map2d[Map2dDataType]:
             yield (
                 y,
                 (
-                    (x_ind * step_x + first_x, data)
+                    (X(x_ind * step_x + first_x), data)
                     for x_ind, data in enumerate(slice_row_datas)
                 ),
             )
 
-    def __iter_data_by_columns(
-        self, first_x: int, first_y: int, last_x: int, last_y: int
-    ) -> Iterable[tuple[int, Iterable[tuple[int, Map2dDataType]]]]:
-        step_x = 1 if first_x <= last_x else -1
+    def iter_data_by_columns(
+        self, first_y: Y, first_x: X, last_y: Y, last_x: X
+    ) -> Iterable[tuple[X, Iterable[tuple[Y, Map2dDataType]]]]:
         step_y = 1 if first_y <= last_y else -1
+        step_x = 1 if first_x <= last_x else -1
         if first_y < 0:
-            first_y = 0
-        elif first_y >= self._height:
-            first_y = self._height - 1
+            first_y = Y(0)
+        elif first_y > self._br_y:
+            first_y = self._br_y
         if last_y < 0:
-            last_y = 0
-        elif last_y >= self._height:
-            last_y = self._height - 1
+            last_y = Y(0)
+        elif last_y > self._br_y:
+            last_y = self._br_y
         for x in range(first_x, last_x + step_x, step_x):
             if x < 0 or x >= self._width:
                 continue
 
             yield (
-                x,
+                X(x),
                 (
-                    (y, self.__get(x, y))
+                    (Y(y), self._sequence_data[y][x])
                     for y in range(first_y, last_y + step_y, step_y)
                 ),
             )
 
+    @overload
     def iter_data(
         self,
-        first_corner: Coord2d | None = None,
-        last_corner: Coord2d | None = None,
+        *,
+        columns_first: bool,
+    ) -> Iterable[tuple[X, Iterable[tuple[Y, Map2dDataType]]]]: ...
+    @overload
+    def iter_data(
+        self,
+        *,
+        columns_first: Literal[False] = False,
+    ) -> Iterable[tuple[Y, Iterable[tuple[X, Map2dDataType]]]]: ...
+    @overload
+    def iter_data(
+        self, first_y: Y, first_x: X, *, columns_first: bool
+    ) -> Iterable[tuple[X, Iterable[tuple[Y, Map2dDataType]]]]: ...
+    @overload
+    def iter_data(
+        self, first_y: Y, first_x: X, *, columns_first: Literal[False] = False
+    ) -> Iterable[tuple[Y, Iterable[tuple[X, Map2dDataType]]]]: ...
+    @overload
+    def iter_data(
+        self,
+        first_y: Y,
+        first_x: X,
+        last_y: Y,
+        last_x: X,
+        *,
+        columns_first: bool,
+    ) -> Iterable[tuple[X, Iterable[tuple[Y, Map2dDataType]]]]: ...
+    @overload
+    def iter_data(
+        self,
+        first_y: Y,
+        first_x: X,
+        last_y: Y,
+        last_x: X,
+        *,
+        columns_first: Literal[False] = False,
+    ) -> Iterable[tuple[Y, Iterable[tuple[X, Map2dDataType]]]]: ...
+
+    def iter_data(
+        self,
+        first_y: Y | None = None,
+        first_x: X | None = None,
+        last_y: Y | None = None,
+        last_x: X | None = None,
         *,
         columns_first: bool = False,
-    ) -> Iterable[tuple[int, Iterable[tuple[int, Map2dDataType]]]]:
-        if first_corner is None:
-            first_x = -1
-            first_y = -1
+    ) -> (
+        Iterable[tuple[Y, Iterable[tuple[X, Map2dDataType]]]]
+        | Iterable[tuple[X, Iterable[tuple[Y, Map2dDataType]]]]
+    ):
+        if first_x is None:
+            assert first_y is None
+            first_x = X(-1)
+            first_y = Y(-1)
         else:
-            first_x = first_corner.x
-            first_y = first_corner.y
+            assert first_y is not None
 
-        if last_corner is None:
-            last_x = self._width
-            last_y = self._height
+        if last_x is None:
+            assert last_y is None
+            last_x = X(self._width)
+            last_y = Y(self._height)
         else:
-            last_x = last_corner.x
-            last_y = last_corner.y
+            assert last_y is not None
 
         if first_x < 0 and last_x < 0:
             return
-        if first_x > self.last_x and last_x >= self.last_x:
+        if first_x > self._br_x and last_x >= self._br_x:
             return
         if first_y < 0 and last_y < 0:
             return
-        if first_y > self.last_y and last_y >= self.last_y:
+        if first_y > self._br_y and last_y >= self._br_y:
             return
 
         if not columns_first:
-            yield from self.__iter_data_by_lines(first_x, first_y, last_x, last_y)
+            yield from self.iter_data_by_lines(first_y, first_x, last_y, last_x)
         else:
-            yield from self.__iter_data_by_columns(first_x, first_y, last_x, last_y)
+            yield from self.iter_data_by_columns(first_y, first_x, last_y, last_x)
 
     def str_lines(
         self, get_symbol: Callable[[Map2dDataType], str] | None = None
@@ -249,16 +264,16 @@ class Map2d[Map2dDataType]:
     def __rotate_once_clockwise(self) -> Map2d[Map2dDataType]:
         return Map2d(
             (data for _, data in items)
-            for _, items in self.__iter_data_by_columns(
-                0, self._height - 1, self._width - 1, 0
+            for _, items in self.iter_data_by_columns(
+                self._br_y, X(0), Y(0), self._br_x
             )
         )
 
     def __rotate_once_counterclockwise(self) -> Map2d[Map2dDataType]:
         return Map2d(
             (data for _, data in items)
-            for _, items in self.__iter_data_by_columns(
-                self._width - 1, 0, 0, self._height - 1
+            for _, items in self.iter_data_by_columns(
+                Y(0), self._br_x, self._br_y, X(0)
             )
         )
 
