@@ -8,6 +8,7 @@ from dataclasses import InitVar, dataclass, field
 from typing import (
     TYPE_CHECKING,
     Literal,
+    NewType,
     Self,
     assert_never,
     get_args,
@@ -46,16 +47,21 @@ class _InvalidSymbolError(ValueError):
         super().__init__(f"Invalid symbol: {symbol}")
 
 
-class _Map(Map2d[_MapSymbol]):
+@dataclass(slots=True)
+class _Map:
+    garden_plots: dict[int, set[int]] = field(init=False)
+    start_x: _X = field(init=False)
+    start_y: _Y = field(init=False)
+
     def __init__(self, data: Iterable[Sequence[str]]) -> None:
-        start: Coord2d | None = None
+        start: tuple[_X, _Y] | None = None
         start_symbol_count = 0
         map_data: list[list[_MapSymbol]] = []
         for line_index, line in enumerate(data):
             line_data: list[_MapSymbol] = []
             for index, symbol in enumerate(map(_parse_symbol, line)):
                 if symbol == "S":
-                    start = Coord2d(index, line_index)
+                    start = (_X(index), _Y(line_index))
                     start_symbol_count += 1
                     line_data.append(".")
                 else:
@@ -65,11 +71,19 @@ class _Map(Map2d[_MapSymbol]):
         assert start is not None
 
         super().__init__(map_data)
-        self._start: Coord2d = start
+        assert self._height > 0
+        assert self._height == self._width
+        self._size = self._height
+        self._start_y: _Y = start[1]
+        self._start_x: _X = start[0]
 
     @property
-    def start(self) -> Coord2d:
-        return self._start
+    def start_y(self) -> _Y:
+        return self._start_y
+
+    @property
+    def start_x(self) -> _X:
+        return self._start_x
 
     def get_adjoin_garden_plots_for_location(
         self, location: Coord2d
@@ -99,75 +113,12 @@ class _Map(Map2d[_MapSymbol]):
 def p1(input_str: str, steps: int = 64) -> int:
     map_ = _Map(input_str.splitlines())
 
-    locations_to_process: set[Coord2d] = {map_.start}
+    locations_to_process: set[Coord2d] = {Coord2d(map_.start_x, map_.start_y)}
     for _ in range(steps):
         locations_to_process = set(
             map_.get_adjoin_garden_plots_for_locations(locations_to_process)
         )
     return len(locations_to_process)
-
-
-class _InfiniteMap(_Map):
-    @property
-    def start(self) -> Coord2d:
-        return self._start
-
-    def _get(self, x: int, y: int) -> _MapSymbol:
-        x_ = x % self.width
-        y_ = y % self.height
-        return super()._get(x_, y_)
-
-    @override
-    def get_by_xy(self, x: int, y: int) -> _MapSymbol:
-        x_ = x % self.width
-        y_ = y % self.height
-        return super()._get(x_, y_)
-
-    def _iter_row(self, y: int, min_x: int, max_x: int) -> Iterator[_MapSymbol]:
-        y_ = y % self.height
-        start_x = min_x % self.width
-        stop_x = max_x % self.width
-
-        if (max_x - min_x + 1) <= self.width and start_x <= stop_x:
-            yield from self._sequence_data[y_][start_x : stop_x + 1]
-            return
-
-        yield from self._sequence_data[y_][start_x:]
-        while min_x < max_x - self.width:
-            yield from self._sequence_data[y_]
-            min_x += self.width
-        yield from self._sequence_data[y_][: stop_x + 1]
-
-    def get_row(self, y: int) -> tuple[_MapSymbol, ...]:
-        data_y = y % self.height
-        return self._sequence_data[data_y]
-
-    @override
-    def iter_data(
-        self,
-        first_corner: Coord2d | None = None,
-        last_corner: Coord2d | None = None,
-        *,
-        columns_first: bool = False,
-    ) -> Iterable[tuple[int, Iterable[tuple[int, _MapSymbol]]]]:
-        if columns_first is True:
-            raise NotImplementedError
-
-        if first_corner is None or last_corner is None:
-            raise NotImplementedError
-
-        if first_corner.x > last_corner.x or first_corner.y > last_corner.y:
-            raise NotImplementedError
-
-        for y in range(first_corner.y, last_corner.y + 1):
-            yield (
-                y,
-                zip(
-                    range(first_corner.x, last_corner.x + 1),
-                    self._iter_row(y, first_corner.x, last_corner.x),
-                    strict=True,
-                ),
-            )
 
 
 class _MapRow:
@@ -183,6 +134,11 @@ class _MapRow:
         return f"MapRow({self.data!r})"
 
 
+_X = NewType("_X", int)
+_Y = NewType("_Y", int)
+type _KnownSteps = dict[_Y, dict[_X, int]]
+
+
 @dataclass(slots=True)
 class _AreaSquareBasic:
     min_steps: int
@@ -192,18 +148,39 @@ class _AreaSquareBasic:
 @dataclass(slots=True)
 class _AreaSquareFull(_AreaSquareBasic):
     puzzle_max_steps: InitVar[int]
-    visits_at_step: InitVar[Counter[int]]
+    known_steps: InitVar[_KnownSteps]
+    tl_y: InitVar[_Y]
+    tl_x: InitVar[_X]
+    size: InitVar[int]
 
     _puzzle_max_steps: int = field(init=False)
     _possible_garden_plots_full: int = field(init=False)
-    _visits_at_step: Counter[int] = field(init=False)
+    _step_counts: Counter[int] = field(init=False)
     _garden_plots_cache: dict[int, int] = field(default_factory=dict, init=False)
 
     def __post_init__(
-        self, puzzle_max_steps: int, visits_at_step: Counter[int]
+        self,
+        puzzle_max_steps: int,
+        known_steps: _KnownSteps,
+        tl_y: _Y,
+        tl_x: _X,
+        size: int,
     ) -> None:
         self._puzzle_max_steps = puzzle_max_steps
-        self._visits_at_step = visits_at_step
+
+        over_y = tl_y + size
+        over_x = tl_x + size
+
+        self._step_counts = Counter(
+            (
+                step
+                for y, x_and_steps in known_steps.items()
+                if y >= tl_y and y < over_y
+                for x, step in x_and_steps.items()
+                if x >= tl_x and x < over_x
+            )
+        )
+
         self._possible_garden_plots_full = self._count_possible_garden_plots_at_step(
             puzzle_max_steps
         )
@@ -234,7 +211,7 @@ class _AreaSquareFull(_AreaSquareBasic):
 
     def _count_possible_garden_plots_at_step(self, step: int) -> int:
         possible_count = 0
-        for steps, count in self._visits_at_step.items():
+        for steps, count in self._step_counts.items():
             if steps <= step and steps % 2 == step % 2:
                 possible_count += count
         return possible_count
@@ -488,94 +465,6 @@ class _AreasAroundStart:
     def get_non_extendable_area_results(self, step: int) -> Iterator[_AreaResult]:
         for area in self.completed_non_extendable_areas:
             yield _AreaResult(area.count_possible_garden_plots_at_step(step))
-
-
-@dataclass(slots=True)
-class _ResolverSquare:
-    top_left: Coord2d
-    width: int
-    height: int
-    visits_at_step: dict[int, dict[int, int]] = field(default_factory=dict, init=False)
-    missing_visits: dict[int, set[int]] = field(init=False)
-    _min_step: int | None = field(default=None, init=False)
-    _max_step: int | None = field(default=None, init=False)
-
-    map_: InitVar[_InfiniteMap]
-
-    def __post_init__(self, map_: _InfiniteMap) -> None:
-        self.missing_visits = {
-            y: {x for x, symbol in x_symbol_iter if symbol == "."}
-            for y, x_symbol_iter in map_.iter_data(
-                self.top_left,
-                Coord2d(
-                    self.top_left.x + self.width - 1,
-                    self.top_left.y + self.height - 1,
-                ),
-            )
-        }
-
-    @property
-    def min_step(self) -> int:
-        assert self._min_step is not None
-        return self._min_step
-
-    @property
-    def max_step(self) -> int:
-        assert self._max_step is not None
-        return self._max_step
-
-    @overload
-    def is_inside(self, y: int) -> bool: ...
-
-    @overload
-    def is_inside(self, y: int, x: int) -> bool: ...
-
-    def is_inside(self, y: int, x: int | None = None) -> bool:
-        if y < self.top_left.y or y >= self.top_left.y + self.height:
-            return False
-
-        if x is None:
-            return True
-
-        return x >= self.top_left.x and x < self.top_left.x + self.width
-
-    def add_visits(self, y: int, x_and_steps: Iterable[tuple[int, int]]) -> None:
-        if y < self.top_left.y or y >= self.top_left.y + self.height:
-            return
-
-        for x, step in x_and_steps:
-            if x < self.top_left.x or x >= self.top_left.x + self.width:
-                continue
-
-            visits_xs = self.visits_at_step.get(y)
-            if visits_xs is None:
-                visits_xs = {}
-                self.visits_at_step[y] = visits_xs
-
-            if (missing_xs := self.missing_visits.get(y)) and x in missing_xs:
-                missing_xs.remove(x)
-                if not missing_xs:
-                    del self.missing_visits[y]
-                visits_xs[x] = step
-            else:
-                prev_step = visits_xs[x]
-                if prev_step > step:
-                    visits_xs[x] = step
-
-            if self._min_step is None or step < self._min_step:
-                self._min_step = step
-            if self._max_step is None or step > self._max_step:
-                self._max_step = step
-
-    def to_square(self, puzzle_max_steps: int) -> _AreaSquareFull:
-        return _AreaSquareFull(
-            self.min_step,
-            self.max_step,
-            puzzle_max_steps,
-            Counter(
-                step for xs in self.visits_at_step.values() for step in xs.values()
-            ),
-        )
 
 
 class _ResolverQuadrants:
@@ -843,38 +732,18 @@ class _ResolverVector:
         yield self.next
 
 
+@dataclass(slots=True)
 class _ResolverAroundStart:
-    __slots__ = (
-        "top_left",
-        "top_right",
-        "bottom_left",
-        "bottom_right",
-        "center_to_top",
-        "center_to_right",
-        "center_to_bottom",
-        "center_to_left",
-        "completed_non_extendable_areas",
-        "_min_y",
-        "_max_y",
-        "_min_x",
-        "_max_x",
-    )
-
-    def __init__(self, map_: _InfiniteMap) -> None:
-        self.top_left = _ResolverQuadrants(map_, 2)
-        self.top_right = _ResolverQuadrants(map_, 1)
-        self.bottom_left = _ResolverQuadrants(map_, 3)
-        self.bottom_right = _ResolverQuadrants(map_, 4)
-        center = _ResolverSquare(
-            Coord2d(map_.first_x, map_.first_y), map_.width, map_.height, map_
-        )
-        self.center_to_top = _ResolverVector(map_, center, CardinalDirection.N)
-        self.center_to_right = _ResolverVector(map_, center, CardinalDirection.E)
-        self.center_to_bottom = _ResolverVector(map_, center, CardinalDirection.S)
-        self.center_to_left = _ResolverVector(map_, center, CardinalDirection.W)
-        self.completed_non_extendable_areas = [center]
-
-        self._update_bounds()
+    q_tl: _ResolverQuadrants
+    q_tr: _ResolverQuadrants
+    q_bl: _ResolverQuadrants
+    q_br: _ResolverQuadrants
+    c: _ResolverSquare
+    c_t: _ResolverVector
+    c_r: _ResolverVector
+    c_b: _ResolverVector
+    c_l: _ResolverVector
+    non_extendable_areas: list[_ResolverSquare]
 
     def _update_bounds(self) -> None:
         self._min_y = min(
@@ -891,21 +760,6 @@ class _ResolverAroundStart:
             s.top_left.x + s.width - 1
             for s in (self.bottom_right.q4, self.center_to_right.next)
         )
-
-    @overload
-    def is_inside(self, y: int) -> bool: ...
-
-    @overload
-    def is_inside(self, y: int, x: int) -> bool: ...
-
-    def is_inside(self, y: int, x: int | None = None) -> bool:
-        if y < self._min_y or y > self._max_y:
-            return False
-
-        if x is None:
-            return True
-
-        return any(area.is_inside(y, x) for area in self.all_areas())
 
     def add_visits(self, y: int, x_and_steps: Collection[tuple[int, int]]) -> None:
         for area in self.all_areas():
@@ -997,10 +851,10 @@ class _NeighborVisit:
 
 
 def _get_neighbor_visits(
-    x: int,
+    x: _X,
     neighbor_step: int,
     map_rows: list[_MapRow],
-    known_steps_rows: list[dict[int, int]],
+    known_steps_rows: list[dict[_X, int]],
 ) -> Iterator[_NeighborVisit]:
     assert len(map_rows) == 3
     for y_offset, x_offset, data_ind in (
@@ -1021,49 +875,151 @@ def _get_neighbor_visits(
             yield _NeighborVisit(y_offset, x_offset)
 
 
-class _ResolverInsidePoints:
-    __slots__ = ("points", "_min_y", "_max_y", "_min_x", "_max_x")
+def _get_or_create_list[T](container: dict[_Y, list[T]], y: _Y) -> list[T]:
+    row = container.get(y)
+    if row is None:
+        container[y] = row = []
+    return row
 
-    def __init__(self, resolver: _ResolverAroundStart) -> None:
-        self.points: dict[int, set[int]] = {}
-        for square in resolver.all_squares():
-            for y, points in square.missing_visits.items():
-                self.points.setdefault(y, set()).update(points)
 
-        self._update_bounds()
+def _get_or_create_dict[T](container: dict[_Y, dict[_X, T]], y: _Y) -> dict[_X, T]:
+    row = container.get(y)
+    if row is None:
+        container[y] = row = {}
+    return row
 
-    def _update_bounds(self) -> None:
-        self._min_y = min(self.points)
-        self._max_y = max(self.points)
-        self._min_x = min(min(points) for points in self.points.values())
-        self._max_x = max(max(points) for points in self.points.values())
 
-    def add_square(self, square: _ResolverSquare) -> None:
-        for y, points in square.missing_visits.items():
-            self.points.setdefault(y, set()).update(points)
-        self._update_bounds()
+@dataclass(slots=True)
+class _ResolveSquareArgs:
+    map_: _InfiniteMap
+    tl_y: _Y
+    tl_x: _X
 
-    # def _is_possibly_inside_by_bounds_y(self, y: int) -> bool:
-    #    return self._min_y <= y <= self._max_y
+    size: InitVar[int]
+    all_known_steps: InitVar[_KnownSteps]
 
-    def is_possibly_inside(self, y: int) -> bool:
-        # return self._is_possibly_inside_by_bounds_y(y)
-        return y in self.points
+    br_y: _Y = field(init=False)
+    br_x: _X = field(init=False)
+    initial_ready_to_process: dict[_Y, list[tuple[_X, int]]] = field(init=False)
+    initial_known_steps: _KnownSteps = field(init=False)
 
-    def is_inside(self, y: int, x: int) -> bool:
-        #        if not self._is_possibly_inside_by_bounds_y(y):
-        #            return False
+    def __post_init__(self, size: int, all_known_steps: _KnownSteps) -> None:
+        self.br_y = self.tl_y + size - 1
+        self.br_x = self.tl_x + size - 1
 
-        x_points = self.points.get(y)
-        if x_points is None:
-            return False
-        return x in x_points
+        def is_just_outside(y: _Y, x: _X) -> bool:
+            return (
+                (y == self.tl_y - 1 or y == self.br_y + 1)
+                and (self.tl_x <= x <= self.br_x)
+            ) or (
+                (x == self.tl_x - 1 or x == self.br_x + 1)
+                and self.tl_y <= y <= self.br_y
+            )
+
+        def is_inside(y: _Y, x: _X) -> bool:
+            return self.tl_y <= y <= self.br_y and self.tl_x <= x <= self.br_x
+
+        def is_far_outside_y(y: _Y) -> bool:
+            return y < self.tl_y - 1 or y > self.br_y + 1
+
+        def is_far_outside_x(x: _X) -> bool:
+            return x < self.tl_x - 1 or x > self.br_x + 1
+
+        for y, x_and_steps in all_known_steps.items():
+            if is_far_outside_y(y):
+                continue
+            for x, step in x_and_steps.items():
+                if is_far_outside_x(x):
+                    continue
+                _get_or_create_dict(self.initial_known_steps, y)[x] = step
+                if is_inside(y, x):
+                    _get_or_create_list(self.initial_ready_to_process, y).append(
+                        (x, step)
+                    )
+                else:
+                    assert is_just_outside(y, x)
+
+
+def _resolve_square(args: _ResolveSquareArgs) -> _KnownSteps:
+    def is_inside_y(y: _Y) -> bool:
+        return args.tl_y <= y <= args.br_y
+
+    def is_inside_x(x: _X) -> bool:
+        return args.tl_x <= x <= args.br_x
+
+    ready_to_process: dict[_Y, list[tuple[_X, int]]] = args.initial_ready_to_process
+    known_steps: _KnownSteps = args.initial_known_steps
+
+    while ready_to_process:
+        rows_to_process = list(ready_to_process.keys())
+        for y in rows_to_process:
+            x_and_step_to_process = ready_to_process.pop(y)
+            if not x_and_step_to_process:
+                continue
+
+            map_rows = [_MapRow(args.map_.get_row(y_)) for y_ in range(y - 1, y + 2)]
+            known_steps_rows = [
+                _get_or_create_dict(known_steps, y_) for y_ in range(y - 1, y + 2)
+            ]
+
+            new_locations_to_process: list[list[tuple[_X, int]]] = [
+                [] for _ in range(3)
+            ]
+            for x, step in x_and_step_to_process:
+                neighbor_step = step + 1
+                for neighbor_visit in _get_neighbor_visits(
+                    x, neighbor_step, map_rows, known_steps_rows
+                ):
+                    neighbor_y_ind = neighbor_visit.y_offset + 1
+                    neighbor_x: _X = x + neighbor_visit.x_offset
+
+                    known_steps_rows[neighbor_y_ind][neighbor_x] = neighbor_step
+                    new_locations_to_process[neighbor_y_ind].append(
+                        (neighbor_x, neighbor_step)
+                    )
+
+            for new_y_ind in range(3):
+                new_y: _Y = y + new_y_ind - 1
+                if not is_inside_y(new_y):
+                    continue
+
+                new_x_and_step_to_process = new_locations_to_process[new_y_ind]
+                if not new_x_and_step_to_process:
+                    continue
+
+                ready_to_process_row = _get_or_create_list(ready_to_process, new_y)
+                for new_x, step in new_x_and_step_to_process:
+                    if not is_inside_x(new_x):
+                        continue
+                    ready_to_process_row.append((new_x, step))
+
+    return known_steps
 
 
 def _p2_step1_resolve_around_start(
     map_: _InfiniteMap,
     puzzle_max_steps: int,
 ) -> _AreasAroundStart:
+    known_steps: _KnownSteps = {map_.start.y: {map_.start.x: 0}}
+
+    center_known_steps = _resolve_square(
+        _ResolveSquareArgs(
+            map_=map_,
+            tl_y=_Y(0),
+            tl_x=_X(0),
+            size=map_.height,
+            all_known_steps=known_steps,
+        )
+    )
+
+    center = _AreaSquareFull(
+        tl_y=0,
+        tl_x=0,
+        height=map_.height,
+        width=map_.width,
+        known_steps=center_known_steps,
+    )
+
     resolver = _ResolverAroundStart(map_)
     inside_points = _ResolverInsidePoints(resolver)
 
@@ -1071,7 +1027,6 @@ def _p2_step1_resolve_around_start(
         map_.start.y: [(map_.start.x, 0)]
     }
     ready_to_process_outside: dict[int, list[tuple[int, int]]] = {}
-    known_steps: dict[int, dict[int, int]] = {map_.start.y: {map_.start.x: 0}}
 
     resolver.add_visits(map_.start.y, [(map_.start.x, 0)])
 
