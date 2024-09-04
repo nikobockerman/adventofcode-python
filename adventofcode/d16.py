@@ -1,7 +1,8 @@
 import logging
 
+from adventofcode.tooling.coordinates import Coord2d, X, Y
 from adventofcode.tooling.directions import CardinalDirection as Dir
-from adventofcode.tooling.map import Coord2d, Map2d
+from adventofcode.tooling.map import Map2d
 
 _logger = logging.getLogger(__name__)
 
@@ -37,16 +38,16 @@ def _process_splitter_exit(
     next_splitter_exits: list[tuple[Coord2d, Dir]] = []
     while True:
         if (
-            coord.x < map_.first_x
-            or coord.x > map_.last_x
-            or coord.y < map_.first_y
-            or coord.y > map_.last_y
+            coord.x < map_.tl_x
+            or coord.x > map_.br_x
+            or coord.y < map_.tl_y
+            or coord.y > map_.br_y
         ):
             _logger.debug("Out of map")
             break
         visited.add(coord)
 
-        symbol = map_.get(coord)
+        symbol = map_.get(coord.y, coord.x)
         _logger.debug("Coord: %s Dir: %s Symbol: %s", coord, dir_, symbol)
 
         if symbol == ".":
@@ -127,7 +128,7 @@ def _try_one_enter(
 def p1(input_str: str) -> int:
     map_ = Map2d(input_str.splitlines())
     exit_cache = _SplitterExitCache()
-    return _try_one_enter(Coord2d(0, 0), Dir.E, map_, exit_cache)
+    return _try_one_enter(Coord2d(map_.tl_y, map_.tl_x), Dir.E, map_, exit_cache)
 
 
 def p2(input_str: str) -> int:
@@ -135,18 +136,18 @@ def p2(input_str: str) -> int:
     exit_cache = _SplitterExitCache()
     results: list[tuple[Coord2d, Dir, int]] = []
 
-    for x in range(map_.first_x, map_.last_x + 1):
-        for y in (map_.first_y, map_.last_y):
-            coord = Coord2d(x, y)
-            dir_ = Dir.S if y == 0 else Dir.N
+    for x1 in range(map_.tl_x, map_.br_x + 1):
+        for y1 in (map_.tl_y, map_.br_y):
+            coord = Coord2d(y1, X(x1))
+            dir_ = Dir.S if y1 == 0 else Dir.N
             logging.info("Trying %s -> %s", coord, dir_)
             result = _try_one_enter(coord, dir_, map_, exit_cache)
             logging.info("Result %s -> %s = %d", coord, dir_, result)
             results.append((coord, dir_, result))
-    for y in range(map_.first_y, map_.last_y + 1):
-        for x in (map_.first_x, map_.last_x):
-            coord = Coord2d(x, y)
-            dir_ = Dir.E if x == 0 else Dir.W
+    for y2 in range(map_.tl_y, map_.br_y + 1):
+        for x2 in (map_.tl_x, map_.br_x):
+            coord = Coord2d(Y(y2), x2)
+            dir_ = Dir.E if x2 == 0 else Dir.W
             logging.info("Trying %s -> %s", coord, dir_)
             result = _try_one_enter(coord, dir_, map_, exit_cache)
             logging.info("Result %s -> %s = %d", coord, dir_, result)

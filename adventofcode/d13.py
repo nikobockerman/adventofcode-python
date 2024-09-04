@@ -2,7 +2,8 @@ import itertools
 import logging
 from collections.abc import Iterable
 
-from adventofcode.tooling.map import Coord2d, Map2d
+from adventofcode.tooling.coordinates import X, Y
+from adventofcode.tooling.map import Map2d
 
 
 def _parse_maps(input_str: str) -> Iterable[Map2d[str]]:
@@ -32,13 +33,16 @@ def _compare_datas(
 def _find_consecutive_rows_or_columns(
     map_: Map2d[str], start_pos: int, find_column_not_row: bool, allowed_mismatches: int
 ) -> tuple[int, int] | None:
-    first_corner = (
-        Coord2d(start_pos, 0) if find_column_not_row else Coord2d(0, start_pos)
-    )
+    if find_column_not_row:
+        first_y = Y(0)
+        first_x = X(start_pos)
+    else:
+        first_y = Y(start_pos)
+        first_x = X(0)
     for (i1, data1), (_, data2) in itertools.pairwise(
         (i, [sym for _, sym in sym_iter])
         for i, sym_iter in map_.iter_data(
-            first_corner, columns_first=find_column_not_row
+            first_y, first_x, columns_first=find_column_not_row
         )
     ):
         match_res = _compare_datas(data1, data2, allowed_mismatches)
@@ -58,25 +62,26 @@ def _check_if_datas_around_reflection_match(
     find_column_not_row: bool,
     allowed_mismatches: int,
 ) -> int | None:
-    before_first_corner = (
-        Coord2d(pos_before_reflection - 1, 0)
-        if find_column_not_row
-        else Coord2d(0, pos_before_reflection - 1)
-    )
-    before_last_corner = (
-        Coord2d(-1, map_.last_y) if find_column_not_row else Coord2d(map_.last_x, -1)
-    )
-    after_first_corner = (
-        Coord2d(pos_before_reflection + 2, 0)
-        if find_column_not_row
-        else Coord2d(0, pos_before_reflection + 2)
-    )
+    if find_column_not_row:
+        before_first_y = Y(0)
+        before_first_x = X(pos_before_reflection - 1)
+        before_last_y = map_.br_y
+        before_last_x = X(-1)
+        after_first_y = Y(0)
+        after_first_x = X(pos_before_reflection + 2)
+    else:
+        before_first_y = Y(pos_before_reflection - 1)
+        before_first_x = X(0)
+        before_last_y = Y(-1)
+        before_last_x = map_.br_x
+        after_first_y = Y(pos_before_reflection + 2)
+        after_first_x = X(0)
 
     mismatches = 0
 
     for (i1, data1_iter), (i2, data2_iter) in zip(
-        map_.iter_data(before_first_corner, before_last_corner),
-        map_.iter_data(after_first_corner),
+        map_.iter_data(before_first_y, before_first_x, before_last_y, before_last_x),
+        map_.iter_data(after_first_y, after_first_x),
         strict=False,
     ):
         match_res = _compare_datas(

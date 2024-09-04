@@ -2,8 +2,9 @@ import heapq
 import logging
 from dataclasses import dataclass, field
 
+from adventofcode.tooling.coordinates import Coord2d
 from adventofcode.tooling.directions import CardinalDirection as Dir
-from adventofcode.tooling.map import Coord2d, Map2d
+from adventofcode.tooling.map import Map2d
 
 _logger = logging.getLogger(__name__)
 
@@ -127,10 +128,10 @@ def _get_next_position_in_direction(
     new_next_coord = pos.next_coord.adjoin(new_dir)
 
     if (
-        new_next_coord.x < data.map_.first_x
-        or new_next_coord.x > data.map_.last_x
-        or new_next_coord.y < data.map_.first_y
-        or new_next_coord.y > data.map_.last_y
+        new_next_coord.x < data.map_.tl_x
+        or new_next_coord.x > data.map_.br_x
+        or new_next_coord.y < data.map_.tl_y
+        or new_next_coord.y > data.map_.br_y
     ):
         _logger.debug("Outside of map")
         return None
@@ -147,8 +148,8 @@ def _get_next_position_in_direction(
 
 def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -> int:
     map_ = Map2d((int(c) for c in line) for line in input_str.splitlines())
-    start_pos = Coord2d(map_.first_x, map_.first_y)
-    destination = Coord2d(map_.last_x, map_.last_y)
+    start_pos = Coord2d(map_.tl_y, map_.tl_x)
+    destination = Coord2d(map_.br_y, map_.br_x)
 
     queue = _create_prio_queue(start_pos, destination)
 
@@ -160,7 +161,7 @@ def _resolve(input_str: str, min_straight_moves: int, max_straight_moves: int) -
 
         _logger.debug("Processing cheapest: %s", pos)
 
-        new_heat_loss = pos.heat_loss + map_.get(pos.next_coord)
+        new_heat_loss = pos.heat_loss + map_.get(pos.next_coord.y, pos.next_coord.x)
 
         if pos.next_coord == destination:
             if result is None or new_heat_loss < result:

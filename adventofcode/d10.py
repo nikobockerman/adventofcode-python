@@ -4,9 +4,10 @@ import logging
 from collections.abc import Collection, Iterable
 from dataclasses import dataclass, field
 
+from adventofcode.tooling.coordinates import Coord2d, X, Y
 from adventofcode.tooling.directions import CardinalDirection as Dir
 from adventofcode.tooling.directions import CardinalDirectionsAll
-from adventofcode.tooling.map import Coord2d, Map2d
+from adventofcode.tooling.map import Map2d
 
 _logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class _MapData(Map2d[_Pipe]):
             y_pipes: list[_Pipe] = []
             data.append(y_pipes)
             for x, symbol in enumerate(row):
-                pipe = _Pipe(Coord2d(x, y), symbol)
+                pipe = _Pipe(Coord2d(Y(y), X(x)), symbol)
                 if symbol == "S":
                     assert start is None
                     start = pipe
@@ -62,7 +63,8 @@ class _MapData(Map2d[_Pipe]):
 
 
 def _get_adjoin_pipes_on_path(pipe: _Pipe, map_data: _MapData) -> Iterable[_Pipe]:
-    east = map_data.get(pipe.coord.adjoin(Dir.E), None)
+    east_adjoin = pipe.coord.adjoin(Dir.E)
+    east = map_data.get_or_default(east_adjoin.y, east_adjoin.x, None)
     if (
         east
         and pipe.symbol in _symbols_open_to_east
@@ -70,7 +72,8 @@ def _get_adjoin_pipes_on_path(pipe: _Pipe, map_data: _MapData) -> Iterable[_Pipe
     ):
         yield east
 
-    south = map_data.get(pipe.coord.adjoin(Dir.S), None)
+    south_adjoin = pipe.coord.adjoin(Dir.S)
+    south = map_data.get_or_default(south_adjoin.y, south_adjoin.x, None)
     if (
         south
         and pipe.symbol in _symbols_open_to_south
@@ -78,7 +81,8 @@ def _get_adjoin_pipes_on_path(pipe: _Pipe, map_data: _MapData) -> Iterable[_Pipe
     ):
         yield south
 
-    west = map_data.get(pipe.coord.adjoin(Dir.W), None)
+    west_adjoin = pipe.coord.adjoin(Dir.W)
+    west = map_data.get_or_default(west_adjoin.y, west_adjoin.x, None)
     if (
         west
         and pipe.symbol in _symbols_open_to_west
@@ -86,7 +90,8 @@ def _get_adjoin_pipes_on_path(pipe: _Pipe, map_data: _MapData) -> Iterable[_Pipe
     ):
         yield west
 
-    north = map_data.get(pipe.coord.adjoin(Dir.N), None)
+    north_adjoin = pipe.coord.adjoin(Dir.N)
+    north = map_data.get_or_default(north_adjoin.y, north_adjoin.x, None)
     if (
         north
         and pipe.symbol in _symbols_open_to_north
@@ -162,9 +167,9 @@ def _create_first_path_pipe(
     map_data: _MapData, coords_in_path: Collection[Coord2d]
 ) -> _PathPipe:
     # Guessed value for y to hit path on | symbol
-    y = (map_data.height // 2) + 1
+    y = Y((map_data.height // 2) + 1)
 
-    for _, x_iter in map_data.iter_data(Coord2d(0, y), Coord2d(map_data.last_x, y + 1)):
+    for _, x_iter in map_data.iter_data_by_lines(y, X(0), Y(y + 1), map_data.br_x):
         for _, pipe in x_iter:
             coord = pipe.coord
             if coord not in coords_in_path:
@@ -173,7 +178,8 @@ def _create_first_path_pipe(
             else:
                 assert pipe.symbol not in "J7-S"
                 assert pipe.symbol == "|", "Use better value for y"
-                east_neighbor = map_data.get(pipe.coord.adjoin(Dir.E))
+                adjoin_coord = pipe.coord.adjoin(Dir.E)
+                east_neighbor = map_data.get(adjoin_coord.y, adjoin_coord.x)
                 if east_neighbor and east_neighbor.coord not in coords_in_path:
                     east_neighbor.inside = _Inside.Inside
                 return _PathPipe(pipe, {Dir.E: _Inside.Inside, Dir.W: _Inside.Outside})
@@ -295,7 +301,8 @@ def create_path_pipe(prev: _PathPipe, pipe: _Pipe, map_data: _MapData) -> _PathP
     # Set inside/outside for direct neighbors already in map as we have the data
     # available
     for neighbor_dir, inside in neighbors.items():
-        neighbor = map_data.get(pipe.coord.adjoin(neighbor_dir), None)
+        neighbor_coord = pipe.coord.adjoin(neighbor_dir)
+        neighbor = map_data.get_or_default(neighbor_coord.y, neighbor_coord.x, None)
         if neighbor is not None and neighbor.inside is not _Inside.InPath:
             assert neighbor.inside is _Inside.Unknown or neighbor.inside is inside
             neighbor.inside = inside
@@ -341,7 +348,11 @@ def p2(input_str: str) -> int:
         visited_recursive_coords.add(pipe.coord)
 
         for neighbor in (
-            map_data.get(pipe.coord.adjoin(direction), None)
+            map_data.get_or_default(
+                (neighbor_coord := pipe.coord.adjoin(direction)).y,
+                neighbor_coord.x,
+                None,
+            )
             for direction in CardinalDirectionsAll
         ):
             if not neighbor:

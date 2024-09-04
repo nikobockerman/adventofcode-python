@@ -1,7 +1,12 @@
 import logging
+from typing import TYPE_CHECKING, assert_never, cast
 
+from adventofcode.tooling.coordinates import Coord2d, X, Y
 from adventofcode.tooling.directions import CardinalDirection as Dir
-from adventofcode.tooling.map import Coord2d, Map2d
+from adventofcode.tooling.map import Map2d
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 _logger = logging.getLogger(__name__)
 
@@ -19,12 +24,16 @@ def _calculate_load(map_: Map2d[str]) -> int:
 def _roll_rocks(map_: Map2d[str], direction: Dir) -> Map2d[str]:
     lines: list[list[str]] = [["."] * map_.width for _ in range(map_.height)]
 
-    def _coord_rows_first(outer: int, inner: int) -> Coord2d:
-        return Coord2d(inner, outer)
+    def _coord_rows_first(outer: Y | X, inner: Y | X) -> Coord2d:
+        return Coord2d(cast(Y, outer), cast(X, inner))
 
-    def _coord_columns_first(outer: int, inner: int) -> Coord2d:
-        return Coord2d(outer, inner)
+    def _coord_columns_first(outer: Y | X, inner: Y | X) -> Coord2d:
+        return Coord2d(cast(Y, inner), cast(X, outer))
 
+    map_iter: (
+        Iterable[tuple[Y, Iterable[tuple[X, str]]]]
+        | Iterable[tuple[X, Iterable[tuple[Y, str]]]]
+    )
     if direction == Dir.N:
         map_iter = map_.iter_data(columns_first=True)
         coord_func = _coord_columns_first
@@ -37,7 +46,7 @@ def _roll_rocks(map_: Map2d[str], direction: Dir) -> Map2d[str]:
             lines[y][coord.x] = "O"
 
     elif direction == Dir.E:
-        map_iter = map_.iter_data(Coord2d(map_.last_x, 0), Coord2d(0, map_.last_y))
+        map_iter = map_.iter_data_by_lines(map_.tl_y, map_.br_x, map_.br_y, map_.tl_x)
         coord_func = _coord_rows_first
 
         def set_rock(
@@ -50,9 +59,7 @@ def _roll_rocks(map_: Map2d[str], direction: Dir) -> Map2d[str]:
             lines[coord.y][x] = "O"
 
     elif direction == Dir.S:
-        map_iter = map_.iter_data(
-            Coord2d(0, map_.last_y), Coord2d(map_.last_x, 0), columns_first=True
-        )
+        map_iter = map_.iter_data_by_columns(map_.br_y, map_.tl_x, map_.tl_y, map_.br_x)
         coord_func = _coord_columns_first
 
         def set_rock(
@@ -76,7 +83,7 @@ def _roll_rocks(map_: Map2d[str], direction: Dir) -> Map2d[str]:
             lines[coord.y][x] = "O"
 
     else:
-        raise ValueError(direction)
+        assert_never(direction)
 
     for outer, data_iter in map_iter:
         prev_square: Coord2d | None = None

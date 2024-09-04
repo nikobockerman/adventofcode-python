@@ -1,7 +1,8 @@
 import contextlib
 from collections.abc import Iterable
 
-from adventofcode.tooling.map import Coord2d, Map2d
+from adventofcode.tooling.coordinates import Coord2d
+from adventofcode.tooling.map import Map2d
 
 
 class _InputMap(Map2d[str]):
@@ -44,7 +45,7 @@ def calculate_distance_between_galaxies(input_str: str, expansion_distance: int)
             empty_x_indices.remove(x)
         with contextlib.suppress(KeyError):
             empty_y_indices.remove(y)
-        galaxy_coords.append(Coord2d(x, y))
+        galaxy_coords.append(Coord2d(y, x))
 
     return sum(
         _calculate_distance(

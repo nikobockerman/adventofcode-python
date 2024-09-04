@@ -3,8 +3,8 @@ import logging
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
+from adventofcode.tooling.coordinates import Coord2d, X, Y
 from adventofcode.tooling.directions import CardinalDirection as Dir
-from adventofcode.tooling.map import Coord2d
 
 _logger = logging.getLogger(__name__)
 
@@ -12,20 +12,20 @@ _logger = logging.getLogger(__name__)
 @dataclass(slots=True, eq=False)
 class _Path:
     corners: list[Coord2d] = field(
-        default_factory=lambda: list[Coord2d]((Coord2d(0, 0),))
+        default_factory=lambda: list[Coord2d]((Coord2d(Y(0), X(0)),))
     )
-    _last_position: Coord2d = field(default_factory=lambda: Coord2d(0, 0))
-    _north_west_corner: Coord2d = field(default_factory=lambda: Coord2d(0, 0))
-    _south_east_corner: Coord2d = field(default_factory=lambda: Coord2d(0, 0))
+    _last_position: Coord2d = field(default_factory=lambda: Coord2d(Y(0), X(0)))
+    _north_west_corner: Coord2d = field(default_factory=lambda: Coord2d(Y(0), X(0)))
+    _south_east_corner: Coord2d = field(default_factory=lambda: Coord2d(Y(0), X(0)))
 
     @property
     def height(self) -> int:
-        assert self._north_west_corner == Coord2d(0, 0)
+        assert self._north_west_corner == Coord2d(Y(0), X(0))
         return self._south_east_corner.y + 1
 
     @property
     def width(self) -> int:
-        assert self._north_west_corner == Coord2d(0, 0)
+        assert self._north_west_corner == Coord2d(Y(0), X(0))
         return self._south_east_corner.x + 1
 
     def process(self, dir_counts: Iterable[tuple[Dir, int]]) -> None:
@@ -37,12 +37,12 @@ class _Path:
         self.corners.append(self._last_position)
 
         self._north_west_corner = Coord2d(
-            min(self._north_west_corner.x, self._last_position.x),
             min(self._north_west_corner.y, self._last_position.y),
+            min(self._north_west_corner.x, self._last_position.x),
         )
         self._south_east_corner = Coord2d(
-            max(self._south_east_corner.x, self._last_position.x),
             max(self._south_east_corner.y, self._last_position.y),
+            max(self._south_east_corner.x, self._last_position.x),
         )
         _logger.debug("Adding %s, %s -> %s", direction, count, self._last_position)
 
@@ -53,13 +53,13 @@ class _Path:
         x_adjustment = -self._north_west_corner.x
         y_adjustment = -self._north_west_corner.y
         self.corners = [
-            Coord2d(coord.x + x_adjustment, coord.y + y_adjustment)
+            Coord2d(Y(coord.y + y_adjustment), X(coord.x + x_adjustment))
             for coord in self.corners
         ]
-        self._north_west_corner = Coord2d(0, 0)
+        self._north_west_corner = Coord2d(Y(0), X(0))
         self._south_east_corner = Coord2d(
-            self._south_east_corner.x + x_adjustment,
-            self._south_east_corner.y + y_adjustment,
+            Y(self._south_east_corner.y + y_adjustment),
+            X(self._south_east_corner.x + x_adjustment),
         )
         if _logger.isEnabledFor(logging.DEBUG):
             path = " -> ".join(str(coord) for coord in self.corners)
@@ -147,8 +147,8 @@ class _PathLines:
         horizontals_firsts = {line.c1.x for line in horizontals}
         horizontals_lasts = {line.c2.x for line in horizontals}
 
-        def get_crossing_vertice_columns_set() -> set[int]:
-            crossing_vertice_columns_set = set[int]()
+        def get_crossing_vertice_columns_set() -> set[X]:
+            crossing_vertice_columns_set = set[X]()
             for line in self.verticals:
                 assert line.c1.x == line.c2.x
                 if line.c1.y >= row:
