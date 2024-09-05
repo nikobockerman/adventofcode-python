@@ -65,10 +65,42 @@ class Coord2d:
         return math.isqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
     def distance_to(self, other: Coord2d) -> float:
+        if self.y == other.y:
+            return abs(self.x - other.x)
+        if self.x == other.x:
+            return abs(self.y - other.y)
         return math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
     def __str__(self) -> str:
-        return f"({self.x}, {self.y})"
+        return f"({self.y}, {self.x})"
 
     def __repr__(self) -> str:
-        return f"Coord2d({self.x}, {self.y})"
+        return f"Coord2d({self.y}, {self.x})"
+
+
+def adjoin_north(y: Y, x: X) -> tuple[Y, X]:
+    return Y(y - 1), x
+
+
+def adjoin_east(y: Y, x: X) -> tuple[Y, X]:
+    return y, X(x + 1)
+
+
+def adjoin_south(y: Y, x: X) -> tuple[Y, X]:
+    return Y(y + 1), x
+
+
+def adjoin_west(y: Y, x: X) -> tuple[Y, X]:
+    return y, X(x - 1)
+
+
+def adjoin_dir(y: Y, x: X, direction: CardinalDirection) -> tuple[Y, X]:
+    if direction is CardinalDirection.N:
+        return adjoin_north(y, x)
+    if direction is CardinalDirection.E:
+        return adjoin_east(y, x)
+    if direction is CardinalDirection.S:
+        return adjoin_south(y, x)
+    if direction is CardinalDirection.W:
+        return adjoin_west(y, x)
+    assert_never(direction)

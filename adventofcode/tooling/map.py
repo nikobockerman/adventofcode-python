@@ -107,7 +107,7 @@ class Map2d[Map2dDataType]:
         elif last_x > self._br_x:
             last_x = self._br_x
 
-        if last_y <= 0:
+        if last_y <= 0 and step_y < 0:
             slice_rows = self._sequence_data[first_y::step_y]
         else:
             if last_y < 0:
@@ -118,7 +118,7 @@ class Map2d[Map2dDataType]:
 
         for row_ind, row in enumerate(slice_rows):
             y = Y(row_ind * step_y + first_y)
-            if last_x <= 0:
+            if last_x <= 0 and step_x < 0:
                 slice_row_datas = row[first_x::step_x]
             else:
                 slice_row_datas = row[first_x : last_x + step_x : step_x]
