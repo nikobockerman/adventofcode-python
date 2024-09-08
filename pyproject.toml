@@ -21,7 +21,7 @@ ruff-fix = "ruff check --fix-only"
 
 test = "pytest"
 
-runall = "adventofcode"
+runall = "adventofcode all"
 validate = ["lint", "test", "runall"]
 
 [tool.poe.tasks.shellcheck]
