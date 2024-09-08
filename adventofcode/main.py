@@ -5,7 +5,8 @@ import sys
 import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Annotated, Any
+from enum import StrEnum
+from typing import Annotated, Any, assert_never
 
 import joblib
 import typer
@@ -13,12 +14,11 @@ import typer
 from adventofcode.answers import ANSWERS
 
 app = typer.Typer()
+state = {"day_suffix": ""}
 
 
-@app.command()
-def main(
-    day: Annotated[int | None, typer.Argument()] = None,
-    problem: Annotated[int | None, typer.Argument()] = None,
+@app.callback()
+def callback(
     verbosity: Annotated[
         int,
         typer.Option(
@@ -26,8 +26,8 @@ def main(
             "-v",
             count=True,
             show_default=False,
-            help="Increase verbosity level. This option can be specified multiple "
-            "times.",
+            help="Increase log level. This option can be specified multiple "
+            "times. Log levels by count of this flag: 0=WARNING, 1=INFO, 2=DEBUG.",
         ),
     ] = 0,
     day_suffix: Annotated[str, typer.Option("--day-suffix", "-s")] = "",
@@ -36,23 +36,45 @@ def main(
         verbosity, logging.DEBUG
     )
     logging.basicConfig(level=level)
-
-    exit_code: int = 0
-    if day is not None and problem is not None:
-        exit_code = _specific_problem(day, day_suffix, problem)
-    else:
-        days = (ANSWERS.keys()) if day is None else [day]
-        exit_code = _multiple_problems(days, day_suffix=day_suffix)
-
-    sys.exit(exit_code)
+    state["day_suffix"] = day_suffix
 
 
-def _specific_problem(day: int, day_suffix: str, problem: int) -> int:
+@app.command(name="all")
+def all_() -> None:
+    sys.exit(_multiple_problems(ANSWERS.keys(), day_suffix=state["day_suffix"]))
+
+
+@app.command(name="day")
+def day_(day: int) -> None:
+    sys.exit(_multiple_problems((day,), day_suffix=state["day_suffix"]))
+
+
+class _Profiler(StrEnum):
+    CProfile = "cProfile"
+    Pyinstrument = "pyinstrument"
+
+
+@app.command()
+def single(
+    day: int,
+    problem: int,
+    profiler: Annotated[_Profiler | None, typer.Option("-p", "--profiler")] = None,
+) -> None:
+    sys.exit(_specific_problem(day, state["day_suffix"], problem, profiler))
+
+
+def _specific_problem(
+    day: int, day_suffix: str, problem: int, profiler: _Profiler | None
+) -> int:
     try:
-        result = _process_output(
-            _exec_problem(_get_problem_input(day, day_suffix, problem))
-        )
-        print(f"Duration: {result.duration:.3f}s")
+        input_ = _get_problem_input(day, day_suffix, problem)
+        if profiler is not None:
+            output = _profiler_problem(input_, profiler)
+        else:
+            output = _exec_problem(input_)
+        result = _process_output(output)
+        if result.duration is not None:
+            print(f"Duration: {result.duration:.3f}s")
 
         if result.incorrect:
             print(
@@ -89,8 +111,13 @@ def _multiple_problems(days: Iterable[int], day_suffix: str) -> int:
                 if all_passed is None:
                     all_passed = passed
                 all_passed &= passed
-                if slowest is None or result.duration > slowest.duration:
+                assert result.duration is not None
+                if slowest is None:
                     slowest = result
+                else:
+                    assert slowest.duration is not None
+                    if result.duration > slowest.duration:
+                        slowest = result
 
     duration = time.perf_counter() - start
 
@@ -132,7 +159,7 @@ class _ProblemResult:
     problem: int
 
     answer: str
-    duration: float
+    duration: float | None
     correct_answer: str | None
 
     @property
@@ -173,7 +200,7 @@ class _ProblemInput:
 @dataclass(frozen=True, slots=True)
 class _ProblemOutput:
     input_: _ProblemInput
-    duration: float
+    duration: float | None
     result: str
 
     @property
@@ -222,5 +249,36 @@ def _exec_problem(input_: _ProblemInput) -> _ProblemOutput:
     return _ProblemOutput(input_, duration, str(result))
 
 
+def _profiler_problem(input_: _ProblemInput, profiler: _Profiler) -> _ProblemOutput:
+    if profiler is _Profiler.CProfile:
+        import cProfile
+        import pstats
+
+        with cProfile.Profile() as pr:
+            result = input_.func(input_.input_str)
+            stats = pstats.Stats(pr).strip_dirs()
+            stats.sort_stats("tottime").print_stats(0.2)
+            stats.sort_stats("cumtime").print_stats(0.2)
+            return _ProblemOutput(input_, None, str(result))
+
+    elif profiler is _Profiler.Pyinstrument:
+        import pyinstrument
+        import pyinstrument.util
+        from pyinstrument.renderers.console import ConsoleRenderer
+
+        with pyinstrument.profile(
+            renderer=ConsoleRenderer(
+                color=pyinstrument.util.file_supports_color(sys.stderr),
+                unicode=pyinstrument.util.file_supports_unicode(sys.stderr),
+                short_mode=True,
+                show_all=True,
+            )
+        ):
+            result = input_.func(input_.input_str)
+            return _ProblemOutput(input_, None, str(result))
+    else:
+        assert_never(profiler)
+
+
 if __name__ == "__main__":
-    typer.run(main)
+    app()
