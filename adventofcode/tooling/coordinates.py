@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import NewType, assert_never
+from typing import NamedTuple, NewType, assert_never
 
 from adventofcode.tooling.directions import CardinalDirection
 
@@ -9,20 +9,9 @@ X = NewType("X", int)
 Y = NewType("Y", int)
 
 
-class Coord2d:
-    __slots__ = ("y", "x")
-
-    def __init__(self, y: Y, x: X) -> None:
-        self.y = y
-        self.x = x
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, Coord2d):
-            return self.x == other.x and self.y == other.y
-        return NotImplemented
-
-    def __hash__(self) -> int:
-        return hash((self.x, self.y))
+class Coord2d(NamedTuple):
+    y: Y
+    x: X
 
     def adjoin(self, direction: CardinalDirection) -> Coord2d:
         if direction is CardinalDirection.N:
@@ -66,9 +55,3 @@ class Coord2d:
 
     def distance_to(self, other: Coord2d) -> float:
         return math.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
-
-    def __str__(self) -> str:
-        return f"({self.x}, {self.y})"
-
-    def __repr__(self) -> str:
-        return f"Coord2d({self.x}, {self.y})"

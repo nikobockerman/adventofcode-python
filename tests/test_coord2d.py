@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from adventofcode.tooling.coordinates import Coord2d, X, Y
@@ -43,5 +45,5 @@ def test_dir_to() -> None:
     assert Coord2d(Y(1), X(1)).dir_to(Coord2d(Y(0), X(0))) in (Dir.W, Dir.N)
 
     other = Coord2d(Y(1), X(1))
-    with pytest.raises(ValueError, match=str(other)):
+    with pytest.raises(ValueError, match=re.escape(str(other))):
         Coord2d(Y(1), X(1)).dir_to(other)
