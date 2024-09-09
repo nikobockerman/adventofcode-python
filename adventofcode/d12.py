@@ -1,11 +1,12 @@
 import itertools
 import logging
 from collections.abc import Iterable
-from dataclasses import dataclass
 from typing import Literal
 
+from attrs import frozen
 
-@dataclass(frozen=True)
+
+@frozen
 class _Data:
     records: str
     group_lengths: list[int]
@@ -20,7 +21,7 @@ def _parse_input(lines: Iterable[str]) -> Iterable[_Data]:
         yield _Data(records, [int(length) for length in group_lengths.split(",")])
 
 
-@dataclass(frozen=True)
+@frozen
 class _ClassificationState:
     known_damaged_lengths: list[int]
     index_of_first_unknown: int

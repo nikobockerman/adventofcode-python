@@ -1,24 +1,25 @@
 import logging
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+
+from attrs import Factory, define, field
 
 
-@dataclass
+@define
 class _InputNumber:
     value: str
     begin_index: int
 
 
-@dataclass
+@define
 class _InputSymbol:
     symbol: str
     index: int
 
 
-@dataclass
+@define
 class _InputRow:
-    numbers: list[_InputNumber] = field(default_factory=list, init=False)
-    symbols: list[_InputSymbol] = field(default_factory=list, init=False)
+    numbers: list[_InputNumber] = field(default=Factory(list[_InputNumber]), init=False)
+    symbols: list[_InputSymbol] = field(default=Factory(list[_InputSymbol]), init=False)
 
 
 def _parse_input(lines: Iterable[str]) -> list[_InputRow]:
@@ -59,7 +60,7 @@ def p1(input_str: str) -> int:
 
     symbol_indexes = [[symbol.index for symbol in row.symbols] for row in d]
 
-    @dataclass
+    @define
     class Number:
         number: int
         adjacent_ind_range_begin: int
@@ -100,7 +101,7 @@ def p1(input_str: str) -> int:
 def p2(input_str: str) -> int:
     d = _parse_input(input_str.splitlines())
 
-    @dataclass
+    @define
     class Number:
         number: int
         adjacent_ind_range_begin: int
@@ -108,7 +109,7 @@ def p2(input_str: str) -> int:
         adjacent_row_range_begin: int
         adjacent_row_range_end: int
 
-    @dataclass
+    @define
     class GearSymbol:
         row_ind: int
         ind: int

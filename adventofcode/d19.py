@@ -3,10 +3,11 @@ import logging
 import math
 import re
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
 from enum import Enum
 from queue import Queue
 from typing import cast
+
+from attrs import define, frozen
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class _Comparison(Enum):
         return f"{self.name}"
 
 
-@dataclass(slots=True, frozen=True)
+@frozen
 class _Rule:
     category: str
     comparison: _Comparison
@@ -34,7 +35,7 @@ class _Rule:
     action: str
 
 
-@dataclass(slots=True, frozen=True)
+@frozen
 class _Workflow:
     name: str
     rules: list[_Rule]
@@ -153,7 +154,7 @@ def p1(input_str: str) -> int:
     return result
 
 
-@dataclass
+@define
 class _WorkflowStep:
     category_value_ranges: dict[str, list[range] | None]
     next_workflow: str

@@ -5,8 +5,9 @@ import logging
 import math
 from abc import ABCMeta, abstractmethod
 from collections import Counter, deque
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Never, NewType, override
+
+from attrs import frozen
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -21,14 +22,14 @@ _PulseHigh = _PulseValue(True)
 _ModuleName = NewType("_ModuleName", str)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@frozen(kw_only=True)
 class _PulseNew:
     value: _PulseValue
     from_: _Module
     to: _Module
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@frozen(kw_only=True)
 class _Pulse:
     value: _PulseValue
     from_: _Module

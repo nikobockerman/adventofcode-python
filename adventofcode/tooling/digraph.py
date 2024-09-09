@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import typing
-from dataclasses import dataclass
 from functools import cache
 from typing import Protocol, runtime_checkable
+
+from attrs import Factory, define, field
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -14,7 +15,7 @@ class NodeId(typing.Hashable, Protocol):
     pass
 
 
-@dataclass(kw_only=True, slots=True)
+@define(kw_only=True)
 class Digraph[Id: NodeId, N]:
     nodes: dict[Id, N]  # TODO: Consider replacing with a frozendict
     arcs: tuple[DigraphArc[Id], ...]
@@ -33,16 +34,18 @@ class DigraphArc[Id: NodeId](Protocol):
     def to(self) -> Id: ...
 
 
-@dataclass(frozen=True, slots=True)
+@define(frozen=True)
 class Arc[Id: NodeId]:
     from_: Id
     to: Id
 
 
+@define
 class DigraphCreator[Id: NodeId, N]:
-    def __init__(self) -> None:
-        self._nodes: dict[Id, N] = {}
-        self._arcs: list[DigraphArc[Id]] = []
+    _nodes: dict[Id, N] = field(default=Factory(dict[Id, N]), init=False)
+    _arcs: list[DigraphArc[Id]] = field(
+        default=Factory(list[DigraphArc[Id]]), init=False
+    )
 
     def add_node(self, node_id: Id, node: N, /) -> None:
         if node_id in self._nodes:
