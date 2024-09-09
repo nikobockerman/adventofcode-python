@@ -1,7 +1,8 @@
 import itertools
 import logging
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+
+from attrs import define, field
 
 from adventofcode.tooling.coordinates import Coord2d, X, Y
 from adventofcode.tooling.directions import CardinalDirection as Dir
@@ -9,14 +10,12 @@ from adventofcode.tooling.directions import CardinalDirection as Dir
 _logger = logging.getLogger(__name__)
 
 
-@dataclass(slots=True, eq=False)
+@define(eq=False)
 class _Path:
-    corners: list[Coord2d] = field(
-        default_factory=lambda: list[Coord2d]((Coord2d(Y(0), X(0)),))
-    )
-    _last_position: Coord2d = field(default_factory=lambda: Coord2d(Y(0), X(0)))
-    _north_west_corner: Coord2d = field(default_factory=lambda: Coord2d(Y(0), X(0)))
-    _south_east_corner: Coord2d = field(default_factory=lambda: Coord2d(Y(0), X(0)))
+    corners: list[Coord2d] = field(factory=lambda: [Coord2d(Y(0), X(0))])
+    _last_position: Coord2d = Coord2d(Y(0), X(0))
+    _north_west_corner: Coord2d = Coord2d(Y(0), X(0))
+    _south_east_corner: Coord2d = Coord2d(Y(0), X(0))
 
     @property
     def height(self) -> int:
@@ -66,7 +65,7 @@ class _Path:
             _logger.debug("Normalized path: %s", path)
 
 
-@dataclass
+@define
 class _Line:
     c1: Coord2d
     c2: Coord2d
@@ -80,7 +79,7 @@ def _find_at_row_from_sorted(line_list: Iterable[_Line], row: int) -> Iterable[_
             yield line
 
 
-@dataclass(slots=True)
+@define(init=False)
 class _PathLines:
     verticals: list[_Line]
     horizontals: list[_Line]
@@ -182,7 +181,7 @@ class _PathLines:
         )
         columns_to_check.sort()
 
-        @dataclass
+        @define
         class ProcessData:
             count: int = 0
             x_inside_first: int | None = None
@@ -246,7 +245,7 @@ class _PathLines:
         return data.count
 
 
-@dataclass
+@define(init=False)
 class _InsideCountGroups:
     unique_rows: dict[int, int]
     row_ranges: list[tuple[int, int, int]]

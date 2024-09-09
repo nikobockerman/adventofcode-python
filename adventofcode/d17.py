@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import heapq
 import logging
-from dataclasses import dataclass, field
+
+from attrs import define, field, frozen
 
 from adventofcode.tooling.coordinates import Coord2d
 from adventofcode.tooling.directions import CardinalDirection as Dir
@@ -9,14 +12,17 @@ from adventofcode.tooling.map import Map2d
 _logger = logging.getLogger(__name__)
 
 
-@dataclass(slots=True, frozen=True, order=True)
+@frozen
 class _PathPosition:
-    coord: Coord2d = field(compare=False)
-    direction: Dir = field(compare=False)
-    next_coord: Coord2d = field(compare=False)
-    moves_straight: int = field(compare=False)
-    heat_loss: int = field(compare=False)
+    coord: Coord2d
+    direction: Dir
+    next_coord: Coord2d
+    moves_straight: int
+    heat_loss: int
     estimated_total_heat_loss: int
+
+    def __lt__(self, other: _PathPosition) -> bool:
+        return self.estimated_total_heat_loss < other.estimated_total_heat_loss
 
 
 def _estimate_remaining_heat_loss(start: Coord2d, destination: Coord2d) -> int:
@@ -51,14 +57,14 @@ def _create_prio_queue(start_pos: Coord2d, destination: Coord2d) -> _PriorityQue
     return queue
 
 
-@dataclass
+@define
 class _ResolutionData:
     min_straight_moves: int
     max_straight_moves: int
     map_: Map2d[int]
     visited_min_cache: dict[
         tuple[Coord2d, Dir], tuple[list[tuple[int, int]], list[tuple[int, int]]]
-    ] = field(default_factory=dict)
+    ] = field(factory=dict)
 
 
 def _get_next_position_in_direction(

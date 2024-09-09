@@ -1,28 +1,41 @@
 import logging
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+
+from attrs import Factory, define, field
 
 from adventofcode.tooling.ranges import are_ranges_overlapping, partition_range
 
 
-@dataclass
+@define
 class _RangeMap:
     destination_start: int
     source_start: int
     length: int
 
 
-@dataclass
+@define
 class _InputMaps:
-    seed_to_soil_map: list[_RangeMap] = field(default_factory=list, init=False)
-    soil_to_fertilizer_map: list[_RangeMap] = field(default_factory=list, init=False)
-    fertilizer_to_water_map: list[_RangeMap] = field(default_factory=list, init=False)
-    water_to_light_map: list[_RangeMap] = field(default_factory=list, init=False)
-    light_to_temperature_map: list[_RangeMap] = field(default_factory=list, init=False)
-    temperature_to_humidity_map: list[_RangeMap] = field(
-        default_factory=list, init=False
+    seed_to_soil_map: list[_RangeMap] = field(
+        default=Factory(list[_RangeMap]), init=False
     )
-    humidity_to_location_map: list[_RangeMap] = field(default_factory=list, init=False)
+    soil_to_fertilizer_map: list[_RangeMap] = field(
+        default=Factory(list[_RangeMap]), init=False
+    )
+    fertilizer_to_water_map: list[_RangeMap] = field(
+        default=Factory(list[_RangeMap]), init=False
+    )
+    water_to_light_map: list[_RangeMap] = field(
+        default=Factory(list[_RangeMap]), init=False
+    )
+    light_to_temperature_map: list[_RangeMap] = field(
+        default=Factory(list[_RangeMap]), init=False
+    )
+    temperature_to_humidity_map: list[_RangeMap] = field(
+        default=Factory(list[_RangeMap]), init=False
+    )
+    humidity_to_location_map: list[_RangeMap] = field(
+        default=Factory(list[_RangeMap]), init=False
+    )
 
 
 def _parse_input(lines: list[str]) -> tuple[list[int], _InputMaps]:

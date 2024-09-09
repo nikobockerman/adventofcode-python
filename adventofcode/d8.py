@@ -2,7 +2,8 @@ import itertools
 import logging
 import math
 from collections.abc import Iterable
-from dataclasses import dataclass
+
+from attrs import define
 
 
 def _parse_input(lines: list[str]) -> tuple[str, list[tuple[str, tuple[str, str]]]]:
@@ -33,7 +34,7 @@ def p1(input_str: str) -> int:
     return turn_count
 
 
-@dataclass
+@define
 class _MapData:
     map_nodes: dict[int, tuple[int, int]]
     start_locations: list[int]

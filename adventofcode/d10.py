@@ -2,7 +2,8 @@ import enum
 import itertools
 import logging
 from collections.abc import Collection, Iterable
-from dataclasses import dataclass, field
+
+from attrs import define, field
 
 from adventofcode.tooling.coordinates import Coord2d, X, Y
 from adventofcode.tooling.directions import CardinalDirection as Dir
@@ -25,7 +26,7 @@ class _Inside(enum.Enum):
         return self.name
 
 
-@dataclass
+@define
 class _Pipe:
     coord: Coord2d
     symbol: str
@@ -41,7 +42,7 @@ _symbols_open_to_south = "|F7S"
 _symbols_open_to_west = "-J7S"
 
 
-@dataclass
+@define(init=False)
 class _MapData(Map2d[_Pipe]):
     start: _Pipe
 
@@ -157,7 +158,7 @@ def _create_path_by_pipes(
     return path_by_pipes
 
 
-@dataclass
+@define
 class _PathPipe:
     pipe: _Pipe
     neighbors: dict[Dir, _Inside]
@@ -186,10 +187,10 @@ def _create_first_path_pipe(
     raise AssertionError
 
 
-@dataclass
+@define
 class _NeighborCheckGroup:
     prev_neighbor_dirs_to_check: list[Dir]
-    neighbor_dirs_to_set: list[Dir] = field(default_factory=list)
+    neighbor_dirs_to_set: list[Dir] = field(factory=list)
     inside: _Inside = _Inside.Unknown
 
 

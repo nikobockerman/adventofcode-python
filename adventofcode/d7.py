@@ -1,9 +1,10 @@
 import enum
 from collections import Counter
 from collections.abc import Iterable
-from dataclasses import dataclass
 from functools import total_ordering
 from types import NotImplementedType
+
+from attrs import define
 
 
 def _parse_input(lines: Iterable[str]) -> Iterable[tuple[str, int]]:
@@ -28,7 +29,7 @@ class _HandType(enum.Enum):
         return NotImplemented
 
 
-@dataclass
+@define
 class _Hand:
     card_values: list[int]
     hand_type: _HandType

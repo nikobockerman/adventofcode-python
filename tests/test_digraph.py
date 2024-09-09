@@ -1,5 +1,6 @@
-from dataclasses import dataclass
 from typing import assert_type
+
+from attrs import define, frozen
 
 from adventofcode.tooling.digraph import Arc, Digraph, DigraphCreator
 
@@ -30,7 +31,7 @@ def test_digraph_creator_two_types() -> None:
 
 
 def test_digraph_creator_multiple_inherited_classes() -> None:
-    @dataclass
+    @define
     class Base:
         name: str
 
@@ -66,7 +67,7 @@ def test_digraph_get_arcs() -> None:
 
 
 def test_digraph_weighted_arcs() -> None:
-    @dataclass(frozen=True)
+    @frozen
     class WeightedArc:
         from_: str
         to: str

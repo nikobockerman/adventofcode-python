@@ -1,9 +1,10 @@
 from collections import Counter
 from collections.abc import Iterable
-from dataclasses import dataclass
+
+from attrs import define
 
 
-@dataclass
+@define
 class _InputCards:
     card_id: int
     winning: list[int]

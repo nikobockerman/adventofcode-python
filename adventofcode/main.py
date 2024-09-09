@@ -4,12 +4,12 @@ import pathlib
 import sys
 import time
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
 from enum import StrEnum
 from typing import Annotated, Any, assert_never
 
 import joblib
 import typer
+from attrs import define, frozen
 
 from adventofcode.answers import ANSWERS
 
@@ -153,7 +153,7 @@ class _ProblemNotFoundError(_SolverNotFoundError):
         super().__init__(f"Solver for problem {problem} not found")
 
 
-@dataclass
+@define
 class _ProblemResult:
     day: int
     problem: int
@@ -189,7 +189,7 @@ def _report_one_of_many_problems(result: _ProblemResult) -> bool:
     return not result.incorrect
 
 
-@dataclass(frozen=True, slots=True)
+@frozen
 class _ProblemInput:
     day: int
     problem: int
@@ -197,7 +197,7 @@ class _ProblemInput:
     input_str: str
 
 
-@dataclass(frozen=True, slots=True)
+@frozen
 class _ProblemOutput:
     input_: _ProblemInput
     duration: float | None
