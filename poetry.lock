@@ -68,17 +68,21 @@ files = [
 
 [[package]]
 name = "joblib-stubs"
-version = "1.4.2.4.20240825"
+version = "1.4.2.5.20240918"
 description = "joblib stubs"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "joblib_stubs-1.4.2.4.20240825-py3-none-any.whl", hash = "sha256:ff469cebb4f149148419824a8901adcccdcb4bcb4e6cfe47ceecc6ef8647ac49"},
-    {file = "joblib_stubs-1.4.2.4.20240825.tar.gz", hash = "sha256:dbbb5957fa8365dc8b01e916ab658db37783263b7fdc6d92e8ca6bb8875c3e72"},
+    {file = "joblib_stubs-1.4.2.5.20240918-py3-none-any.whl", hash = "sha256:84df5e7b22955da9c9e4327b995ce6efb6b1d1c6e9e5b7b25eefb6516a554965"},
+    {file = "joblib_stubs-1.4.2.5.20240918.tar.gz", hash = "sha256:7434591e8144c79d0070153816c5cb3861a622069847300ca1f3e0d844840f62"},
 ]
 
 [package.dependencies]
 typing-extensions = ">=4.4.0"
+
+[package.extras]
+mypy = ["mypy (>=1.11.2)"]
+mypy-strict = ["mypy (==1.11.2)", "mypy (>=1.11.2)"]
 
 [[package]]
 name = "markdown-it-py"
@@ -510,4 +514,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "b18d14eb3e689fd079297ffae4ed3a8468eeca626bfd39a07dea53efff970a9c"
+content-hash = "3361376abde00b15b46fa18ab3b72a23051c3ac781736dd2c04376176e5f3d89"
