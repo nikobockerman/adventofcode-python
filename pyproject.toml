@@ -48,7 +48,7 @@ poethepoet = "^0.28.0"
 snakeviz = "^2.2.0"
 tuna = "^0.5.11"
 pyinstrument = "^4.7.3"
-pyright = "^1.1.380"
+pyright = "^1.1.381"
 joblib-stubs = "^1.4.2.4.20240825"
 
 [tool.poetry.scripts]
