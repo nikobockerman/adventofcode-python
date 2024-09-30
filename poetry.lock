@@ -188,6 +188,22 @@ files = [
 ]
 
 [[package]]
+name = "nodejs-wheel-binaries"
+version = "20.17.0"
+description = "unoffical Node.js package"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "nodejs_wheel_binaries-20.17.0-py2.py3-none-macosx_10_15_x86_64.whl", hash = "sha256:a5eaffb0327d751360e5f01e92f0adeb3b297a9196751bf1dda910b92c9f6f83"},
+    {file = "nodejs_wheel_binaries-20.17.0-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:a661d2894b11dc886ae8c25727c3cdf1d54db982cdccfcddbb2dfe20dd249f3b"},
+    {file = "nodejs_wheel_binaries-20.17.0-py2.py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e0144c91e9816cda969d78ba0903acc405c99e0a4bfffbdabac6b48b237335e7"},
+    {file = "nodejs_wheel_binaries-20.17.0-py2.py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b87ee7e88bfece2d325949e4f0dedb942b7478c401fc4e6726c5270f5835a02d"},
+    {file = "nodejs_wheel_binaries-20.17.0-py2.py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:5b5fb7c51204ad30e9f83ab503f11b17de4bcc1c248314f83ca3302fda24b1a1"},
+    {file = "nodejs_wheel_binaries-20.17.0-py2.py3-none-win_amd64.whl", hash = "sha256:931558d528b976eb67ae1f68253df089e9d7d7267b6980fc580bfd31d67a0f5c"},
+    {file = "nodejs_wheel_binaries-20.17.0.tar.gz", hash = "sha256:827a3297a99764adfaeb0cd1e9e36d8fb79c5b074de916a2a31b8a61b8d208f7"},
+]
+
+[[package]]
 name = "packaging"
 version = "24.0"
 description = "Core utilities for Python packages"
@@ -346,6 +362,7 @@ files = [
 
 [package.dependencies]
 nodeenv = ">=1.6.0"
+nodejs-wheel-binaries = {version = "*", optional = true, markers = "extra == \"nodejs\""}
 typing-extensions = ">=4.1"
 
 [package.extras]
@@ -567,4 +584,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "0a9203ef4a5f909dc846784382bd24730c4ca987925813c2555aa136bfb1b98c"
+content-hash = "e5f626765787f4bed7e7dcdacf779223c69867efa7c6b5cba9a99dfbbae92764"
