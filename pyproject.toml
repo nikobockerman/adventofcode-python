@@ -106,6 +106,7 @@ select = [
     "TID",  # flake8-tidy-imports
     "TRY",  # tryceratops
     "YTT",  # flake8-2020
+    "FURB",  # refurb
     "PERF",  # perflint
     "SLOT",  # flake8-slots
 ]
