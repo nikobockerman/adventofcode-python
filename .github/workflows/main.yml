@@ -11,18 +11,30 @@ on:
   workflow_dispatch:
   schedule:
     # Run every Monday at 00:30 UTC
-    - cron: '30 0 * * 1'
+    - cron: "30 0 * * 1"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install poetry
-      run: pipx install poetry
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-        cache: 'poetry'
-    - run: poetry install
-    - run: poetry run poe validate
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        id: setup-uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "^0.4.20"
+          enable-cache: true
+      - run: echo "Installed uv version is ${{ steps.setup-uv.outputs.uv-version }}"
+
+      - name: Install python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - run: python --version
+
+      - name: Install project
+        run: uv sync --all-extras --dev
+
+      - name: Run validations
+        run: uvx --from poethepoet poe validate
