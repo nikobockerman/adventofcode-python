@@ -25,6 +25,7 @@
                 "charliermarsh.ruff",
                 "editorconfig.editorconfig",
                 "github.vscode-github-actions",
+                "mrmlnc.vscode-json5",
                 "ms-azuretools.vscode-docker",
                 "ms-python.mypy-type-checker"
             ]
