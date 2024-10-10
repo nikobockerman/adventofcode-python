@@ -230,15 +230,15 @@ wheels = [
 
 [[package]]
 name = "pyright"
-version = "1.1.383"
+version = "1.1.384"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "nodeenv" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/78/a9/4654d15f4125d8dca6318d7be36a3283a8b3039661291c59bbdd1e576dcf/pyright-1.1.383.tar.gz", hash = "sha256:1df7f12407f3710c9c6df938d98ec53f70053e6c6bbf71ce7bcb038d42f10070", size = 21971 }
+sdist = { url = "https://files.pythonhosted.org/packages/84/00/a23114619f9d005f4b0f35e037c76cee029174d090a6f73a355749c74f4a/pyright-1.1.384.tar.gz", hash = "sha256:25e54d61f55cbb45f1195ff89c488832d7a45d59f3e132f178fdf9ef6cafc706", size = 21956 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/55/40a6559cea209b551c81dcd31cb351a6ffdb5876e7865ee242e269af72d8/pyright-1.1.383-py3-none-any.whl", hash = "sha256:d864d1182a313f45aaf99e9bfc7d2668eeabc99b29a556b5344894fd73cb1959", size = 18577 },
+    { url = "https://files.pythonhosted.org/packages/6d/4a/e7f4d71d194ba675f3577d11eebe4e17a592c4d1c3f9986d4b321ba3c809/pyright-1.1.384-py3-none-any.whl", hash = "sha256:f0b6f4db2da38f27aeb7035c26192f034587875f751b847e9ad42ed0c704ac9e", size = 18578 },
 ]
 
 [package.optional-dependencies]
@@ -263,15 +263,15 @@ wheels = [
 
 [[package]]
 name = "rich"
-version = "13.7.1"
+version = "13.9.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markdown-it-py" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b3/01/c954e134dc440ab5f96952fe52b4fdc64225530320a910473c1fe270d9aa/rich-13.7.1.tar.gz", hash = "sha256:9be308cb1fe2f1f57d67ce99e95af38a1e2bc71ad9813b0e247cf7ffbcc3a432", size = 221248 }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/9e/1784d15b057b0075e5136445aaea92d23955aad2c93eaede673718a40d95/rich-13.9.2.tar.gz", hash = "sha256:51a2c62057461aaf7152b4d611168f93a9fc73068f8ded2790f29fe2b5366d0c", size = 222843 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/67/a37f6214d0e9fe57f6ae54b2956d550ca8365857f42a1ce0392bb21d9410/rich-13.7.1-py3-none-any.whl", hash = "sha256:4edbae314f59eb482f54e9e30bf00d33350aaa94f4bfcd4e9e3110e64d0d7222", size = 240681 },
+    { url = "https://files.pythonhosted.org/packages/67/91/5474b84e505a6ccc295b2d322d90ff6aa0746745717839ee0c5fb4fdcceb/rich-13.9.2-py3-none-any.whl", hash = "sha256:8c82a3d3f8dcfe9e734771313e606b39d8247bb6b826e196f4914b333b743cf1", size = 242117 },
 ]
 
 [[package]]
