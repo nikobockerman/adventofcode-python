@@ -35,7 +35,7 @@ dev = [
     { name = "joblib-stubs", specifier = ">=1.4.2.5.20240918,<2" },
     { name = "mypy", specifier = ">=1.11.2,<2" },
     { name = "pyinstrument", specifier = ">=4.7.3,<5" },
-    { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.383,<2" },
+    { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.383,!=1.1.384,<2" },
     { name = "pytest", specifier = ">=8.3.3,<9" },
     { name = "ruff", specifier = ">=0.6.9,<0.7" },
     { name = "snakeviz", specifier = ">=2.2.0,<3" },
