@@ -47,7 +47,7 @@ dev-dependencies = [
     "pytest >=8.3.3,<9",
     "snakeviz >=2.2.0,<3",
     "tuna >=0.5.11,<0.6",
-    "pyinstrument >=4.7.3,<5",
+    "pyinstrument >=5,<6",
 ]
 
 [tool.pyright]
