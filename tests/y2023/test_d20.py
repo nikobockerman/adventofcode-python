@@ -1,4 +1,4 @@
-from adventofcode import d20
+from adventofcode.y2023 import d20
 
 _example1_input = r"""
 broadcaster -> a, b, c

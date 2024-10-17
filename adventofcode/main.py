@@ -1,20 +1,26 @@
+from __future__ import annotations
+
 import importlib
 import logging
 import pathlib
 import sys
 import time
-from collections.abc import Callable, Iterable
-from enum import StrEnum
-from typing import Annotated, Any, assert_never
+from enum import Enum, StrEnum
+from typing import TYPE_CHECKING, Annotated, Any, TypeGuard, assert_never
 
 import joblib
 import typer
 from attrs import define, frozen
 
-from adventofcode.answers import ANSWERS
+from adventofcode import answers
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
 
 app = typer.Typer()
 state = {"day_suffix": ""}
+
+YEAR = answers.Year(2023)
 
 
 @app.callback()
@@ -41,12 +47,16 @@ def callback(
 
 @app.command(name="all")
 def all_() -> None:
-    sys.exit(_multiple_problems(ANSWERS.keys(), day_suffix=state["day_suffix"]))
+    sys.exit(_multiple_problems(answers.get(), day_suffix=state["day_suffix"]))
 
 
 @app.command(name="day")
 def day_(day: int) -> None:
-    sys.exit(_multiple_problems((day,), day_suffix=state["day_suffix"]))
+    sys.exit(
+        _multiple_problems(
+            answers.get(YEAR, answers.Day(day)), day_suffix=state["day_suffix"]
+        )
+    )
 
 
 class _Profiler(StrEnum):
@@ -54,20 +64,34 @@ class _Profiler(StrEnum):
     Pyinstrument = "pyinstrument"
 
 
+class _ProblemArg(Enum):
+    _1 = 1
+    _2 = 2
+
+
 @app.command()
 def single(
     day: int,
-    problem: int,
+    problem: _ProblemArg,
     profiler: Annotated[_Profiler | None, typer.Option("-p", "--profiler")] = None,
 ) -> None:
-    sys.exit(_specific_problem(day, state["day_suffix"], problem, profiler))
+    problem_: answers.Problem = problem  # type: ignore[reportAssignmentType, assignment]
+    sys.exit(
+        _specific_problem(
+            answers.ProblemId(YEAR, answers.Day(day), problem_),
+            state["day_suffix"],
+            profiler,
+        )
+    )
 
 
 def _specific_problem(
-    day: int, day_suffix: str, problem: int, profiler: _Profiler | None
+    id_: answers.ProblemId,
+    day_suffix: str,
+    profiler: _Profiler | None,
 ) -> int:
     try:
-        input_ = _get_problem_input(day, day_suffix, problem)
+        input_ = _get_problem_input(id_, day_suffix)
         if profiler is not None:
             output = _profiler_problem(input_, profiler)
         else:
@@ -94,16 +118,12 @@ def _specific_problem(
         return 0
 
 
-def _multiple_problems(days: Iterable[int], day_suffix: str) -> int:
+def _multiple_problems(answers: Iterable[answers.Answer], day_suffix: str) -> int:
     all_passed = None
     slowest = None
     start = time.perf_counter()
     with joblib.Parallel(n_jobs=-1, return_as="generator") as parallel:
-        inputs = [
-            _get_problem_input(day, day_suffix, problem)
-            for day in days
-            for problem in ANSWERS.get(day, {})
-        ]
+        inputs = [_get_problem_input(answer, day_suffix) for answer in answers]
         outputs = parallel(joblib.delayed(_exec_problem)(x) for x in inputs)
         results = (_process_output(x) for x in outputs)
         for result in results:
@@ -123,12 +143,12 @@ def _multiple_problems(days: Iterable[int], day_suffix: str) -> int:
 
     if slowest is not None:
         print(
-            f"Slowest: Day {slowest.day} Problem {slowest.problem}: "
+            f"Slowest: {slowest.id.year} {slowest.id.day:2} {slowest.id.problem}: "
             f"{slowest.duration:.3f}s"
         )
 
     if all_passed is None:
-        print(f"No answers known for requested day. Duration {duration:.3f}s")
+        print(f"No answers known. Duration {duration:.3f}s")
         return 0
 
     if all_passed:
@@ -155,28 +175,22 @@ class _ProblemNotFoundError(_SolverNotFoundError):
 
 @define
 class _ProblemResult:
-    day: int
-    problem: int
-
-    answer: str
+    id: answers.ProblemId
+    answer: answers.AnswerType
     duration: float | None
-    correct_answer: str | None
-
-    @property
-    def answer_known(self) -> bool:
-        return self.correct_answer is not None
+    correct_answer: answers.AnswerType | None
 
     @property
     def correct(self) -> bool:
-        return self.answer_known and self.answer == self.correct_answer
+        return self.correct_answer is not None and self.correct_answer == self.answer
 
     @property
     def incorrect(self) -> bool:
-        return self.answer_known and self.answer != self.correct_answer
+        return self.correct_answer is not None and self.answer != self.correct_answer
 
 
 def _report_one_of_many_problems(result: _ProblemResult) -> bool:
-    msg = f"Day {result.day:2} Problem {result.problem}: "
+    msg = f"{result.id.year} {result.id.day:2} {result.id.problem}: "
     msg += f"{result.duration:.3f}s: "
     if result.incorrect:
         msg += (
@@ -191,62 +205,66 @@ def _report_one_of_many_problems(result: _ProblemResult) -> bool:
 
 @frozen
 class _ProblemInput:
-    day: int
-    problem: int
+    id: answers.ProblemId
     func: Callable[[str], Any]
     input_str: str
 
 
 @frozen
 class _ProblemOutput:
-    input_: _ProblemInput
+    id_: answers.ProblemId
     duration: float | None
-    result: str
-
-    @property
-    def day(self) -> int:
-        return self.input_.day
-
-    @property
-    def problem(self) -> int:
-        return self.input_.problem
+    result: answers.AnswerType
 
 
-def _get_problem_input(day: int, day_suffix: str, problem: int) -> _ProblemInput:
+def _get_problem_input(id_: answers.ProblemId, day_suffix: str) -> _ProblemInput:
     try:
-        mod_name = f"adventofcode.d{day}{day_suffix}"
+        mod_name = f"adventofcode.y{id_.year}.d{id_.day}{day_suffix}"
         mod = importlib.import_module(mod_name)
     except ModuleNotFoundError:
-        raise _DayNotFoundError(day) from None
+        raise _DayNotFoundError(id_.day) from None
 
     try:
-        func = getattr(mod, f"p{problem}")
+        func = getattr(mod, f"p{id_.problem}")
     except AttributeError:
-        raise _ProblemNotFoundError(problem) from None
+        raise _ProblemNotFoundError(id_.problem) from None
 
     input_str = (
-        (pathlib.Path(__file__).parent / f"input-d{day}.txt").read_text().strip()
+        (pathlib.Path(__file__).parent / f"y{id_.year}" / f"input-d{id_.day}.txt")
+        .read_text()
+        .strip()
     )
 
-    return _ProblemInput(day, problem, func, input_str)
+    return _ProblemInput(id_, func, input_str)
 
 
 def _process_output(output: _ProblemOutput) -> _ProblemResult:
-    answer = ANSWERS.get(output.day, {}).get(output.problem)
+    answer = answers.get_from_id(output.id_)
     return _ProblemResult(
-        output.day,
-        output.problem,
+        output.id_,
         output.result,
         output.duration,
-        str(answer) if answer is not None else None,
+        answer.answer if answer is not None else None,
     )
+
+
+class InvalidResultTypeError(TypeError):
+    def __init__(self, result_type: type) -> None:
+        super().__init__(f"Invalid result type: {result_type}")
+
+
+def is_valid_result_type(result: Any) -> TypeGuard[answers.AnswerType]:  # noqa: ANN401
+    return isinstance(result, int)
 
 
 def _exec_problem(input_: _ProblemInput) -> _ProblemOutput:
     start_time = time.perf_counter()
-    result = input_.func(input_.input_str)
+    result: Any = input_.func(input_.input_str)
     duration = time.perf_counter() - start_time
-    return _ProblemOutput(input_, duration, str(result))
+    if not is_valid_result_type(result):
+        raise InvalidResultTypeError(type(result))  # type: ignore[reportUnknownArgumentType]
+
+    return _ProblemOutput(input_.id, duration, result)
 
 
 def _profiler_problem(input_: _ProblemInput, profiler: _Profiler) -> _ProblemOutput:
@@ -259,7 +277,9 @@ def _profiler_problem(input_: _ProblemInput, profiler: _Profiler) -> _ProblemOut
             stats = pstats.Stats(pr).strip_dirs()
             stats.sort_stats("tottime").print_stats(0.2)
             stats.sort_stats("cumtime").print_stats(0.2)
-            return _ProblemOutput(input_, None, str(result))
+            if not is_valid_result_type(result):
+                raise InvalidResultTypeError(type(result))  # type: ignore[reportUnknownArgumentType]
+            return _ProblemOutput(input_.id, None, result)
 
     elif profiler is _Profiler.Pyinstrument:
         import pyinstrument
@@ -275,9 +295,11 @@ def _profiler_problem(input_: _ProblemInput, profiler: _Profiler) -> _ProblemOut
             )
         ):
             result = input_.func(input_.input_str)
-            return _ProblemOutput(input_, None, str(result))
-    else:
-        assert_never(profiler)
+            if not is_valid_result_type(result):
+                raise InvalidResultTypeError(type(result))  # type: ignore[reportUnknownArgumentType]
+            return _ProblemOutput(input_.id, None, result)
+
+    assert_never(profiler)
 
 
 if __name__ == "__main__":

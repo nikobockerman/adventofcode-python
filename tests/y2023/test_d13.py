@@ -1,4 +1,4 @@
-from adventofcode import d13
+from adventofcode.y2023 import d13
 
 _example_input = """
 #.##..##.

@@ -1,4 +1,4 @@
-from adventofcode import d8
+from adventofcode.y2023 import d8
 
 _example_input_p1 = """
 LLR

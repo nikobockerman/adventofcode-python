@@ -1,4 +1,4 @@
-from adventofcode import d5
+from adventofcode.y2023 import d5
 
 _example_input = """
 seeds: 79 14 55 13
