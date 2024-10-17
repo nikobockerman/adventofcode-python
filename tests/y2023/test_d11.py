@@ -1,4 +1,4 @@
-from adventofcode import d11
+from adventofcode.y2023 import d11
 
 _example_input = """
 ...#......
