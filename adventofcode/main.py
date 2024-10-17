@@ -96,28 +96,28 @@ def _specific_problem(
 
 def _multiple_problems(days: Iterable[int], day_suffix: str) -> int:
     all_passed = None
+    slowest = None
     start = time.perf_counter()
-    with joblib.Parallel(n_jobs=-1) as parallel:
-        slowest = None
-        for day in days:
-            problems = ANSWERS.get(day, {})
-            inputs = [
-                _get_problem_input(day, day_suffix, problem) for problem in problems
-            ]
-            outputs = parallel(joblib.delayed(_exec_problem)(x) for x in inputs)
-            results = (_process_output(x) for x in outputs)
-            for result in results:
-                passed = _report_one_of_many_problems(result)
-                if all_passed is None:
-                    all_passed = passed
-                all_passed &= passed
-                assert result.duration is not None
-                if slowest is None:
+    with joblib.Parallel(n_jobs=-1, return_as="generator") as parallel:
+        inputs = [
+            _get_problem_input(day, day_suffix, problem)
+            for day in days
+            for problem in ANSWERS.get(day, {})
+        ]
+        outputs = parallel(joblib.delayed(_exec_problem)(x) for x in inputs)
+        results = (_process_output(x) for x in outputs)
+        for result in results:
+            passed = _report_one_of_many_problems(result)
+            if all_passed is None:
+                all_passed = passed
+            all_passed &= passed
+            assert result.duration is not None
+            if slowest is None:
+                slowest = result
+            else:
+                assert slowest.duration is not None
+                if result.duration > slowest.duration:
                     slowest = result
-                else:
-                    assert slowest.duration is not None
-                    if result.duration > slowest.duration:
-                        slowest = result
 
     duration = time.perf_counter() - start
 
