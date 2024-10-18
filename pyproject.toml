@@ -40,7 +40,7 @@ shellcheck $(git ls-files | grep '\\..*sh')
 
 [tool.uv]
 dev-dependencies = [
-    "ruff >=0.6.9,<0.7",
+    "ruff >=0.7,<0.8",
     "pyright[nodejs] >=1.1.383,<2,!=1.1.384",
     "joblib-stubs >=1.4.2.5.20240918,<2",
     "mypy >=1.11.2,<2",
