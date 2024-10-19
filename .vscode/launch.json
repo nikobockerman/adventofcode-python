@@ -8,14 +8,10 @@
             "name": "Problem",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/adventofcode/main.py",
-            "args": [
-                "-vv",
-                "12",
-                "1"
-            ],
+            "program": "${workspaceFolder}/adventofcode/newmain.py",
+            "args": ["single", "1", "1"],
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false
         }
     ]
 }

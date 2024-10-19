@@ -6,10 +6,10 @@ import pathlib
 import sys
 import time
 from enum import Enum, StrEnum
-from typing import TYPE_CHECKING, Annotated, Any, TypeGuard, assert_never
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeGuard, assert_never
 
+import cyclopts
 import joblib
-import typer
 from attrs import define, frozen
 
 from adventofcode import answers
@@ -17,29 +17,15 @@ from adventofcode import answers
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-app = typer.Typer()
-
 YEAR = answers.Year(2023)
 
 
-@app.callback()
-def callback(
-    verbosity: Annotated[
-        int,
-        typer.Option(
-            "--verbose",
-            "-v",
-            count=True,
-            show_default=False,
-            help="Increase log level. This option can be specified multiple "
-            "times. Log levels by count of this flag: 0=WARNING, 1=INFO, 2=DEBUG.",
-        ),
-    ] = 0,
-) -> None:
-    level = {0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG}.get(
-        verbosity, logging.DEBUG
-    )
-    logging.basicConfig(level=level)
+def verbose_converter(**kwargs) -> dict[str, Any]:
+    print(f"DEBUG: converter input: {kwargs!r}")
+    return kwargs
+
+
+app = cyclopts.App(converter=verbose_converter)
 
 
 @app.command(name="all")
@@ -47,8 +33,8 @@ def all_() -> None:
     sys.exit(_multiple_problems(answers.get()))
 
 
-@app.command(name="day")
-def day_(day: int) -> None:
+@app.command(name="day", converter=verbose_converter)
+def day(day: int, /) -> None:
     sys.exit(_multiple_problems(answers.get(YEAR, answers.Day(day))))
 
 
@@ -66,9 +52,13 @@ class _ProblemArg(Enum):
 def single(
     day: int,
     problem: _ProblemArg,
-    profiler: Annotated[_Profiler | None, typer.Option("-p", "--profiler")] = None,
+    /,
+    *,
+    profiler: Annotated[
+        _Profiler | None, cyclopts.Parameter(name=["--profiler", "-p"])
+    ] = None,
 ) -> None:
-    problem_: answers.Problem = problem  # type: ignore[reportAssignmentType, assignment]
+    problem_: answers.Problem = problem.value
     sys.exit(
         _specific_problem(answers.ProblemId(YEAR, answers.Day(day), problem_), profiler)
     )
@@ -290,5 +280,9 @@ def _profiler_problem(input_: _ProblemInput, profiler: _Profiler) -> _ProblemOut
     assert_never(profiler)
 
 
+def app_verbose() -> None:
+    app(verbose=True)
+
+
 if __name__ == "__main__":
-    app()
+    app(verbose=True)
