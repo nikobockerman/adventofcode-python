@@ -10,10 +10,5 @@
             matchFileNames: [".devcontainer/Dockerfile"],
             pinDigests: false,
         },
-        {
-            description: "Enable rebase for lock file maintenance",
-            matchUpdateTypes: ["lockFileMaintenance"],
-            rebaseWhen: "behind-base-branch",
-        },
     ],
 }
