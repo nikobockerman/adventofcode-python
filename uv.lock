@@ -11,7 +11,7 @@ dependencies = [
     { name = "typer" },
 ]
 
-[package.dev-dependencies]
+[package.dependency-groups]
 dev = [
     { name = "joblib-stubs" },
     { name = "mypy" },
@@ -25,21 +25,21 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "attrs", specifier = ">=24.2.0,<25" },
-    { name = "joblib", specifier = ">=1.4.2,<2" },
-    { name = "typer", specifier = ">=0.12.5,<0.13" },
+    { name = "attrs", specifier = "==24.2.0" },
+    { name = "joblib", specifier = "==1.4.2" },
+    { name = "typer", specifier = "==0.12.5" },
 ]
 
-[package.metadata.requires-dev]
+[package.metadata.dependency-groups]
 dev = [
-    { name = "joblib-stubs", specifier = ">=1.4.2.5.20240918,<2" },
-    { name = "mypy", specifier = ">=1.11.2,<2" },
-    { name = "pyinstrument", specifier = ">=5,<6" },
-    { name = "pyright", extras = ["nodejs"], specifier = ">=1.1.383,!=1.1.384,<2" },
-    { name = "pytest", specifier = ">=8.3.3,<9" },
-    { name = "ruff", specifier = ">=0.7,<0.8" },
-    { name = "snakeviz", specifier = ">=2.2.0,<3" },
-    { name = "tuna", specifier = ">=0.5.11,<0.6" },
+    { name = "joblib-stubs", specifier = "==1.4.2.5.20240918" },
+    { name = "mypy", specifier = "==1.13.0" },
+    { name = "pyinstrument", specifier = "==5.0.0" },
+    { name = "pyright", extras = ["nodejs"], specifier = "==1.1.387" },
+    { name = "pytest", specifier = "==8.3.3" },
+    { name = "ruff", specifier = "==0.7.2" },
+    { name = "snakeviz", specifier = "==2.2.0" },
+    { name = "tuna", specifier = "==0.5.11" },
 ]
 
 [[package]]
