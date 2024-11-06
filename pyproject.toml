@@ -55,7 +55,6 @@ typeCheckingMode = "strict"
 
 [tool.mypy]
 strict_optional = true
-enable_incomplete_feature = ["NewGenericSyntax"]
 
 [tool.ruff.lint]
 select = [
