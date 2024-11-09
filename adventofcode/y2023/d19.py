@@ -5,15 +5,21 @@ import re
 from collections.abc import Iterable, Mapping
 from enum import Enum
 from queue import Queue
-from typing import cast
+from typing import Literal, NewType, TypeGuard, cast
 
 from attrs import define, frozen
 
 _logger = logging.getLogger(__name__)
 
-type _Part = dict[str, int]
 
-_categories = frozenset("xmas")
+type _Category = Literal["x", "m", "a", "s"]
+_categories: frozenset[_Category] = frozenset(("x", "m", "a", "s"))
+
+_Part = NewType("_Part", Mapping[_Category, int])
+
+
+def is_category(category: str) -> TypeGuard[_Category]:
+    return category in _categories
 
 
 class _Comparison(Enum):
@@ -29,7 +35,7 @@ class _Comparison(Enum):
 
 @frozen
 class _Rule:
-    category: str
+    category: _Category
     comparison: _Comparison
     value: int
     action: str
@@ -51,7 +57,7 @@ def _parse_rule(statement: str) -> _Rule:
     match = _rule_regex.match(statement)
     assert match is not None
     category = match.group("category")
-    assert category in _categories
+    assert is_category(category)
     return _Rule(
         category,
         _Comparison(match.group("comparison")),
@@ -81,7 +87,12 @@ _part_regex = re.compile(r"\{x=(?P<x>\d+),m=(?P<m>\d+),a=(?P<a>\d+),s=(?P<s>\d+)
 def _parse_part(line: str) -> _Part:
     match = _part_regex.match(line)
     assert match is not None
-    return {k: int(v) for k, v in match.groupdict().items()}
+
+    def key_to_category(key: str) -> _Category:
+        assert is_category(key)
+        return key
+
+    return _Part({key_to_category(k): int(v) for k, v in match.groupdict().items()})
 
 
 def _parse_input(input_str: str) -> tuple[dict[str, _Workflow], Iterable[_Part]]:
@@ -102,41 +113,43 @@ def _parse_input(input_str: str) -> tuple[dict[str, _Workflow], Iterable[_Part]]
     return workflows, map(_parse_part, input_line_iter)
 
 
-def p1(input_str: str) -> int:
+def _process_part(
+    in_workflow: _Workflow, workflows: dict[str, _Workflow], part: _Part
+) -> bool:
     def _lt(left: int, right: int) -> bool:
         return left < right
 
     def _gt(left: int, right: int) -> bool:
         return left > right
 
-    def _process_part(
-        in_workflow: _Workflow, workflows: dict[str, _Workflow], part: _Part
-    ) -> bool:
-        workflow = in_workflow
-        while True:
-            action = None
-            for rule in workflow.rules:
-                if rule.comparison == _Comparison.LT:
+    workflow = in_workflow
+    while True:
+        action = None
+        for rule in workflow.rules:
+            match rule.comparison:
+                case _Comparison.LT:
                     compare = _lt
-                elif rule.comparison == _Comparison.GT:
+                case _Comparison.GT:
                     compare = _gt
-                else:
-                    raise AssertionError
 
-                if compare(part[rule.category], rule.value):
-                    action = rule.action
-                    break
-            else:
-                action = workflow.default
+            if compare(part[rule.category], rule.value):
+                action = rule.action
+                break
+        else:
+            action = workflow.default
 
-            assert action is not None
+        assert action is not None
 
-            if action == "A":
+        match action:
+            case "A":
                 return True
-            if action == "R":
+            case "R":
                 return False
-            workflow = workflows[action]
+            case _:
+                workflow = workflows[action]
 
+
+def p1(input_str: str) -> int:
     workflows, parts_iter = _parse_input(input_str)
     in_workflow = workflows["in"]
     result = 0
@@ -156,18 +169,11 @@ def p1(input_str: str) -> int:
 
 @define
 class _WorkflowStep:
-    category_value_ranges: dict[str, list[range] | None]
+    category_value_ranges: dict[_Category, list[range] | None]
     next_workflow: str
 
 
-def _merge_value_range(
-    left: list[range] | None, right: list[range] | None
-) -> list[range] | None:
-    if left is None:
-        return None if right is None else list(right)
-    if right is None:
-        return list(left)
-
+def _merge_two_value_ranges(left: list[range], right: list[range]) -> list[range]:
     right_iter = iter(right)
     try:
         r2: range | None = next(right_iter)
@@ -210,9 +216,20 @@ def _merge_value_range(
     return result
 
 
+def _merge_value_range(
+    left: list[range] | None, right: list[range] | None
+) -> list[range] | None:
+    if left is None:
+        return None if right is None else list(right)
+    if right is None:
+        return list(left)
+    return _merge_two_value_ranges(left, right)
+
+
 def _merge_category_value_ranges(
-    left: Mapping[str, list[range] | None], right: Mapping[str, list[range] | None]
-) -> dict[str, list[range] | None]:
+    left: Mapping[_Category, list[range] | None],
+    right: Mapping[_Category, list[range] | None],
+) -> dict[_Category, list[range] | None]:
     return {
         category: _merge_value_range(left[category], right[category])
         for category in left
@@ -238,15 +255,17 @@ def _negated_value_range(value_range: list[range] | None) -> list[range] | None:
 
 
 def _negated_category_value_ranges(
-    category_value_ranges: Mapping[str, list[range] | None],
-) -> dict[str, list[range] | None]:
+    category_value_ranges: Mapping[_Category, list[range] | None],
+) -> dict[_Category, list[range] | None]:
     return {
         category: _negated_value_range(category_value_ranges[category])
         for category in category_value_ranges
     }
 
 
-def _category_value_ranges_from_rule(rule: _Rule) -> dict[str, list[range] | None]:
+def _category_value_ranges_from_rule(
+    rule: _Rule,
+) -> dict[_Category, list[range] | None]:
     return {
         category: (
             None
@@ -257,12 +276,12 @@ def _category_value_ranges_from_rule(rule: _Rule) -> dict[str, list[range] | Non
                 else [range(rule.value + 1, 4_000 + 1)]
             )
         )
-        for category in "xmas"
+        for category in _categories
     }
 
 
 def _possible_category_value_ranges(
-    category_value_ranges: dict[str, list[range] | None],
+    category_value_ranges: dict[_Category, list[range] | None],
 ) -> bool:
     return all(
         value_ranges is None or value_ranges
@@ -272,7 +291,9 @@ def _possible_category_value_ranges(
 
 def _construct_workflow_steps(workflow: _Workflow) -> list[_WorkflowStep]:
     result = list[_WorkflowStep]()
-    failure_limits: dict[str, list[range] | None] = {cat: None for cat in "xmas"}
+    failure_limits: dict[_Category, list[range] | None] = {
+        cat: None for cat in _categories
+    }
     for rule in workflow.rules:
         category_value_ranges = _category_value_ranges_from_rule(rule)
         applicable_category_value_ranges = _merge_category_value_ranges(
@@ -301,7 +322,7 @@ def p2(input_str: str) -> int:
 
     workflow_step_cache = dict[str, list[_WorkflowStep]]()
 
-    accepted_category_value_ranges = list[dict[str, list[range]]]()
+    accepted_category_value_ranges = list[dict[_Category, list[range]]]()
     while not queue.empty():
         step = queue.get_nowait()
         _logger.debug("Processing step: %s", step)
@@ -313,7 +334,7 @@ def p2(input_str: str) -> int:
             assert all(
                 ranges is not None for ranges in step.category_value_ranges.values()
             )
-            ranges = cast(dict[str, list[range]], step.category_value_ranges)
+            ranges = cast(dict[_Category, list[range]], step.category_value_ranges)
             accepted_category_value_ranges.append(ranges)
             continue
 
@@ -350,7 +371,9 @@ def p2(input_str: str) -> int:
     if _logger.isEnabledFor(logging.DEBUG):
         for i, cat_value_ranges in enumerate(accepted_category_value_ranges):
             _logger.debug("i=%d, cat_value_ranges=%s", i, cat_value_ranges)
-            lenghts = {cat: len(ranges[0]) for cat, ranges in cat_value_ranges.items()}
+            lenghts: dict[_Category, int] = {
+                cat: len(ranges[0]) for cat, ranges in cat_value_ranges.items()
+            }
             _logger.debug("i=%d, range_lengths=%s", i, lenghts)
 
     return sum(

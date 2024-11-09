@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import itertools
 import logging
-from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from attrs import define, field
 
 from adventofcode.tooling.coordinates import Coord2d, X, Y
 from adventofcode.tooling.directions import CardinalDirection as Dir
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 _logger = logging.getLogger(__name__)
 
@@ -79,6 +84,109 @@ def _find_at_row_from_sorted(line_list: Iterable[_Line], row: int) -> Iterable[_
             yield line
 
 
+@define(slots=True, init=False)
+class _ColumnsInsideCounter:
+    flats: list[_Line]
+    flats_firsts: set[X]
+    flats_lasts: set[X]
+    horizontals: list[_Line]
+    horizontals_firsts: set[X]
+    horizontals_lasts: set[X]
+    crossing_vertice_columns_set: set[X]
+    _columns_to_check: list[X]
+
+    def __init__(self, segments: _PathLines, row: int) -> None:
+        self.flats = list(
+            _find_at_row_from_sorted(segments.flats_within_verticals, row)
+        )
+        self.flats_firsts = {line.c1.x for line in self.flats}
+        self.flats_lasts = {line.c2.x for line in self.flats}
+        self.horizontals = list(_find_at_row_from_sorted(segments.horizontals, row))
+        self.horizontals_firsts = {line.c1.x for line in self.horizontals}
+        self.horizontals_lasts = {line.c2.x for line in self.horizontals}
+
+        self.crossing_vertice_columns_set = segments.get_crossing_vertice_columns_set(
+            row
+        )
+
+        self._columns_to_check = list(self.crossing_vertice_columns_set)
+        self._columns_to_check.extend(
+            x for line in self.flats for x in (line.c1.x, line.c2.x)
+        )
+        self._columns_to_check.extend(
+            x for line in self.horizontals for x in (line.c1.x, line.c2.x)
+        )
+        self._columns_to_check.sort()
+
+    @define(slots=True)
+    class _CountState:
+        count: int = 0
+        _x_inside_first: int | None = None
+        _line_in_progress: _Line | None = None
+
+        def _process_not_x_inside_first(
+            self, info: _ColumnsInsideCounter, x: X
+        ) -> None:
+            assert x not in info.flats_lasts
+            assert x not in info.horizontals_lasts
+            self._x_inside_first = x
+            if x in info.crossing_vertice_columns_set:
+                pass
+            elif x in info.flats_firsts:
+                self._line_in_progress = next(
+                    line for line in info.flats if line.c1.x == x
+                )
+            elif x in info.horizontals_firsts:
+                self._line_in_progress = next(
+                    line for line in info.horizontals if line.c1.x == x
+                )
+
+        def process_column(self, info: _ColumnsInsideCounter, x: X) -> None:
+            if self._x_inside_first is None:
+                self._process_not_x_inside_first(info, x)
+
+            elif x in info.crossing_vertice_columns_set:
+                assert self._line_in_progress is None
+                self.count += x - self._x_inside_first + 1
+                self._x_inside_first = None
+
+            elif x in info.horizontals_firsts:
+                assert self._line_in_progress is None
+                self._line_in_progress = next(
+                    line for line in info.horizontals if line.c1.x == x
+                )
+
+            elif x in info.horizontals_lasts:
+                assert self._line_in_progress is not None
+                assert self._line_in_progress.c2.x == x
+
+                if self._line_in_progress.c1.x == self._x_inside_first:
+                    self.count += x - self._x_inside_first + 1
+                    self._x_inside_first = None
+                self._line_in_progress = None
+
+            elif x in info.flats_firsts:
+                assert self._line_in_progress is None
+                self._line_in_progress = next(
+                    line for line in info.flats if line.c1.x == x
+                )
+
+            elif x in info.flats_lasts:
+                assert self._line_in_progress is not None
+                assert self._line_in_progress.c2.x == x
+
+                if self._line_in_progress.c1.x != self._x_inside_first:
+                    self.count += x - self._x_inside_first + 1
+                    self._x_inside_first = None
+                self._line_in_progress = None
+
+    def count(self) -> int:
+        state = self._CountState()
+        for x in self._columns_to_check:
+            state.process_column(self, x)
+        return state.count
+
+
 @define(init=False)
 class _PathLines:
     verticals: list[_Line]
@@ -114,6 +222,8 @@ class _PathLines:
             prevs = prevs[-2:]
             prevs.append(corner)
 
+        self.optimize()
+
     def optimize(self) -> None:
         def _smaller_x_first(flat_list: Iterable[_Line]) -> Iterable[_Line]:
             for line in flat_list:
@@ -136,113 +246,16 @@ class _PathLines:
         ]
         self.verticals.sort(key=lambda line: line.c1.y)
 
-    def count_inside_columns(self, row: int) -> int:
-        assert 0 <= row < self.height
-
-        flats = list(_find_at_row_from_sorted(self.flats_within_verticals, row))
-        flats_firsts = {line.c1.x for line in flats}
-        flats_lasts = {line.c2.x for line in flats}
-        horizontals = list(_find_at_row_from_sorted(self.horizontals, row))
-        horizontals_firsts = {line.c1.x for line in horizontals}
-        horizontals_lasts = {line.c2.x for line in horizontals}
-
-        def get_crossing_vertice_columns_set() -> set[X]:
-            crossing_vertice_columns_set = set[X]()
-            for line in self.verticals:
-                assert line.c1.x == line.c2.x
-                if line.c1.y >= row:
-                    break
-                if row <= line.c1.y or line.c2.y <= row:
-                    continue
-                crossing_vertice_columns_set.add(line.c1.x)
-            return crossing_vertice_columns_set
-
-        crossing_vertice_columns_set = get_crossing_vertice_columns_set()
-
-        def assert_disjoints() -> None:
-            if not __debug__:
-                return
-            disjoint_sets = [
-                crossing_vertice_columns_set,
-                horizontals_firsts,
-                horizontals_lasts,
-                flats_firsts,
-                flats_lasts,
-            ]
-            for set1, set2 in itertools.combinations(disjoint_sets, 2):
-                assert set1.isdisjoint(set2)
-
-        assert_disjoints()
-
-        columns_to_check = list[int](crossing_vertice_columns_set)
-        columns_to_check.extend(x for line in flats for x in (line.c1.x, line.c2.x))
-        columns_to_check.extend(
-            x for line in horizontals for x in (line.c1.x, line.c2.x)
-        )
-        columns_to_check.sort()
-
-        @define
-        class ProcessData:
-            count: int = 0
-            x_inside_first: int | None = None
-            line_in_progress: _Line | None = None
-
-            def process_column(self, x: int) -> None:
-                if self.x_inside_first is None:
-                    assert x not in flats_lasts
-                    assert x not in horizontals_lasts
-                    self.x_inside_first = x
-                    if x in crossing_vertice_columns_set:
-                        pass
-                    elif x in flats_firsts:
-                        self.line_in_progress = next(
-                            line for line in flats if line.c1.x == x
-                        )
-                    elif x in horizontals_firsts:
-                        self.line_in_progress = next(
-                            line for line in horizontals if line.c1.x == x
-                        )
-
-                elif x in crossing_vertice_columns_set:
-                    assert self.line_in_progress is None
-                    self.count += x - self.x_inside_first + 1
-                    self.x_inside_first = None
-
-                elif x in horizontals_firsts:
-                    assert self.line_in_progress is None
-                    self.line_in_progress = next(
-                        line for line in horizontals if line.c1.x == x
-                    )
-
-                elif x in horizontals_lasts:
-                    assert self.line_in_progress is not None
-                    assert self.line_in_progress.c2.x == x
-
-                    if self.line_in_progress.c1.x == self.x_inside_first:
-                        self.count += x - self.x_inside_first + 1
-                        self.x_inside_first = None
-                    self.line_in_progress = None
-
-                elif x in flats_firsts:
-                    assert self.line_in_progress is None
-                    self.line_in_progress = next(
-                        line for line in flats if line.c1.x == x
-                    )
-
-                elif x in flats_lasts:
-                    assert self.line_in_progress is not None
-                    assert self.line_in_progress.c2.x == x
-
-                    if self.line_in_progress.c1.x != self.x_inside_first:
-                        self.count += x - self.x_inside_first + 1
-                        self.x_inside_first = None
-                    self.line_in_progress = None
-
-        data = ProcessData()
-        for x in columns_to_check:
-            data.process_column(x)
-
-        return data.count
+    def get_crossing_vertice_columns_set(self, row: int) -> set[X]:
+        crossing_vertice_columns_set = set[X]()
+        for line in self.verticals:
+            assert line.c1.x == line.c2.x
+            if line.c1.y >= row:
+                break
+            if row <= line.c1.y or line.c2.y <= row:
+                continue
+            crossing_vertice_columns_set.add(line.c1.x)
+        return crossing_vertice_columns_set
 
 
 @define(init=False)
@@ -274,7 +287,7 @@ class _InsideCountGroups:
 
         prev_line_with_vertices_only: tuple[int, int] | None = None
         for y in rows_to_check:
-            self.unique_rows[y] = segments.count_inside_columns(y)
+            self.unique_rows[y] = _ColumnsInsideCounter(segments, y).count()
             if prev_line_with_vertices_only is not None:
                 assert prev_line_with_vertices_only[0] < y
                 assert y - 1 not in rows_with_unique_counts
@@ -291,7 +304,10 @@ class _InsideCountGroups:
                 continue
 
             assert prev_line_with_vertices_only is None
-            prev_line_with_vertices_only = (y + 1, segments.count_inside_columns(y + 1))
+            prev_line_with_vertices_only = (
+                y + 1,
+                _ColumnsInsideCounter(segments, y + 1).count(),
+            )
 
         assert prev_line_with_vertices_only is None
 
@@ -307,7 +323,6 @@ def _resolve(dir_counts: Iterable[tuple[Dir, int]]) -> int:
     path.normalize()
 
     segments = _PathLines(path)
-    segments.optimize()
     segment_groups = _InsideCountGroups(segments)
     return segment_groups.total_inside_positions()
 

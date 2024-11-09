@@ -1,12 +1,10 @@
 import logging
-from typing import TYPE_CHECKING, assert_never, cast
+from collections.abc import Callable, Iterable
+from typing import Literal, overload, override
 
 from adventofcode.tooling.coordinates import Coord2d, X, Y
 from adventofcode.tooling.directions import CardinalDirection as Dir
 from adventofcode.tooling.map import IterDirection, Map2d
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
 
 _logger = logging.getLogger(__name__)
 
@@ -21,85 +19,163 @@ def _calculate_load(map_: Map2d[str]) -> int:
     )
 
 
+def _coord_rows_first(outer: Y, inner: X) -> Coord2d:
+    return Coord2d(outer, inner)
+
+
+def _coord_columns_first(outer: X, inner: Y) -> Coord2d:
+    return Coord2d(inner, outer)
+
+
+class _Roll[Outer: X | Y, Inner: X | Y]:
+    def __init__(
+        self,
+        map_iter: Iterable[tuple[Outer, Iterable[tuple[Inner, str]]]],
+        to_coord: Callable[[Outer, Inner], Coord2d],
+    ) -> None:
+        self._map_iter = map_iter
+        self._to_coord = to_coord
+
+    def _get_new_rock_coords(
+        self,
+        prev_square: Coord2d | None,
+        rock_group_count: int,
+        coord: Coord2d,
+    ) -> Coord2d:
+        raise NotImplementedError
+
+    def set_rocks(self, lines: list[list[str]]) -> None:
+        for outer, data_iter in self._map_iter:
+            prev_square: Coord2d | None = None
+            rock_group_count = 0
+            for inner, sym in data_iter:
+                if sym == ".":
+                    continue
+                coord = self._to_coord(outer, inner)
+                if sym == "#":
+                    lines[coord.y][coord.x] = "#"
+                    prev_square = coord
+                    rock_group_count = 0
+                elif sym == "O":
+                    rock_group_count += 1
+                    new_rock_coord = self._get_new_rock_coords(
+                        prev_square, rock_group_count, coord
+                    )
+                    lines[new_rock_coord.y][new_rock_coord.x] = "O"
+
+
+class _RollVertical(_Roll[X, Y]):
+    @overload
+    def __init__(
+        self,
+        map_iter: Iterable[tuple[X, Iterable[tuple[Y, str]]]],
+        direction: Literal[Dir.N],
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        map_iter: Iterable[tuple[X, Iterable[tuple[Y, str]]]],
+        direction: Literal[Dir.S],
+        map_height: int,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        map_iter: Iterable[tuple[X, Iterable[tuple[Y, str]]]],
+        direction: Literal[Dir.N, Dir.S],
+        map_height: int = 0,
+    ) -> None:
+        super().__init__(map_iter, _coord_columns_first)
+        self._direction: Literal[Dir.N, Dir.S] = direction
+        self._map_height = map_height
+
+    @override
+    def _get_new_rock_coords(
+        self,
+        prev_square: Coord2d | None,
+        rock_group_count: int,
+        coord: Coord2d,
+    ) -> Coord2d:
+        match self._direction:
+            case Dir.N:
+                y = Y((-1 if prev_square is None else prev_square.y) + rock_group_count)
+            case Dir.S:
+                y = Y(
+                    (self._map_height if prev_square is None else prev_square.y)
+                    - rock_group_count
+                )
+        return Coord2d(y, coord.x)
+
+
+class _RollHorizontal(_Roll[Y, X]):
+    @overload
+    def __init__(
+        self,
+        map_iter: Iterable[tuple[Y, Iterable[tuple[X, str]]]],
+        direction: Literal[Dir.E],
+        map_width: int,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        map_iter: Iterable[tuple[Y, Iterable[tuple[X, str]]]],
+        direction: Literal[Dir.W],
+    ) -> None: ...
+
+    def __init__(
+        self,
+        map_iter: Iterable[tuple[Y, Iterable[tuple[X, str]]]],
+        direction: Literal[Dir.E, Dir.W],
+        map_width: int = 0,
+    ) -> None:
+        super().__init__(map_iter, _coord_rows_first)
+        self._direction: Literal[Dir.E, Dir.W] = direction
+        self._map_width = map_width
+
+    @override
+    def _get_new_rock_coords(
+        self,
+        prev_square: Coord2d | None,
+        rock_group_count: int,
+        coord: Coord2d,
+    ) -> Coord2d:
+        match self._direction:
+            case Dir.E:
+                x = X(
+                    (self._map_width if prev_square is None else prev_square.x)
+                    - rock_group_count
+                )
+            case Dir.W:
+                x = X((-1 if prev_square is None else prev_square.x) + rock_group_count)
+        return Coord2d(coord.y, x)
+
+
 def _roll_rocks(map_: Map2d[str], direction: Dir) -> Map2d[str]:
     lines: list[list[str]] = [["."] * map_.width for _ in range(map_.height)]
+    roller: _RollVertical | _RollHorizontal
+    match direction:
+        case Dir.N:
+            roller = _RollVertical(
+                map_.iter_data(direction=IterDirection.Columns), direction
+            )
+        case Dir.E:
+            roller = _RollHorizontal(
+                map_.iter_data_by_lines(map_.tl_y, map_.br_x, map_.br_y, map_.tl_x),
+                direction,
+                map_.width,
+            )
+        case Dir.S:
+            roller = _RollVertical(
+                map_.iter_data_by_columns(map_.br_y, map_.tl_x, map_.tl_y, map_.br_x),
+                direction,
+                map_.height,
+            )
+        case Dir.W:
+            roller = _RollHorizontal(map_.iter_data(), direction)
 
-    def _coord_rows_first(outer: Y | X, inner: Y | X) -> Coord2d:
-        return Coord2d(cast(Y, outer), cast(X, inner))
-
-    def _coord_columns_first(outer: Y | X, inner: Y | X) -> Coord2d:
-        return Coord2d(cast(Y, inner), cast(X, outer))
-
-    map_iter: (
-        Iterable[tuple[Y, Iterable[tuple[X, str]]]]
-        | Iterable[tuple[X, Iterable[tuple[Y, str]]]]
-    )
-    if direction == Dir.N:
-        map_iter = map_.iter_data(direction=IterDirection.Columns)
-        coord_func = _coord_columns_first
-
-        def set_rock(
-            prev_square: Coord2d | None, rock_group_count: int, coord: Coord2d
-        ) -> None:
-            nonlocal lines
-            y = (-1 if prev_square is None else prev_square.y) + rock_group_count
-            lines[y][coord.x] = "O"
-
-    elif direction == Dir.E:
-        map_iter = map_.iter_data_by_lines(map_.tl_y, map_.br_x, map_.br_y, map_.tl_x)
-        coord_func = _coord_rows_first
-
-        def set_rock(
-            prev_square: Coord2d | None, rock_group_count: int, coord: Coord2d
-        ) -> None:
-            nonlocal lines
-            x = (
-                map_.width if prev_square is None else prev_square.x
-            ) - rock_group_count
-            lines[coord.y][x] = "O"
-
-    elif direction == Dir.S:
-        map_iter = map_.iter_data_by_columns(map_.br_y, map_.tl_x, map_.tl_y, map_.br_x)
-        coord_func = _coord_columns_first
-
-        def set_rock(
-            prev_square: Coord2d | None, rock_group_count: int, coord: Coord2d
-        ) -> None:
-            nonlocal lines
-            y = (
-                map_.height if prev_square is None else prev_square.y
-            ) - rock_group_count
-            lines[y][coord.x] = "O"
-
-    elif direction == Dir.W:
-        map_iter = map_.iter_data()
-        coord_func = _coord_rows_first
-
-        def set_rock(
-            prev_square: Coord2d | None, rock_group_count: int, coord: Coord2d
-        ) -> None:
-            nonlocal lines
-            x = (-1 if prev_square is None else prev_square.x) + rock_group_count
-            lines[coord.y][x] = "O"
-
-    else:
-        assert_never(direction)
-
-    for outer, data_iter in map_iter:
-        prev_square: Coord2d | None = None
-        rock_group_count = 0
-        for inner, sym in data_iter:
-            if sym == ".":
-                continue
-            coord = coord_func(outer, inner)
-            if sym == "#":
-                lines[coord.y][coord.x] = "#"
-                prev_square = coord
-                rock_group_count = 0
-            elif sym == "O":
-                rock_group_count += 1
-                set_rock(prev_square, rock_group_count, coord)
-
+    roller.set_rocks(lines)
     return Map2d(lines)
 
 

@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import itertools
 import logging
 import math
 from abc import ABCMeta, abstractmethod
 from collections import Counter, deque
-from typing import TYPE_CHECKING, Never, NewType, override
+from typing import TYPE_CHECKING, NamedTuple, Never, NewType, override
 
 from attrs import frozen
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, Sequence
 
 _logger = logging.getLogger(__name__)
 
@@ -201,12 +200,17 @@ type _AnyModule = (
 )
 
 
-def _parse_module(line: str) -> tuple[_AnyModule, list[_ModuleName]]:
+def _parse_module(
+    line: str,
+) -> (
+    tuple[_Broadcast, list[_ModuleName]]
+    | tuple[_FlipFlop, list[_ModuleName]]
+    | tuple[_Conjunction, list[_ModuleName]]
+):
     name, outputs_str = map(str.strip, line.split("->"))
-    name = _ModuleName(name)
     outputs = [_ModuleName(x.strip()) for x in outputs_str.split(",")]
     if name == "broadcaster":
-        return _Broadcast(name), outputs
+        return _Broadcast(_ModuleName(name)), outputs
 
     assert name[0] in "%&"
     module_type = name[0]
@@ -217,100 +221,92 @@ def _parse_module(line: str) -> tuple[_AnyModule, list[_ModuleName]]:
     return _Conjunction(name), outputs
 
 
-def _parse_modules(
-    lines: Iterable[str], *, use_gateway: bool = False
-) -> tuple[
-    _Receiver | None,
-    _Button,
-    _GatewayConjuction | None,
-    dict[type[_AnyModule], list[_AnyModule]],
-]:
-    modules_with_output_names = [(_Button(), [_ModuleName("broadcaster")])] + [
-        _parse_module(line) for line in lines
-    ]
+class ModuleGroup[T: _AnyModule](NamedTuple):
+    key: T
+    group: list[T]
 
+
+def _find_gateway(
+    modules_with_output_names: Sequence[tuple[_AnyModule, list[_ModuleName]]],
+    receiver: _Receiver,
+) -> _GatewayConjuction | None:
+    gateways_to_receiver = [
+        module
+        for module, outputs in modules_with_output_names
+        if receiver.name in outputs
+    ]
+    assert len(gateways_to_receiver) <= 1, "Safety check: only 0-1 gateways are known"
+    if not gateways_to_receiver:
+        return None
+
+    gateway_to_receiver = gateways_to_receiver[0]
+    assert isinstance(
+        gateway_to_receiver, _Conjunction
+    ), "Safety check: only conjunctions are known"
+    return _GatewayConjuction(gateway_to_receiver.name)
+
+
+def _resolve_receiver_names(
+    modules_with_output_names: Sequence[tuple[_AnyModule, list[_ModuleName]]],
+) -> set[_ModuleName]:
     all_names_with_outputs = {module.name for module, _ in modules_with_output_names}
+
     all_output_names = {
         output for _, outputs in modules_with_output_names for output in outputs
     }
-    receiver_names = all_output_names - all_names_with_outputs
+    return all_output_names - all_names_with_outputs
+
+
+def _parse_modules(
+    lines: Iterable[str], *, use_gateway: bool = False
+) -> tuple[_Receiver | None, _Button, _GatewayConjuction | None]:
+    button = _Button()
+    modules_with_output_names: list[tuple[_AnyModule, list[_ModuleName]]] = [
+        (button, [_ModuleName("broadcaster")])
+    ]
+    modules_with_output_names += [_parse_module(line) for line in lines]
+
+    receiver_names = _resolve_receiver_names(modules_with_output_names)
     assert (
         len(receiver_names) <= 1
     ), "Safety check: only inputs with 0-1 receivers are known"
 
+    receiver: _Receiver | None = None
     if receiver_names:
-        receiver_name = receiver_names.pop()
-        modules_with_output_names.append((_Receiver(receiver_name), []))
-        gateways_to_receiver = [
-            module
-            for module, outputs in modules_with_output_names
-            if receiver_name in outputs
+        receiver = _Receiver(receiver_names.pop())
+
+    gateway: _GatewayConjuction | None = None
+    if receiver:
+        modules_with_output_names = [
+            *modules_with_output_names,
+            (receiver, list[_ModuleName]()),
         ]
         if use_gateway:
-            assert (
-                len(gateways_to_receiver) <= 1
-            ), "Safety check: only 0-1 gateways are known"
-            if gateways_to_receiver:
-                gateway_to_receiver = gateways_to_receiver[0]
-                assert isinstance(
-                    gateway_to_receiver, _Conjunction
-                ), "Safety check: only conjunctions are known"
+            gateway = _find_gateway(modules_with_output_names, receiver)
+            if gateway:
                 modules_with_output_names = [
-                    (
-                        _GatewayConjuction(module.name)
-                        if module is gateway_to_receiver
-                        else module,
-                        outputs,
-                    )
+                    (gateway if module.name == gateway.name else module, outputs)
                     for module, outputs in modules_with_output_names
                 ]
 
     modules_by_name = {module.name: module for module, _ in modules_with_output_names}
 
-    modules_with_output_modules = [
-        (module, list(map(modules_by_name.__getitem__, outputs)))
-        for module, outputs in modules_with_output_names
-    ]
-
-    for module, output_modules in modules_with_output_modules:
-        for output_module in output_modules:
+    for module, outputs in modules_with_output_names:
+        for output in outputs:
+            output_module = modules_by_name[output]
             module.add_receiving_module(output_module)
 
-    modules_by_type: dict[type[_AnyModule], list[_AnyModule]] = {
-        t: list(g)
-        for t, g in itertools.groupby(
-            sorted(
-                (x[0] for x in modules_with_output_modules),
-                key=lambda x: type(x).__name__,
-            ),
-            key=lambda x: type(x),
-        )
-    }
-
-    for t, conjunctions in modules_by_type.items():
-        if not issubclass(t, _Conjunction):
+    for conjunction in modules_by_name.values():
+        if not isinstance(conjunction, _Conjunction):
             continue
-        for conjunction in conjunctions:
-            assert isinstance(conjunction, _Conjunction)
-            inputs = (
-                module.name
-                for module, outputs in modules_with_output_names
-                if conjunction.name in outputs
-            )
-            conjunction.set_inputs(inputs)
+        inputs = (
+            module.name
+            for module, outputs in modules_with_output_names
+            if conjunction.name in outputs
+        )
+        conjunction.set_inputs(inputs)
 
-    receiver = modules_by_type.get(_Receiver, [None])[0]
-    if receiver is not None:
-        assert isinstance(receiver, _Receiver)
-
-    button = modules_by_type[_Button][0]
-    assert isinstance(button, _Button)
-
-    gateway = modules_by_type.get(_GatewayConjuction, [None])[0]
-    if gateway is not None:
-        assert isinstance(gateway, _GatewayConjuction)
-
-    return receiver, button, gateway, modules_by_type
+    return receiver, button, gateway
 
 
 def _extend_pulses(
@@ -320,7 +316,7 @@ def _extend_pulses(
 
 
 def p1(input_str: str) -> int:
-    _, button, _, _ = _parse_modules(input_str.splitlines())
+    _, button, _ = _parse_modules(input_str.splitlines())
 
     counts = Counter[_PulseValue]()
     queue = deque[_Pulse]()
@@ -340,9 +336,7 @@ def p1(input_str: str) -> int:
 
 def p2(input_str: str) -> int:
     receiver_name = _ModuleName("rx")
-    receiver, button, gateway, _ = _parse_modules(
-        input_str.splitlines(), use_gateway=True
-    )
+    receiver, button, gateway = _parse_modules(input_str.splitlines(), use_gateway=True)
     assert receiver is not None
     assert receiver.name == receiver_name
     assert gateway is not None
