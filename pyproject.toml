@@ -57,55 +57,15 @@ typeCheckingMode = "strict"
 strict_optional = true
 
 [tool.ruff.lint]
-select = [
-    "A",  # prevent using keywords that clobber python builtins
-    "B",  # bugbear: security warnings
-    "E",  # pycodestyle errors
-    "F",  # pyflakes
-    "G",  # flake8-logging-format
-    "I",  # isort
-    "N",  # pep8-naming
-    "S",  # bandit
-    "Q",  # flake8-quotes
-    "W",  # pycodestyle warnings
-    "C4",  # flake8-comprehensions
-    "EM",  # flake8-errmsg
-    "FA",  # flake8-future-annotations
-    "PL",  # pylint
-    "PT",  # flake8-pytest-style
-    "TD",  # flake8-todo
-    "UP",  # alert you when better syntax is available in your python version
-    "ANN",  # flake8-annotations
-    "ARG",  # flake8-unused-arguments
-    "COM",  # flake8-commas
-    "ERA",  # flake8-eradicate
-    "DTZ",  # flake8-datetimez
-    "FLY",  # flynt
-    "ICN",  # flake8-import-conventions
-    "INP",  # flake8-no-pep420
-    "ISC",  # flake8-implicit-str-concat
-    "LOG",  # flake8-logging
-    "PGH",  # pygrep-hooks
-    "PIE",  # flake8-pie
-    "PTH",  # flake8-use-pathlib
-    "PYI",  # flake8-pyi
-    "RET",  # flake8-return
-    "RSE",  # flake8-raise
-    "RUF",  # the ruff developer's own rules
-    "SIM",  # flake8-simplify
-    "SLF",  # flake8-self
-    "T20",  # flake8-print
-    "TCH",  # flake8-type-checking
-    "TID",  # flake8-tidy-imports
-    "TRY",  # tryceratops
-    "YTT",  # flake8-2020
-    "FURB",  # refurb
-    "PERF",  # perflint
-    "SLOT",  # flake8-slots
-]
+select = ["ALL"]
 ignore = [
     "ANN101",
+    "C901",
     "COM812",
+    "D10",
+    "FBT001",
+    "FBT003",
+    "FIX",
     "ISC001",
     "PLR2004",
     "S101",
@@ -117,6 +77,8 @@ ignore = [
 "tests/**/*.py" = ["INP001"]
 "adventofcode/main.py" = ["T201"]
 
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
 
 [build-system]
 requires = ["hatchling"]
