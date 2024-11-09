@@ -90,8 +90,9 @@ class Map2d[Map2dDataType]:
             return default
         return self._sequence_data[y][x]
 
-    def iter_data_by_lines(  # noqa: PLR0912, optimized for performance
-        # so can't reduce branching here which is done for sanitizing input values
+    def iter_data_by_lines(  # noqa: C901, PLR0912
+        # optimized for performance so can't reduce branching here which is done for
+        # sanitizing input values
         self,
         first_y: Y,
         first_x: X,
