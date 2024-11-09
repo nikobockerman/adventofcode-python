@@ -18,7 +18,7 @@ mypy = "mypy ."
 pyright = "pyright"
 ruff-check = "ruff check"
 ruff-check-format = "ruff format --check"
-lint = ["ruff-check", "ruff-check-format", "shellcheck", "pyright", "mypy"]
+lint = ["ruff-check", "ruff-check-format", "pyright", "mypy"]
 
 format = "ruff format"
 ruff-fix = "ruff check --fix-only"

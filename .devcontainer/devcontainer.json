@@ -12,7 +12,7 @@
         "UV_CACHE_DIR": "${containerWorkspaceFolder}/.uv/cache",
         "UV_TOOL_DIR": "${containerWorkspaceFolder}/.uv/tools"
     },
-    "postCreateCommand": "bash ./.devcontainer/post-install.sh",
+    "updateContentCommand": "uv sync",
     "portsAttributes": {
         "8080": {
             "label": "Web Server for accessing performance profiles",
