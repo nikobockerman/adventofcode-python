@@ -28,16 +28,6 @@ test = "pytest"
 runall = "adventofcode all"
 validate = ["lint", "test", "runall"]
 
-[tool.poe.tasks.shellcheck]
-shell = """
-if [ ! $(command -v shellcheck) ]; then
-    echo "shellcheck is not installed"
-    exit 0
-fi
-
-shellcheck $(git ls-files | grep '\\..*sh')
-"""
-
 [dependency-groups]
 dev = [
     "ruff ==0.7.3",
