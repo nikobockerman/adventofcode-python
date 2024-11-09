@@ -113,41 +113,43 @@ def _parse_input(input_str: str) -> tuple[dict[str, _Workflow], Iterable[_Part]]
     return workflows, map(_parse_part, input_line_iter)
 
 
-def p1(input_str: str) -> int:
+def _process_part(
+    in_workflow: _Workflow, workflows: dict[str, _Workflow], part: _Part
+) -> bool:
     def _lt(left: int, right: int) -> bool:
         return left < right
 
     def _gt(left: int, right: int) -> bool:
         return left > right
 
-    def _process_part(
-        in_workflow: _Workflow, workflows: dict[str, _Workflow], part: _Part
-    ) -> bool:
-        workflow = in_workflow
-        while True:
-            action = None
-            for rule in workflow.rules:
-                if rule.comparison == _Comparison.LT:
+    workflow = in_workflow
+    while True:
+        action = None
+        for rule in workflow.rules:
+            match rule.comparison:
+                case _Comparison.LT:
                     compare = _lt
-                elif rule.comparison == _Comparison.GT:
+                case _Comparison.GT:
                     compare = _gt
-                else:
-                    raise AssertionError
 
-                if compare(part[rule.category], rule.value):
-                    action = rule.action
-                    break
-            else:
-                action = workflow.default
+            if compare(part[rule.category], rule.value):
+                action = rule.action
+                break
+        else:
+            action = workflow.default
 
-            assert action is not None
+        assert action is not None
 
-            if action == "A":
+        match action:
+            case "A":
                 return True
-            if action == "R":
+            case "R":
                 return False
-            workflow = workflows[action]
+            case _:
+                workflow = workflows[action]
 
+
+def p1(input_str: str) -> int:
     workflows, parts_iter = _parse_input(input_str)
     in_workflow = workflows["in"]
     result = 0
@@ -171,14 +173,7 @@ class _WorkflowStep:
     next_workflow: str
 
 
-def _merge_value_range(
-    left: list[range] | None, right: list[range] | None
-) -> list[range] | None:
-    if left is None:
-        return None if right is None else list(right)
-    if right is None:
-        return list(left)
-
+def _merge_two_value_ranges(left: list[range], right: list[range]) -> list[range]:
     right_iter = iter(right)
     try:
         r2: range | None = next(right_iter)
@@ -219,6 +214,16 @@ def _merge_value_range(
             result.append(range(start, stop))
 
     return result
+
+
+def _merge_value_range(
+    left: list[range] | None, right: list[range] | None
+) -> list[range] | None:
+    if left is None:
+        return None if right is None else list(right)
+    if right is None:
+        return list(left)
+    return _merge_two_value_ranges(left, right)
 
 
 def _merge_category_value_ranges(
