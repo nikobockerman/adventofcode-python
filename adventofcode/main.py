@@ -5,7 +5,7 @@ import logging
 import pathlib
 import sys
 import time
-from enum import Enum, StrEnum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Annotated, Any, TypeGuard, assert_never
 
 import joblib
@@ -64,15 +64,15 @@ class _Profiler(StrEnum):
     Pyinstrument = "pyinstrument"
 
 
-class _ProblemArg(Enum):
-    _1 = 1
-    _2 = 2
+class _Problem(StrEnum):
+    _1 = "1"
+    _2 = "2"
 
 
 @app.command()
 def single(
     day: int,
-    problem: _ProblemArg,
+    problem: _Problem,
     profiler: Annotated[_Profiler | None, typer.Option("-p", "--profiler")] = None,
 ) -> None:
     problem_: answers.Problem = problem  # type: ignore[reportAssignmentType, assignment]
