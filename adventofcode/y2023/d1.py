@@ -4,7 +4,7 @@ from collections.abc import Iterable
 _STR_DIGITS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 
 
-def _find_first_and_last_int(input_str: str, use_texts: bool) -> tuple[str, str]:
+def _find_first_and_last_int(input_str: str, *, use_texts: bool) -> tuple[str, str]:
     first: str | None = None
     last: str | None = None
     for ind, c in enumerate(input_str):
@@ -33,17 +33,17 @@ def _int_chars_to_int(s1: str, s2: str) -> int:
     return int(s1 + s2)
 
 
-def _p1_ints(lines: Iterable[str], use_texts: bool) -> Iterable[int]:
+def _p1_ints(lines: Iterable[str], *, use_texts: bool) -> Iterable[int]:
     for line in lines:
         logging.debug("line=%s", line)
-        value = _int_chars_to_int(*_find_first_and_last_int(line, use_texts))
+        value = _int_chars_to_int(*_find_first_and_last_int(line, use_texts=use_texts))
         logging.debug("value=%s", value)
         yield value
 
 
 def p1(input_str: str) -> int:
-    return sum(_p1_ints(input_str.splitlines(), False))
+    return sum(_p1_ints(input_str.splitlines(), use_texts=False))
 
 
 def p2(input_str: str) -> int:
-    return sum(_p1_ints(input_str.splitlines(), True))
+    return sum(_p1_ints(input_str.splitlines(), use_texts=True))

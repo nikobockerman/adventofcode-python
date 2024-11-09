@@ -3,6 +3,7 @@ import pytest
 from adventofcode.tooling.coordinates import X, Y
 from adventofcode.tooling.directions import RotationDirection
 from adventofcode.tooling.map import (
+    IterDirection,
     Map2d,
     Map2dEmptyDataError,
     Map2dRectangularDataError,
@@ -132,7 +133,8 @@ def test_iter_data() -> None:
         (2, [(0, "g"), (1, "h"), (2, "i")]),
     ]
     assert [
-        (x, list(data_iter)) for x, data_iter in map_.iter_data(columns_first=True)
+        (x, list(data_iter))
+        for x, data_iter in map_.iter_data(direction=IterDirection.Columns)
     ] == [
         (0, [(0, "a"), (1, "d"), (2, "g")]),
         (1, [(0, "b"), (1, "e"), (2, "h")]),
@@ -150,7 +152,7 @@ def test_iter_data() -> None:
     assert [
         (x, list(data_iter))
         for x, data_iter in map_.iter_data(
-            map_.br_y, map_.br_x, Y(0), X(0), columns_first=True
+            map_.br_y, map_.br_x, Y(0), X(0), direction=IterDirection.Columns
         )
     ] == [
         (2, [(2, "i"), (1, "f"), (0, "c")]),
@@ -169,7 +171,7 @@ def test_iter_data() -> None:
     assert [
         (x, list(data_iter))
         for x, data_iter in map_.iter_data(
-            map_.br_y, X(0), Y(0), map_.br_x, columns_first=True
+            map_.br_y, X(0), Y(0), map_.br_x, direction=IterDirection.Columns
         )
     ] == [
         (0, [(2, "g"), (1, "d"), (0, "a")]),
@@ -188,7 +190,7 @@ def test_iter_data() -> None:
     assert [
         (x, list(data_iter))
         for x, data_iter in map_.iter_data(
-            Y(0), map_.br_x, map_.br_y, X(0), columns_first=True
+            Y(0), map_.br_x, map_.br_y, X(0), direction=IterDirection.Columns
         )
     ] == [
         (2, [(0, "c"), (1, "f"), (2, "i")]),
@@ -215,7 +217,9 @@ def test_iter_data_partial() -> None:
     ]
     assert [
         (x, list(data_iter))
-        for x, data_iter in map_.iter_data(Y(1), X(1), Y(2), X(2), columns_first=True)
+        for x, data_iter in map_.iter_data(
+            Y(1), X(1), Y(2), X(2), direction=IterDirection.Columns
+        )
     ] == [
         (1, [(1, "f"), (2, "j")]),
         (2, [(1, "g"), (2, "k")]),
@@ -229,7 +233,9 @@ def test_iter_data_partial() -> None:
     ]
     assert [
         (x, list(data_iter))
-        for x, data_iter in map_.iter_data(Y(2), X(2), Y(1), X(1), columns_first=True)
+        for x, data_iter in map_.iter_data(
+            Y(2), X(2), Y(1), X(1), direction=IterDirection.Columns
+        )
     ] == [
         (2, [(2, "k"), (1, "g")]),
         (1, [(2, "j"), (1, "f")]),
@@ -243,7 +249,9 @@ def test_iter_data_partial() -> None:
     ]
     assert [
         (x, list(data_iter))
-        for x, data_iter in map_.iter_data(Y(2), X(1), Y(1), X(2), columns_first=True)
+        for x, data_iter in map_.iter_data(
+            Y(2), X(1), Y(1), X(2), direction=IterDirection.Columns
+        )
     ] == [
         (1, [(2, "j"), (1, "f")]),
         (2, [(2, "k"), (1, "g")]),
@@ -257,7 +265,9 @@ def test_iter_data_partial() -> None:
     ]
     assert [
         (x, list(data_iter))
-        for x, data_iter in map_.iter_data(Y(1), X(2), Y(2), X(1), columns_first=True)
+        for x, data_iter in map_.iter_data(
+            Y(1), X(2), Y(2), X(1), direction=IterDirection.Columns
+        )
     ] == [
         (2, [(1, "g"), (2, "k")]),
         (1, [(1, "f"), (2, "j")]),
@@ -279,7 +289,11 @@ def test_iter_data_completely_outside() -> None:
         assert (
             list(
                 map_.iter_data(
-                    corner1_y, corner1_x, corner2_y, corner2_x, columns_first=True
+                    corner1_y,
+                    corner1_x,
+                    corner2_y,
+                    corner2_x,
+                    direction=IterDirection.Columns,
                 )
             )
             == []
@@ -288,7 +302,11 @@ def test_iter_data_completely_outside() -> None:
         assert (
             list(
                 map_.iter_data(
-                    corner2_y, corner2_x, corner1_y, corner1_x, columns_first=True
+                    corner2_y,
+                    corner2_x,
+                    corner1_y,
+                    corner1_x,
+                    direction=IterDirection.Columns,
                 )
             )
             == []
@@ -318,7 +336,9 @@ def test_iter_partially_outside_left_top_corner() -> None:
     ]
     assert [
         (x, list(data_iter))
-        for x, data_iter in map_.iter_data(Y(-1), X(-1), Y(1), X(1), columns_first=True)
+        for x, data_iter in map_.iter_data(
+            Y(-1), X(-1), Y(1), X(1), direction=IterDirection.Columns
+        )
     ] == [
         (0, [(0, "a"), (1, "d")]),
         (1, [(0, "b"), (1, "e")]),
@@ -333,7 +353,9 @@ def test_iter_partially_outside_left_top_corner() -> None:
     ]
     assert [
         (x, list(data_iter))
-        for x, data_iter in map_.iter_data(Y(1), X(1), Y(-1), X(-1), columns_first=True)
+        for x, data_iter in map_.iter_data(
+            Y(1), X(1), Y(-1), X(-1), direction=IterDirection.Columns
+        )
     ] == [
         (1, [(1, "e"), (0, "b")]),
         (0, [(1, "d"), (0, "a")]),
@@ -359,7 +381,7 @@ def test_iter_partially_outside_right_top_corner() -> None:
     assert [
         (x, list(data_iter))
         for x, data_iter in map_.iter_data(
-            Y(-1), X(1), Y(1), X(map_.br_x + 1), columns_first=True
+            Y(-1), X(1), Y(1), X(map_.br_x + 1), direction=IterDirection.Columns
         )
     ] == [
         (1, [(0, "b"), (1, "e")]),
@@ -375,7 +397,9 @@ def test_iter_partially_outside_right_top_corner() -> None:
     ]
     assert [
         (x, list(data_iter))
-        for x, data_iter in map_.iter_data(Y(1), X(1), Y(-1), X(-1), columns_first=True)
+        for x, data_iter in map_.iter_data(
+            Y(1), X(1), Y(-1), X(-1), direction=IterDirection.Columns
+        )
     ] == [
         (1, [(1, "e"), (0, "b")]),
         (0, [(1, "d"), (0, "a")]),
