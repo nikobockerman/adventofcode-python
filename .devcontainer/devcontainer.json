@@ -4,15 +4,13 @@
         "dockerfile": "Dockerfile"
     },
     "features": {
-        "ghcr.io/devcontainers-contrib/features/shfmt:1.0.0": {},
-        "ghcr.io/lukewiwa/features/shellcheck:0": {},
         "ghcr.io/devcontainers/features/node:1": {}
     },
     "containerEnv": {
         "UV_CACHE_DIR": "${containerWorkspaceFolder}/.uv/cache",
         "UV_TOOL_DIR": "${containerWorkspaceFolder}/.uv/tools"
     },
-    "postCreateCommand": "bash ./.devcontainer/post-install.sh",
+    "updateContentCommand": "uv sync",
     "portsAttributes": {
         "8080": {
             "label": "Web Server for accessing performance profiles",
