@@ -3,7 +3,7 @@ import logging
 from collections.abc import Iterable
 
 from adventofcode.tooling.coordinates import X, Y
-from adventofcode.tooling.map import Map2d
+from adventofcode.tooling.map import IterDirection, Map2d
 
 
 def _parse_maps(input_str: str) -> Iterable[Map2d[str]]:
@@ -31,19 +31,21 @@ def _compare_datas(
 
 
 def _find_consecutive_rows_or_columns(
-    map_: Map2d[str], start_pos: int, find_column_not_row: bool, allowed_mismatches: int
+    map_: Map2d[str],
+    start_pos: int,
+    direction: IterDirection,
+    allowed_mismatches: int,
 ) -> tuple[int, int] | None:
-    if find_column_not_row:
-        first_y = Y(0)
-        first_x = X(start_pos)
-    else:
-        first_y = Y(start_pos)
-        first_x = X(0)
+    match direction:
+        case IterDirection.Rows:
+            first_y = Y(start_pos)
+            first_x = X(0)
+        case IterDirection.Columns:
+            first_y = Y(0)
+            first_x = X(start_pos)
     for (i1, data1), (_, data2) in itertools.pairwise(
         (i, [sym for _, sym in sym_iter])
-        for i, sym_iter in map_.iter_data(
-            first_y, first_x, columns_first=find_column_not_row
-        )
+        for i, sym_iter in map_.iter_data(first_y, first_x, direction=direction)
     ):
         match_res = _compare_datas(data1, data2, allowed_mismatches)
         if match_res is None:
@@ -59,23 +61,24 @@ def _map_data_iter_to_data(d: tuple[int, str]) -> str:
 def _check_if_datas_around_reflection_match(
     map_: Map2d[str],
     pos_before_reflection: int,
-    find_column_not_row: bool,
+    direction: IterDirection,
     allowed_mismatches: int,
 ) -> int | None:
-    if find_column_not_row:
-        before_first_y = Y(0)
-        before_first_x = X(pos_before_reflection - 1)
-        before_last_y = map_.br_y
-        before_last_x = X(-1)
-        after_first_y = Y(0)
-        after_first_x = X(pos_before_reflection + 2)
-    else:
-        before_first_y = Y(pos_before_reflection - 1)
-        before_first_x = X(0)
-        before_last_y = Y(-1)
-        before_last_x = map_.br_x
-        after_first_y = Y(pos_before_reflection + 2)
-        after_first_x = X(0)
+    match direction:
+        case IterDirection.Rows:
+            before_first_y = Y(pos_before_reflection - 1)
+            before_first_x = X(0)
+            before_last_y = Y(-1)
+            before_last_x = map_.br_x
+            after_first_y = Y(pos_before_reflection + 2)
+            after_first_x = X(0)
+        case IterDirection.Columns:
+            before_first_y = Y(0)
+            before_first_x = X(pos_before_reflection - 1)
+            before_last_y = map_.br_y
+            before_last_x = X(-1)
+            after_first_y = Y(0)
+            after_first_x = X(pos_before_reflection + 2)
 
     mismatches = 0
 
@@ -102,7 +105,7 @@ def _check_if_datas_around_reflection_match(
 
 
 def _find_reflection_line(
-    map_: Map2d[str], find_column_not_row: bool, required_mismatches: int = 0
+    map_: Map2d[str], direction: IterDirection, required_mismatches: int = 0
 ) -> int | None:
     logging.debug(
         "Searching for reflection with %d required mismatches", required_mismatches
@@ -111,7 +114,7 @@ def _find_reflection_line(
     while True:
         remaining_mismatches = required_mismatches
         found_data_info = _find_consecutive_rows_or_columns(
-            map_, search_start_pos, find_column_not_row, remaining_mismatches
+            map_, search_start_pos, direction, remaining_mismatches
         )
         if found_data_info is None:
             logging.debug(
@@ -131,7 +134,7 @@ def _find_reflection_line(
         )
 
         check_res = _check_if_datas_around_reflection_match(
-            map_, first_pos, find_column_not_row, remaining_mismatches
+            map_, first_pos, direction, remaining_mismatches
         )
         if check_res is None:
             logging.debug(
@@ -159,12 +162,16 @@ def _resolve(input_str: str, required_mismatches_per_map: int) -> int:
             map_.width,
             map_,
         )
-        match_index = _find_reflection_line(map_, False, required_mismatches_per_map)
+        match_index = _find_reflection_line(
+            map_, IterDirection.Rows, required_mismatches_per_map
+        )
         if match_index is not None:
             line_or_column = "L"
             match_multiplier = 100
         else:
-            match_index = _find_reflection_line(map_, True, required_mismatches_per_map)
+            match_index = _find_reflection_line(
+                map_, IterDirection.Columns, required_mismatches_per_map
+            )
             assert match_index is not None
             line_or_column = "C"
             match_multiplier = 1

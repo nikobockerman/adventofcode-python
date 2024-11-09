@@ -1,3 +1,4 @@
+import enum
 from collections.abc import Iterable
 from functools import reduce
 
@@ -38,15 +39,27 @@ def p2(input_str: str) -> int:
     time = int(reduce(lambda t1, t2: t1 + t2, (str(t) for t, _ in d)))
     distance = int(reduce(lambda d1, d2: d1 + d2, (str(d) for _, d in d)))
 
+    class ScenarioOrdering(enum.Enum):
+        FASTEST = enum.auto()
+        SLOWEST = enum.auto()
+
     def first_possible_button_press_time(
-        max_time: int, distance_to_beat: int, forward: bool
+        max_time: int, distance_to_beat: int, ordering: ScenarioOrdering
     ) -> int:
-        r = range(1, max_time) if forward else range(max_time - 1, 0, -1)
+        match ordering:
+            case ScenarioOrdering.FASTEST:
+                r = range(1, max_time)
+            case ScenarioOrdering.SLOWEST:
+                r = range(max_time - 1, 0, -1)
         for button_press_time in r:
             if _is_winning_scenario(button_press_time, max_time, distance_to_beat):
                 return button_press_time
         raise AssertionError
 
-    first_button_press_time = first_possible_button_press_time(time, distance, True)
-    last_button_press_time = first_possible_button_press_time(time, distance, False)
+    first_button_press_time = first_possible_button_press_time(
+        time, distance, ScenarioOrdering.FASTEST
+    )
+    last_button_press_time = first_possible_button_press_time(
+        time, distance, ScenarioOrdering.SLOWEST
+    )
     return len(range(first_button_press_time, last_button_press_time)) + 1

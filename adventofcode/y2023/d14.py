@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, assert_never, cast
 
 from adventofcode.tooling.coordinates import Coord2d, X, Y
 from adventofcode.tooling.directions import CardinalDirection as Dir
-from adventofcode.tooling.map import Map2d
+from adventofcode.tooling.map import IterDirection, Map2d
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -35,7 +35,7 @@ def _roll_rocks(map_: Map2d[str], direction: Dir) -> Map2d[str]:
         | Iterable[tuple[X, Iterable[tuple[Y, str]]]]
     )
     if direction == Dir.N:
-        map_iter = map_.iter_data(columns_first=True)
+        map_iter = map_.iter_data(direction=IterDirection.Columns)
         coord_func = _coord_columns_first
 
         def set_rock(

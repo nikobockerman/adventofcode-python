@@ -16,8 +16,8 @@ _logger = logging.getLogger(__name__)
 
 
 _PulseValue = NewType("_PulseValue", bool)
-_PulseLow = _PulseValue(False)
-_PulseHigh = _PulseValue(True)
+_PulseLow = _PulseValue(False)  # noqa: FBT003
+_PulseHigh = _PulseValue(True)  # noqa: FBT003
 
 _ModuleName = NewType("_ModuleName", str)
 

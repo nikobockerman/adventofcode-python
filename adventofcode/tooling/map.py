@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 from typing import TYPE_CHECKING, Literal, assert_never, overload
 
 from .coordinates import X, Y
@@ -17,6 +18,11 @@ class Map2dEmptyDataError(ValueError):
 class Map2dRectangularDataError(ValueError):
     def __init__(self) -> None:
         super().__init__("data must be rectangular")
+
+
+class IterDirection(enum.Enum):
+    Rows = enum.auto()
+    Columns = enum.auto()
 
 
 class Map2d[Map2dDataType]:
@@ -158,23 +164,23 @@ class Map2d[Map2dDataType]:
 
     @overload
     def iter_data(
-        self,
-        *,
-        columns_first: bool,
+        self, *, direction: IterDirection
     ) -> Iterable[tuple[X, Iterable[tuple[Y, Map2dDataType]]]]: ...
     @overload
     def iter_data(
-        self,
-        *,
-        columns_first: Literal[False] = False,
+        self, *, direction: Literal[IterDirection.Rows] = IterDirection.Rows
     ) -> Iterable[tuple[Y, Iterable[tuple[X, Map2dDataType]]]]: ...
     @overload
     def iter_data(
-        self, first_y: Y, first_x: X, *, columns_first: bool
+        self, first_y: Y, first_x: X, *, direction: IterDirection
     ) -> Iterable[tuple[X, Iterable[tuple[Y, Map2dDataType]]]]: ...
     @overload
     def iter_data(
-        self, first_y: Y, first_x: X, *, columns_first: Literal[False] = False
+        self,
+        first_y: Y,
+        first_x: X,
+        *,
+        direction: Literal[IterDirection.Rows] = IterDirection.Rows,
     ) -> Iterable[tuple[Y, Iterable[tuple[X, Map2dDataType]]]]: ...
     @overload
     def iter_data(
@@ -184,7 +190,7 @@ class Map2d[Map2dDataType]:
         last_y: Y,
         last_x: X,
         *,
-        columns_first: bool,
+        direction: IterDirection,
     ) -> Iterable[tuple[X, Iterable[tuple[Y, Map2dDataType]]]]: ...
     @overload
     def iter_data(
@@ -194,7 +200,7 @@ class Map2d[Map2dDataType]:
         last_y: Y,
         last_x: X,
         *,
-        columns_first: Literal[False] = False,
+        direction: Literal[IterDirection.Rows] = IterDirection.Rows,
     ) -> Iterable[tuple[Y, Iterable[tuple[X, Map2dDataType]]]]: ...
 
     def iter_data(
@@ -204,7 +210,7 @@ class Map2d[Map2dDataType]:
         last_y: Y | None = None,
         last_x: X | None = None,
         *,
-        columns_first: bool = False,
+        direction: IterDirection = IterDirection.Rows,
     ) -> (
         Iterable[tuple[Y, Iterable[tuple[X, Map2dDataType]]]]
         | Iterable[tuple[X, Iterable[tuple[Y, Map2dDataType]]]]
@@ -232,10 +238,11 @@ class Map2d[Map2dDataType]:
         if first_y > self._br_y and last_y >= self._br_y:
             return
 
-        if not columns_first:
-            yield from self.iter_data_by_lines(first_y, first_x, last_y, last_x)
-        else:
-            yield from self.iter_data_by_columns(first_y, first_x, last_y, last_x)
+        match direction:
+            case IterDirection.Rows:
+                yield from self.iter_data_by_lines(first_y, first_x, last_y, last_x)
+            case IterDirection.Columns:
+                yield from self.iter_data_by_columns(first_y, first_x, last_y, last_x)
 
     def str_lines(
         self, get_symbol: Callable[[Map2dDataType], str] | None = None
