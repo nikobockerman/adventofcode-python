@@ -17,7 +17,7 @@ from adventofcode import answers
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-app = typer.Typer()
+app = typer.Typer(no_args_is_help=True)
 state = {"day_suffix": ""}
 
 YEAR = answers.Year(2023)
@@ -50,7 +50,7 @@ def all_() -> None:
     sys.exit(_multiple_problems(answers.get(), day_suffix=state["day_suffix"]))
 
 
-@app.command(name="day")
+@app.command(name="day", no_args_is_help=True)
 def day_(day: int) -> None:
     sys.exit(
         _multiple_problems(
@@ -69,7 +69,7 @@ class _Problem(StrEnum):
     _2 = "2"
 
 
-@app.command()
+@app.command(no_args_is_help=True)
 def single(
     day: int,
     problem: _Problem,
