@@ -311,33 +311,7 @@ def create_path_pipe(prev: _PathPipe, pipe: _Pipe, map_data: _MapData) -> _PathP
     return _PathPipe(pipe, neighbors)
 
 
-def p2(input_str: str) -> int:
-    map_data = _MapData(list(input_str.splitlines()))
-
-    start = map_data.start
-    start_neighbors = list(_get_adjoin_pipes_on_path(start, map_data))
-
-    fixed_start_symbol = _resolve_start_symbol(start, start_neighbors)
-    _logger.debug("fixed_start_symbol=%s", fixed_start_symbol)
-    start.symbol = fixed_start_symbol
-
-    path_by_pipes = _create_path_by_pipes(start, start_neighbors[0], map_data)
-
-    coords_in_path = {pipe.coord for pipe in path_by_pipes}
-    first_path_pipe = _create_first_path_pipe(map_data, coords_in_path)
-    _logger.debug("first_path_pipe=%s", first_path_pipe)
-
-    _logger.info("Detecting inside/outside neighbors along path")
-    index_in_path_for_first_path_pipe = path_by_pipes.index(first_path_pipe.pipe)
-    prev_path_pipe: _PathPipe = first_path_pipe
-    for pipe in itertools.chain(
-        path_by_pipes[index_in_path_for_first_path_pipe + 1 :],
-        path_by_pipes[:index_in_path_for_first_path_pipe],
-    ):
-        prev_path_pipe = create_path_pipe(prev_path_pipe, pipe, map_data)
-
-    _logger.info("Marking rest of map for inside/outside")
-
+def mark_pipes(map_data: _MapData) -> None:
     def mark_pipe(
         pipe: _Pipe, visited_recursive_coords: set[Coord2d] | None = None
     ) -> None:
@@ -370,18 +344,51 @@ def p2(input_str: str) -> int:
         for _, pipe in pipe_iter:
             mark_pipe(pipe)
 
-    def get_symbol_for_pipe(pipe: _Pipe) -> str:
-        if pipe.inside is _Inside.Inside:
-            return " "
-        if pipe.inside is _Inside.Outside:
-            return "."
-        if pipe.inside is _Inside.InPath:
-            return pipe.symbol
-        return "#"
 
-    if _logger.isEnabledFor(logging.DEBUG):
-        for map_line in map_data.str_lines(get_symbol_for_pipe):
-            _logger.debug(map_line)
+def p2(input_str: str) -> int:
+    map_data = _MapData(list(input_str.splitlines()))
+
+    start = map_data.start
+    start_neighbors = list(_get_adjoin_pipes_on_path(start, map_data))
+
+    fixed_start_symbol = _resolve_start_symbol(start, start_neighbors)
+    _logger.debug("fixed_start_symbol=%s", fixed_start_symbol)
+    start.symbol = fixed_start_symbol
+
+    path_by_pipes = _create_path_by_pipes(start, start_neighbors[0], map_data)
+
+    coords_in_path = {pipe.coord for pipe in path_by_pipes}
+    first_path_pipe = _create_first_path_pipe(map_data, coords_in_path)
+    _logger.debug("first_path_pipe=%s", first_path_pipe)
+
+    _logger.info("Detecting inside/outside neighbors along path")
+    index_in_path_for_first_path_pipe = path_by_pipes.index(first_path_pipe.pipe)
+    prev_path_pipe: _PathPipe = first_path_pipe
+    for pipe in itertools.chain(
+        path_by_pipes[index_in_path_for_first_path_pipe + 1 :],
+        path_by_pipes[:index_in_path_for_first_path_pipe],
+    ):
+        prev_path_pipe = create_path_pipe(prev_path_pipe, pipe, map_data)
+
+    _logger.info("Marking rest of map for inside/outside")
+
+    mark_pipes(map_data)
+
+    def log_map(map_data: _MapData) -> None:
+        def get_symbol_for_pipe(pipe: _Pipe) -> str:
+            if pipe.inside is _Inside.Inside:
+                return " "
+            if pipe.inside is _Inside.Outside:
+                return "."
+            if pipe.inside is _Inside.InPath:
+                return pipe.symbol
+            return "#"
+
+        if _logger.isEnabledFor(logging.DEBUG):
+            for map_line in map_data.str_lines(get_symbol_for_pipe):
+                _logger.debug(map_line)
+
+    log_map(map_data)
 
     _logger.info("Calculating inside locations")
 
