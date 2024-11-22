@@ -26,7 +26,7 @@ class IterDirection(enum.Enum):
 
 
 class Map2d[Map2dDataType]:
-    __slots__ = ("_sequence_data", "_width", "_height", "_br_y", "_br_x")
+    __slots__ = ("_br_x", "_br_y", "_height", "_sequence_data", "_width")
 
     def __init__(
         self,

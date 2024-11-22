@@ -30,7 +30,7 @@ validate = ["lint", "test", "runall"]
 
 [dependency-groups]
 dev = [
-    "ruff ==0.7.4",
+    "ruff ==0.8.0",
     "pyright[nodejs] ==1.1.389",
     "joblib-stubs ==1.4.2.5.20240918",
     "mypy ==1.13.0",
@@ -50,7 +50,6 @@ strict_optional = true
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "ANN101",
     "COM812",
     "D10",
     "FIX",
