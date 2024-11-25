@@ -14,18 +14,25 @@ dependencies = [
 adventofcode = "adventofcode.main:app"
 
 [tool.poe.tasks]
-mypy = "mypy ."
-pyright = "pyright"
-ruff-check = "ruff check"
-ruff-check-format = "ruff format --check"
-lint = ["ruff-check", "ruff-check-format", "pyright", "mypy"]
+sync = "uv sync"
+"check:mypy" = "mypy ."
+"check:pyright" = "pyright"
+"check:ruff" = "ruff check"
+"check:ruff:format" = "ruff format --check"
+"check:pytest" = "pytest"
+check = [
+    "check:ruff",
+    "check:ruff:format",
+    "check:pyright",
+    "check:mypy",
+    "check:pytest"
+]
 
-format = "ruff format"
-ruff-fix = "ruff check --fix-only"
+"fix:format" = "ruff format"
+"fix:ruff" = "ruff check --fix-only"
+fix = ["fix:format", "fix:ruff"]
 
-test = "pytest"
-
-validate = ["lint", "test", "runall"]
+all = ["sync", "check", "runall"]
 
 [tool.poe.tasks.runall]
 cmd = "adventofcode all"
