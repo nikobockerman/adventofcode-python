@@ -25,8 +25,12 @@ ruff-fix = "ruff check --fix-only"
 
 test = "pytest"
 
-runall = "adventofcode all"
 validate = ["lint", "test", "runall"]
+
+[tool.poe.tasks.runall]
+cmd = "adventofcode all"
+env = { PYTHONWARNINGS = "always,error" }
+
 
 [dependency-groups]
 dev = [
