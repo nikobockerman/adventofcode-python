@@ -41,7 +41,7 @@ env = { PYTHONWARNINGS = "always,error" }
 
 [dependency-groups]
 dev = [
-    "ruff ==0.8.0",
+    "ruff ==0.8.1",
     "pyright[nodejs] ==1.1.389",
     "joblib-stubs ==1.4.2.5.20240918",
     "mypy ==1.13.0",
