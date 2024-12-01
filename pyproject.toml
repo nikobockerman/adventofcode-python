@@ -18,9 +18,11 @@ adventofcode = "adventofcode.main:app"
 "sync:npm" = "npm install"
 sync = ["sync:uv", "sync:npm"]
 
+"check:github-actions" = "npm run check:github-actions"
 "check:mypy" = "mypy ."
-"check:prettier" = "npx prettier --check ."
-"check:pyright" = "npx pyright"
+"check:prettier" = "npm run check:prettier"
+"check:pyright" = "npm run check:pyright"
+"check:renovateconfig" = "npm run check:renovateconfig"
 "check:ruff" = "ruff check"
 "check:ruff:format" = "ruff format --check"
 "check:pytest" = "pytest"
@@ -30,10 +32,12 @@ check = [
   "check:prettier",
   "check:pyright",
   "check:mypy",
-  "check:pytest"
+  "check:pytest",
+  "check:github-actions",
+  "check:renovateconfig"
 ]
 
-"fix:format:prettier" = "npx prettier --write ."
+"fix:format:prettier" = "npm run fix:prettier"
 "fix:format:ruff" = "ruff format"
 "fix:ruff" = "ruff check --fix-only"
 

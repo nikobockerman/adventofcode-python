@@ -1,0 +1,24 @@
+name: Check - pyright
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**.py"
+      - "**/py.typed"
+      - "package.json"
+      - "package-lock.json"
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  pyright:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Setup project
+        uses: ./.github/actions/uv-project-setup
+      - name: Setup npm tools
+        uses: ./.github/actions/npm-tools-setup
+      - name: Check pyright
+        run: uv run poe check:pyright
