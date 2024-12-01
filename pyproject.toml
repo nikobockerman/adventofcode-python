@@ -89,6 +89,9 @@ ignore = [
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
 
+[tool.pytest.ini_options]
+filterwarnings = ["error"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
