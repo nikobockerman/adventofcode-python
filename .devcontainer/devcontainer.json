@@ -1,34 +1,34 @@
 {
-    "name": "AoC-Python",
-    "build": {
-        "dockerfile": "Dockerfile"
-    },
-    "features": {
-        "ghcr.io/devcontainers/features/node:1": {
-            "version": "22"
-        }
-    },
-    "containerEnv": {
-        "UV_CACHE_DIR": "${containerWorkspaceFolder}/.uv/cache",
-        "UV_TOOL_DIR": "${containerWorkspaceFolder}/.uv/tools"
-    },
-    "updateContentCommand": "uv sync && uv run poe sync",
-    "portsAttributes": {
-        "8080": {
-            "label": "Web Server for accessing performance profiles",
-            "onAutoForward": "notify"
-        }
-    },
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "charliermarsh.ruff",
-                "editorconfig.editorconfig",
-                "github.vscode-github-actions",
-                "mrmlnc.vscode-json5",
-                "ms-azuretools.vscode-docker",
-                "ms-python.mypy-type-checker"
-            ]
-        }
+  "name": "AoC-Python",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
     }
+  },
+  "containerEnv": {
+    "UV_CACHE_DIR": "${containerWorkspaceFolder}/.uv/cache",
+    "UV_TOOL_DIR": "${containerWorkspaceFolder}/.uv/tools"
+  },
+  "updateContentCommand": "uv sync && uv run poe sync",
+  "portsAttributes": {
+    "8080": {
+      "label": "Web Server for accessing performance profiles",
+      "onAutoForward": "notify"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "editorconfig.editorconfig",
+        "github.vscode-github-actions",
+        "mrmlnc.vscode-json5",
+        "ms-azuretools.vscode-docker",
+        "ms-python.mypy-type-checker"
+      ]
+    }
+  }
 }
