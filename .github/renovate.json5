@@ -1,14 +1,14 @@
 {
-    $schema: "https://docs.renovatebot.com/renovate-schema.json",
-    extends: ["config:best-practices"],
-    lockFileMaintenance: {
-        enabled: true,
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:best-practices"],
+  lockFileMaintenance: {
+    enabled: true,
+  },
+  packageRules: [
+    {
+      description: "Disable docker pinning for devcontainer",
+      matchFileNames: [".devcontainer/Dockerfile"],
+      pinDigests: false,
     },
-    packageRules: [
-        {
-            description: "Disable docker pinning for devcontainer",
-            matchFileNames: [".devcontainer/Dockerfile"],
-            pinDigests: false,
-        },
-    ],
+  ],
 }
