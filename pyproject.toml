@@ -14,8 +14,12 @@ dependencies = [
 adventofcode = "adventofcode.main:app"
 
 [tool.poe.tasks]
-sync = "uv sync"
+"sync:uv" = "uv sync"
+"sync:npm" = "npm install"
+sync = ["sync:uv", "sync:npm"]
+
 "check:mypy" = "mypy ."
+"check:prettier" = "npx prettier --check ."
 "check:pyright" = "pyright"
 "check:ruff" = "ruff check"
 "check:ruff:format" = "ruff format --check"
@@ -23,13 +27,17 @@ sync = "uv sync"
 check = [
     "check:ruff",
     "check:ruff:format",
+    "check:prettier",
     "check:pyright",
     "check:mypy",
     "check:pytest"
 ]
 
-"fix:format" = "ruff format"
+"fix:format:prettier" = "npx prettier --write ."
+"fix:format:ruff" = "ruff format"
 "fix:ruff" = "ruff check --fix-only"
+
+"fix:format" = ["fix:format:prettier", "fix:format:ruff"]
 fix = ["fix:format", "fix:ruff"]
 
 all = ["sync", "check", "runall"]
