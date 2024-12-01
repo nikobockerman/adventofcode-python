@@ -1,7 +1,6 @@
 name: Run verifications
 
 on:
-  check_run:
   push:
     branches:
       - main
