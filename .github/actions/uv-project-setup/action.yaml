@@ -1,0 +1,17 @@
+name: uv project setup
+description: Setup python, uv and dependencies for project
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      id: setup-uv
+      uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a # v4
+      with:
+        enable-cache: true
+    - name: Setup python
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5
+      with:
+        python-version: 3.12
+    - name: Install project dependencies
+      run: uv sync
+      shell: bash

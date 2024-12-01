@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Run every Monday at 00:30 UTC
+    - cron: "30 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  check-mypy:
+    uses: ./.github/workflows/check-mypy.yaml
+  check-prettier:
+    uses: ./.github/workflows/check-prettier.yaml
+  check-pyright:
+    uses: ./.github/workflows/check-pyright.yaml
+  check-ruff:
+    uses: ./.github/workflows/check-ruff.yaml
+  test-pytest:
+    uses: ./.github/workflows/test-pytest.yaml
+  run-all:
+    uses: ./.github/workflows/run-all.yaml
