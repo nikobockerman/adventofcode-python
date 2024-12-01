@@ -2,6 +2,7 @@
   "scripts": {
     "check:prettier": "prettier --check .",
     "check:pyright": "pyright",
+    "check:renovateconfig": "npx --package=renovate -- renovate-config-validator --strict",
     "fix:prettier": "prettier --write ."
   },
   "private": true,

@@ -21,6 +21,7 @@ sync = ["sync:uv", "sync:npm"]
 "check:mypy" = "mypy ."
 "check:prettier" = "npm run check:prettier"
 "check:pyright" = "npm run check:pyright"
+"check:renovateconfig" = "npm run check:renovateconfig"
 "check:ruff" = "ruff check"
 "check:ruff:format" = "ruff format --check"
 "check:pytest" = "pytest"
@@ -30,7 +31,8 @@ check = [
   "check:prettier",
   "check:pyright",
   "check:mypy",
-  "check:pytest"
+  "check:pytest",
+  "check:renovateconfig"
 ]
 
 "fix:format:prettier" = "npm run fix:prettier"
