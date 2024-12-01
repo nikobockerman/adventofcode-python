@@ -18,6 +18,7 @@ adventofcode = "adventofcode.main:app"
 "sync:npm" = "npm install"
 sync = ["sync:uv", "sync:npm"]
 
+"check:github-actions" = "npm run check:github-actions"
 "check:mypy" = "mypy ."
 "check:prettier" = "npm run check:prettier"
 "check:pyright" = "npm run check:pyright"
@@ -32,6 +33,7 @@ check = [
   "check:pyright",
   "check:mypy",
   "check:pytest",
+  "check:github-actions",
   "check:renovateconfig"
 ]
 
