@@ -5,6 +5,8 @@ on:
     paths:
       - "**.py"
       - "**/py.typed"
+      - ".github/actions/uv-project-setup/**"
+      - ".github/workflows/check-ruff.yaml"
       - "pyproject.toml"
       - "uv.lock"
   workflow_call:

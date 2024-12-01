@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "**.py"
+      - ".github/actions/uv-project-setup/**"
+      - ".github/workflows/run-all.yaml"
       - "adventofcode/**/input-*.txt"
       - "pyproject.toml"
       - "uv.lock"
