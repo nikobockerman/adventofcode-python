@@ -33,8 +33,17 @@ jobs:
           python-version: 3.12
       - run: python --version
 
+      - name: Setup npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
       - name: Install project
         run: uv sync --all-extras --dev
+
+      - name: Install npm dev tools
+        run: uv run poe sync:npm
 
       - name: Run validations
         run: uv run poe all
