@@ -19,8 +19,8 @@ adventofcode = "adventofcode.main:app"
 sync = ["sync:uv", "sync:npm"]
 
 "check:mypy" = "mypy ."
-"check:prettier" = "npx prettier --check ."
-"check:pyright" = "npx pyright"
+"check:prettier" = "npm run check:prettier"
+"check:pyright" = "npm run check:pyright"
 "check:ruff" = "ruff check"
 "check:ruff:format" = "ruff format --check"
 "check:pytest" = "pytest"
@@ -33,7 +33,7 @@ check = [
   "check:pytest"
 ]
 
-"fix:format:prettier" = "npx prettier --write ."
+"fix:format:prettier" = "npm run fix:prettier"
 "fix:format:ruff" = "ruff format"
 "fix:ruff" = "ruff check --fix-only"
 
