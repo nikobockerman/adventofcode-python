@@ -9,11 +9,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/adventofcode/main.py",
-            "args": [
-                "-vv",
-                "12",
-                "1"
-            ],
+            "args": ["-vv", "12", "1"],
             "console": "integratedTerminal",
             "justMyCode": true
         }
