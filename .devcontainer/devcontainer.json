@@ -12,7 +12,7 @@
         "UV_CACHE_DIR": "${containerWorkspaceFolder}/.uv/cache",
         "UV_TOOL_DIR": "${containerWorkspaceFolder}/.uv/tools"
     },
-    "updateContentCommand": "uv sync",
+    "updateContentCommand": "uv sync && uv run poe sync",
     "portsAttributes": {
         "8080": {
             "label": "Web Server for accessing performance profiles",
