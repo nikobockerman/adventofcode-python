@@ -20,6 +20,7 @@ sync = ["sync:uv", "sync:npm"]
 
 "check:github-actions" = "npm run check:github-actions"
 "check:mypy" = "mypy ."
+"check:npm:dedupe" = "npm run check:npm:dedupe"
 "check:prettier" = "npm run check:prettier"
 "check:pyright" = "npm run check:pyright"
 "check:renovateconfig" = "npm run check:renovateconfig"
@@ -34,6 +35,7 @@ check = [
   "check:mypy",
   "check:pytest",
   "check:github-actions",
+  "check:npm:dedupe",
   "check:renovateconfig"
 ]
 
