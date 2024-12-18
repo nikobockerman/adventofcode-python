@@ -4,7 +4,7 @@ import logging
 import math
 from abc import ABCMeta, abstractmethod
 from collections import Counter, deque
-from typing import TYPE_CHECKING, NamedTuple, Never, NewType, override
+from typing import TYPE_CHECKING, Never, NewType, override
 
 from attrs import frozen
 
@@ -219,11 +219,6 @@ def _parse_module(
     if module_type == "%":
         return _FlipFlop(name), outputs
     return _Conjunction(name), outputs
-
-
-class ModuleGroup[T: _AnyModule](NamedTuple):
-    key: T
-    group: list[T]
 
 
 def _find_gateway(
