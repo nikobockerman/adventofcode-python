@@ -10,7 +10,8 @@
   },
   "containerEnv": {
     "UV_CACHE_DIR": "${containerWorkspaceFolder}/.uv/cache",
-    "UV_TOOL_DIR": "${containerWorkspaceFolder}/.uv/tools"
+    "UV_TOOL_DIR": "${containerWorkspaceFolder}/.uv/tools",
+    "PYTHON_HISTORY": "${containerWorkspaceFolder}/.python_history"
   },
   "updateContentCommand": "uv sync && uv run poe sync",
   "portsAttributes": {
