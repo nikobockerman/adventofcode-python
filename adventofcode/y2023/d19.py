@@ -5,7 +5,7 @@ import re
 from collections.abc import Iterable, Mapping
 from enum import Enum
 from queue import Queue
-from typing import Literal, NewType, TypeGuard, cast
+from typing import Literal, NewType, TypeIs, cast
 
 from attrs import define, frozen
 
@@ -18,7 +18,7 @@ _categories: frozenset[_Category] = frozenset(("x", "m", "a", "s"))
 _Part = NewType("_Part", Mapping[_Category, int])
 
 
-def is_category(category: str) -> TypeGuard[_Category]:
+def is_category(category: str) -> TypeIs[_Category]:
     return category in _categories
 
 
