@@ -5,7 +5,7 @@ from adventofcode.tooling.coordinates import Coord2d
 from adventofcode.tooling.map import Map2d
 
 
-class _InputMap(Map2d[str]):
+class _InputMap(Map2d):
     def __init__(self, data: Iterable[str]) -> None:
         super().__init__(list(data))
 

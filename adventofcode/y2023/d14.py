@@ -9,7 +9,7 @@ from adventofcode.tooling.map import IterDirection, Map2d
 _logger = logging.getLogger(__name__)
 
 
-def _calculate_load(map_: Map2d[str]) -> int:
+def _calculate_load(map_: Map2d) -> int:
     max_load = map_.height
     return sum(
         max_load - y
@@ -152,7 +152,7 @@ class _RollHorizontal(_Roll[Y, X]):
         return Coord2d(coord.y, x)
 
 
-def _roll_rocks(map_: Map2d[str], direction: Dir) -> Map2d[str]:
+def _roll_rocks(map_: Map2d, direction: Dir) -> Map2d:
     lines: list[list[str]] = [["."] * map_.width for _ in range(map_.height)]
     roller: _RollVertical | _RollHorizontal
     match direction:
@@ -184,13 +184,13 @@ def p1(input_str: str) -> int:
     return _calculate_load(_roll_rocks(map_, Dir.N))
 
 
-def _perform_spin(map_: Map2d[str]) -> Map2d[str]:
+def _perform_spin(map_: Map2d) -> Map2d:
     for dir_ in (Dir.N, Dir.W, Dir.S, Dir.E):
         map_ = _roll_rocks(map_, dir_)
     return map_
 
 
-def _get_rock_coords(map_: Map2d[str]) -> frozenset[tuple[int, int]]:
+def _get_rock_coords(map_: Map2d) -> frozenset[tuple[int, int]]:
     return frozenset(
         (x, y) for y, x_iter in map_.iter_data() for x, sym in x_iter if sym == "O"
     )
@@ -199,9 +199,9 @@ def _get_rock_coords(map_: Map2d[str]) -> frozenset[tuple[int, int]]:
 def p2(input_str: str) -> int:
     map_ = Map2d([list(line) for line in input_str.splitlines()])
     _logger.debug("Initial map:\n%s", map_)
-    maps_after_spins: list[Map2d[str]] = []
+    maps_after_spins: list[Map2d] = []
     seen_rock_coords: dict[frozenset[tuple[int, int]], int] = {}
-    final_map: Map2d[str] | None = None
+    final_map: Map2d | None = None
     for i in range(1, 1_000_000_000 + 1):
         map_ = _perform_spin(map_)
         _logger.info("Done spinning %d", i)

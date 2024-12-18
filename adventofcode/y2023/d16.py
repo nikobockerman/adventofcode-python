@@ -32,7 +32,7 @@ class _SplitterExitCache:
 
 
 def _process_splitter_exit(
-    coord: Coord2d, dir_: Dir, map_: Map2d[str]
+    coord: Coord2d, dir_: Dir, map_: Map2d
 ) -> tuple[set[Coord2d], list[tuple[Coord2d, Dir]]]:
     visited: set[Coord2d] = set()
     next_splitter_exits: list[tuple[Coord2d, Dir]] = []
@@ -95,7 +95,7 @@ def _process_splitter_exit(
 def _try_one_enter(
     enter_coord: Coord2d,
     enter_dir: Dir,
-    map_: Map2d[str],
+    map_: Map2d,
     exit_cache: _SplitterExitCache,
 ) -> int:
     visited: set[Coord2d] = set()

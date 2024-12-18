@@ -6,7 +6,7 @@ import pathlib
 import sys
 import time
 from enum import StrEnum
-from typing import TYPE_CHECKING, Annotated, Any, TypeGuard, assert_never
+from typing import TYPE_CHECKING, Annotated, Any, TypeIs, assert_never
 
 import joblib
 import typer
@@ -253,7 +253,7 @@ class InvalidResultTypeError(TypeError):
         super().__init__(f"Invalid result type: {result_type}")
 
 
-def is_valid_result_type(result: Any) -> TypeGuard[answers.AnswerType]:  # noqa: ANN401
+def is_valid_result_type(result: Any) -> TypeIs[answers.AnswerType]:  # noqa: ANN401
     return isinstance(result, int)
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import TYPE_CHECKING, Literal, assert_never, overload
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar, assert_never, overload
 
 from .coordinates import X, Y
 from .directions import RotationDirection
@@ -25,7 +25,10 @@ class IterDirection(enum.Enum):
     Columns = enum.auto()
 
 
-class Map2d[Map2dDataType]:
+Map2dDataType = TypeVar("Map2dDataType", default=str)
+
+
+class Map2d(Generic[Map2dDataType]):
     __slots__ = ("_br_x", "_br_y", "_height", "_sequence_data", "_width")
 
     def __init__(
