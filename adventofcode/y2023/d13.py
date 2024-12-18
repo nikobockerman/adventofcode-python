@@ -6,7 +6,7 @@ from adventofcode.tooling.coordinates import X, Y
 from adventofcode.tooling.map import IterDirection, Map2d
 
 
-def _parse_maps(input_str: str) -> Iterable[Map2d[str]]:
+def _parse_maps(input_str: str) -> Iterable[Map2d]:
     lines: list[list[str]] = []
     for line in input_str.splitlines():
         if not line:
@@ -31,7 +31,7 @@ def _compare_datas(
 
 
 def _find_consecutive_rows_or_columns(
-    map_: Map2d[str],
+    map_: Map2d,
     start_pos: int,
     direction: IterDirection,
     allowed_mismatches: int,
@@ -59,7 +59,7 @@ def _map_data_iter_to_data(d: tuple[int, str]) -> str:
 
 
 def _check_if_datas_around_reflection_match(
-    map_: Map2d[str],
+    map_: Map2d,
     pos_before_reflection: int,
     direction: IterDirection,
     allowed_mismatches: int,
@@ -105,7 +105,7 @@ def _check_if_datas_around_reflection_match(
 
 
 def _find_reflection_line(
-    map_: Map2d[str], direction: IterDirection, required_mismatches: int = 0
+    map_: Map2d, direction: IterDirection, required_mismatches: int = 0
 ) -> int | None:
     logging.debug(
         "Searching for reflection with %d required mismatches", required_mismatches
