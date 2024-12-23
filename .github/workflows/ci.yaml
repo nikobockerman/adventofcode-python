@@ -14,8 +14,6 @@ jobs:
     uses: ./.github/workflows/check-github-actions.yaml
   check-mypy:
     uses: ./.github/workflows/check-mypy.yaml
-  check-npm:
-    uses: ./.github/workflows/check-npm.yaml
   check-prettier:
     uses: ./.github/workflows/check-prettier.yaml
   check-pyright:
@@ -24,6 +22,8 @@ jobs:
     uses: ./.github/workflows/check-renovate-config.yaml
   check-ruff:
     uses: ./.github/workflows/check-ruff.yaml
+  check-yarn:
+    uses: ./.github/workflows/check-yarn.yaml
   test-pytest:
     uses: ./.github/workflows/test-pytest.yaml
   run-all:

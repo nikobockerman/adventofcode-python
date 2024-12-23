@@ -1,9 +1,15 @@
 {
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "files.associations": {
     "*.txt": "plaintext"
   },
+  "prettier.prettierPath": ".yarn/sdks/prettier/index.cjs",
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
+  "search.exclude": {
+    "**/.yarn": true,
+    "**/.pnp.*": true
+  },
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.codeActionsOnSave": {

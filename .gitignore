@@ -164,6 +164,12 @@ cython_debug/
 #.idea/
 
 
-/node_modules/
 /.ruff_cache/
 /.python_history
+
+# Yarn
+/.pnp.*
+/.yarn/*
+!/.yarn/patches
+!/.yarn/plugins
+!/.yarn/versions
