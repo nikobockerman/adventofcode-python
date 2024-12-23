@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Setup project
         uses: ./.github/actions/uv-project-setup
-      - name: Setup npm tools
-        uses: ./.github/actions/npm-tools-setup
+      - name: Setup yarn tools
+        uses: ./.github/actions/yarn-project-setup
       - name: Check pyright
         run: uv run poe check:pyright

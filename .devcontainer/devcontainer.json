@@ -4,15 +4,23 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.13",
+      "installTools": false
+    },
     "ghcr.io/devcontainers/features/node:1": {
+      "installYarnUsingApt": false,
       "version": "22"
-    }
+    },
+    "ghcr.io/nikobockerman/devcontainer-features/yarn-persistent-cache:1": {}
   },
   "containerEnv": {
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
     "UV_CACHE_DIR": "${containerWorkspaceFolder}/.uv/cache",
     "UV_TOOL_DIR": "${containerWorkspaceFolder}/.uv/tools",
     "PYTHON_HISTORY": "${containerWorkspaceFolder}/.python_history"
   },
+  "onCreateCommand": "yarn && yarn dlx @yarnpkg/sdks vscode",
   "updateContentCommand": "uv sync && uv run poe sync",
   "portsAttributes": {
     "8080": {
@@ -23,8 +31,10 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "arcanis.vscode-zipfs",
         "charliermarsh.ruff",
         "editorconfig.editorconfig",
+        "esbenp.prettier-vscode",
         "github.vscode-github-actions",
         "mrmlnc.vscode-json5",
         "ms-azuretools.vscode-docker",
