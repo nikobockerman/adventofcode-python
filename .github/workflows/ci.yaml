@@ -10,12 +10,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-github-actions:
+    uses: ./.github/workflows/check-github-actions.yaml
   check-mypy:
     uses: ./.github/workflows/check-mypy.yaml
+  check-npm:
+    uses: ./.github/workflows/check-npm.yaml
   check-prettier:
     uses: ./.github/workflows/check-prettier.yaml
   check-pyright:
     uses: ./.github/workflows/check-pyright.yaml
+  check-renovate-config:
+    uses: ./.github/workflows/check-renovate-config.yaml
   check-ruff:
     uses: ./.github/workflows/check-ruff.yaml
   test-pytest:
