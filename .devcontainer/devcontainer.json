@@ -25,6 +25,7 @@
       "extensions": [
         "charliermarsh.ruff",
         "editorconfig.editorconfig",
+        "esbenp.prettier-vscode",
         "github.vscode-github-actions",
         "mrmlnc.vscode-json5",
         "ms-azuretools.vscode-docker",
