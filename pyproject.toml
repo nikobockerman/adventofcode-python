@@ -55,7 +55,7 @@ env = { PYTHONWARNINGS = "always,error" }
 
 [dependency-groups]
 dev = [
-  "ruff ==0.8.6",
+  "ruff ==0.9.1",
   "joblib-stubs ==1.4.2.5.20240918",
   "mypy ==1.14.1",
   "pytest ==8.3.4",
@@ -79,6 +79,7 @@ ignore = [
   "FIX",
   "ISC001",
   "PLR2004",
+  "RUF009", # Needed due to https://github.com/astral-sh/ruff/issues/6447
   "S101",
   "TD002",
   "TD003"
