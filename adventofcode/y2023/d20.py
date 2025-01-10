@@ -235,9 +235,9 @@ def _find_gateway(
         return None
 
     gateway_to_receiver = gateways_to_receiver[0]
-    assert isinstance(
-        gateway_to_receiver, _Conjunction
-    ), "Safety check: only conjunctions are known"
+    assert isinstance(gateway_to_receiver, _Conjunction), (
+        "Safety check: only conjunctions are known"
+    )
     return _GatewayConjuction(gateway_to_receiver.name)
 
 
@@ -262,9 +262,9 @@ def _parse_modules(
     modules_with_output_names += [_parse_module(line) for line in lines]
 
     receiver_names = _resolve_receiver_names(modules_with_output_names)
-    assert (
-        len(receiver_names) <= 1
-    ), "Safety check: only inputs with 0-1 receivers are known"
+    assert len(receiver_names) <= 1, (
+        "Safety check: only inputs with 0-1 receivers are known"
+    )
 
     receiver: _Receiver | None = None
     if receiver_names:
