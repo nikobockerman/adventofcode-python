@@ -639,9 +639,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pyright@npm:1.1.394":
-  version: 1.1.394
-  resolution: "pyright@npm:1.1.394"
+"pyright@npm:1.1.395":
+  version: 1.1.395
+  resolution: "pyright@npm:1.1.395"
   dependencies:
     fsevents: "npm:~2.3.3"
   dependenciesMeta:
@@ -650,7 +650,7 @@ __metadata:
   bin:
     pyright: index.js
     pyright-langserver: langserver.index.js
-  checksum: 10c0/1136657acec655857f7ac46fbf1f0bf1c7c6dec65e78bb9c9139bbc5d3023113884da5b25990207133ca3cb593896dca81db240246a8ebe688927a47d0ce6bbf
+  checksum: 10c0/daf451d279ce1351e6fefb015a918bd0adc08db0893ec9aeef5af3fb9a8cb3f8c931b1fa59b7d8b0d4d8b965b1f12e7a1471a2b2af877555b3a1e5655d4305cb
   languageName: node
   linkType: hard
 
@@ -679,7 +679,7 @@ __metadata:
     "@action-validator/cli": "npm:0.6.0"
     "@action-validator/core": "npm:0.6.0"
     prettier: "npm:3.5.2"
-    pyright: "npm:1.1.394"
+    pyright: "npm:1.1.395"
   languageName: unknown
   linkType: soft
 
