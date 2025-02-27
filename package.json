@@ -4,7 +4,7 @@
     "check:yarn:dedupe": "yarn dedupe --check",
     "check:prettier": "prettier --check .",
     "check:pyright": "pyright",
-    "check:renovateconfig": "npx --package=renovate -- renovate-config-validator --strict",
+    "check:renovateconfig": "npx --package=renovate --yes -- renovate-config-validator --strict",
     "fix:prettier": "prettier --write --cache-location .prettiercache ."
   },
   "private": true,
