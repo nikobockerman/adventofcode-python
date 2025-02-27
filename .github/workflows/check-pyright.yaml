@@ -2,9 +2,16 @@ name: Check - pyright
 
 on:
   pull_request:
-    paths-ignore:
+    paths:
       - "**.py"
       - "**/py.typed"
+      - ".github/actions/uv-project-setup/**"
+      - ".github/actions/yarn-project-setup/**"
+      - ".github/workflows/check-pyright.yaml"
+      - "package.json"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "yarn.lock"
   workflow_call:
   workflow_dispatch:
 
