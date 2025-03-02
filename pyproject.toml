@@ -58,7 +58,7 @@ dev = [
   "ruff ==0.9.9",
   "joblib-stubs ==1.4.2.5.20240918",
   "mypy ==1.15.0",
-  "pytest ==8.3.4",
+  "pytest ==8.3.5",
   "snakeviz ==2.2.2",
   "tuna ==0.5.11",
   "pyinstrument ==5.0.1",
