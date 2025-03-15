@@ -62,7 +62,7 @@ dev = [
   "snakeviz ==2.2.2",
   "tuna ==0.5.11",
   "pyinstrument ==5.0.1",
-  "poethepoet ==0.33.0",
+  "poethepoet ==0.33.1",
 ]
 
 [tool.pyright]
