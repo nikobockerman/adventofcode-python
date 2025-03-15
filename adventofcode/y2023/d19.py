@@ -291,9 +291,7 @@ def _possible_category_value_ranges(
 
 def _construct_workflow_steps(workflow: _Workflow) -> list[_WorkflowStep]:
     result = list[_WorkflowStep]()
-    failure_limits: dict[_Category, list[range] | None] = {
-        cat: None for cat in _categories
-    }
+    failure_limits: dict[_Category, list[range] | None] = dict.fromkeys(_categories)
     for rule in workflow.rules:
         category_value_ranges = _category_value_ranges_from_rule(rule)
         applicable_category_value_ranges = _merge_category_value_ranges(

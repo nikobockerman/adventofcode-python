@@ -42,10 +42,9 @@ def p2(input_str: str) -> int:
         matches = len(set(cards.winning) & set(cards.own))
         card_count = counts[cards.card_id]
         counts.update(
-            {
-                i: card_count
-                for i in range(cards.card_id + 1, cards.card_id + 1 + matches)
-            }
+            dict.fromkeys(
+                range(cards.card_id + 1, cards.card_id + 1 + matches), card_count
+            )
         )
 
     return sum(v for v in counts.values())
