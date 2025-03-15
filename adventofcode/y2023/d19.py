@@ -332,7 +332,7 @@ def p2(input_str: str) -> int:
             assert all(
                 ranges is not None for ranges in step.category_value_ranges.values()
             )
-            ranges = cast(dict[_Category, list[range]], step.category_value_ranges)
+            ranges = cast("dict[_Category, list[range]]", step.category_value_ranges)
             accepted_category_value_ranges.append(ranges)
             continue
 
