@@ -140,17 +140,17 @@ def p2(input_str: str) -> int:
         for y1 in (map_.tl_y, map_.br_y):
             coord = Coord2d(y1, X(x1))
             dir_ = Dir.S if y1 == 0 else Dir.N
-            logging.info("Trying %s -> %s", coord, dir_)
+            _logger.info("Trying %s -> %s", coord, dir_)
             result = _try_one_enter(coord, dir_, map_, exit_cache)
-            logging.info("Result %s -> %s = %d", coord, dir_, result)
+            _logger.info("Result %s -> %s = %d", coord, dir_, result)
             results.append((coord, dir_, result))
     for y2 in range(map_.tl_y, map_.br_y + 1):
         for x2 in (map_.tl_x, map_.br_x):
             coord = Coord2d(Y(y2), x2)
             dir_ = Dir.E if x2 == 0 else Dir.W
-            logging.info("Trying %s -> %s", coord, dir_)
+            _logger.info("Trying %s -> %s", coord, dir_)
             result = _try_one_enter(coord, dir_, map_, exit_cache)
-            logging.info("Result %s -> %s = %d", coord, dir_, result)
+            _logger.info("Result %s -> %s = %d", coord, dir_, result)
             results.append((coord, dir_, result))
 
     results.sort(key=lambda r: r[2])

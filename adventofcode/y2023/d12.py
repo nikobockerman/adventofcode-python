@@ -5,6 +5,8 @@ from typing import Literal
 
 from attrs import frozen
 
+_logger = logging.getLogger(__name__)
+
 
 @frozen
 class _Data:
@@ -192,12 +194,12 @@ def _calculate_alternatives(
     classifier = _Classifier(data, prev_state)
     if classifier.completion() is True:
         result = 1
-        logging.debug("CA %02d: %s -> Impossible -> %d", recursion_depth, data, result)
+        _logger.debug("CA %02d: %s -> Impossible -> %d", recursion_depth, data, result)
         return result
 
     if classifier.completion() is False:
         result = 0
-        logging.debug("CA %02d: %s -> Impossible -> %d", recursion_depth, data, result)
+        _logger.debug("CA %02d: %s -> Impossible -> %d", recursion_depth, data, result)
         return result
 
     first_unknown_index = classifier.first_unknown_index()
@@ -241,14 +243,14 @@ def _calculate_alternatives(
             result_cache[cache_key] = alternative_result
         result += alternative_result
 
-    logging.debug("CA %02d: %s -> Guessed    -> %d", recursion_depth, data, result)
+    _logger.debug("CA %02d: %s -> Guessed    -> %d", recursion_depth, data, result)
     return result
 
 
 def p1(input_str: str) -> int:
     def p1_calc(ind: int, input_data: _Data) -> int:
         res = _calculate_alternatives(input_data)
-        logging.info("%d: %s -> %s", ind, input_data, res)
+        _logger.info("%d: %s -> %s", ind, input_data, res)
         return res
 
     return sum(
@@ -266,7 +268,7 @@ def p2(input_str: str) -> int:
 
     def p2_calc(ind: int, input_data: _Data) -> int:
         res = _calculate_alternatives(input_data)
-        logging.info("%d: %s -> %s", ind, input_data, res)
+        _logger.info("%d: %s -> %s", ind, input_data, res)
         return res
 
     return sum(

@@ -157,7 +157,7 @@ class _Conjunction(_Module):
         yield from self._get_output_pulses(output_pulse_value)
 
     def set_inputs(self, inputs: Iterable[_ModuleName]) -> None:
-        self._state.update({name: _PulseLow for name in inputs})
+        self._state.update(dict.fromkeys(inputs, _PulseLow))
 
 
 class _GatewayConjuction(_Conjunction):

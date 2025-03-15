@@ -3,6 +3,8 @@ from collections.abc import Iterable
 
 from attrs import Factory, define, field
 
+_logger = logging.getLogger(__name__)
+
 
 @define
 class _InputNumber:
@@ -25,7 +27,7 @@ class _InputRow:
 def _parse_input(lines: Iterable[str]) -> list[_InputRow]:
     rows: list[_InputRow] = []
     for row_ind, line in enumerate(lines):
-        logging.debug("%s: line=%s", row_ind, line)
+        _logger.debug("%s: line=%s", row_ind, line)
         row = _InputRow()
 
         number: str | None = None
@@ -50,7 +52,7 @@ def _parse_input(lines: Iterable[str]) -> list[_InputRow]:
             row.numbers.append(_InputNumber(number, len(line) - 1 - len(number)))
             number = None
 
-        logging.debug("%s: row=%s", row_ind, row)
+        _logger.debug("%s: row=%s", row_ind, row)
         rows.append(row)
     return rows
 
@@ -90,10 +92,10 @@ def p1(input_str: str) -> int:
                 min(len(d), row_ind + 2),
             )
             if is_adjacent(number):
-                logging.debug("input_number=%s. Adjacent", input_number)
+                _logger.debug("input_number=%s. Adjacent", input_number)
                 result += number.number
             else:
-                logging.debug("input_number=%s. NOT adjacent", input_number)
+                _logger.debug("input_number=%s. NOT adjacent", input_number)
 
     return result
 
