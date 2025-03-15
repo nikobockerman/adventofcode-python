@@ -5,6 +5,8 @@ from collections.abc import Iterable
 from adventofcode.tooling.coordinates import X, Y
 from adventofcode.tooling.map import IterDirection, Map2d
 
+_logger = logging.getLogger(__name__)
+
 
 def _parse_maps(input_str: str) -> Iterable[Map2d]:
     lines: list[list[str]] = []
@@ -93,7 +95,7 @@ def _check_if_datas_around_reflection_match(
             allowed_mismatches,
         )
         if match_res is None:
-            logging.debug("Invalid mirror data at %d and %d", i1, i2)
+            _logger.debug("Invalid mirror data at %d and %d", i1, i2)
             return None
 
         assert match_res >= 0
@@ -107,7 +109,7 @@ def _check_if_datas_around_reflection_match(
 def _find_reflection_line(
     map_: Map2d, direction: IterDirection, required_mismatches: int = 0
 ) -> int | None:
-    logging.debug(
+    _logger.debug(
         "Searching for reflection with %d required mismatches", required_mismatches
     )
     search_start_pos = 0
@@ -117,7 +119,7 @@ def _find_reflection_line(
             map_, search_start_pos, direction, remaining_mismatches
         )
         if found_data_info is None:
-            logging.debug(
+            _logger.debug(
                 "No consecutive datas found with %d allowed mismatches",
                 remaining_mismatches,
             )
@@ -127,7 +129,7 @@ def _find_reflection_line(
         search_start_pos = first_pos + 1
         remaining_mismatches -= mismatches
 
-        logging.debug(
+        _logger.debug(
             "Found reflection at %d with %d mismatches remaining",
             first_pos,
             remaining_mismatches,
@@ -137,7 +139,7 @@ def _find_reflection_line(
             map_, first_pos, direction, remaining_mismatches
         )
         if check_res is None:
-            logging.debug(
+            _logger.debug(
                 "Datas around reflection don't match with %d allowed mismatches",
                 remaining_mismatches,
             )
@@ -146,16 +148,16 @@ def _find_reflection_line(
         remaining_mismatches -= check_res
         assert remaining_mismatches >= 0
         if remaining_mismatches > 0:
-            logging.debug("Not enough mismatches")
+            _logger.debug("Not enough mismatches")
             continue
-        logging.debug("Found perfect reflection at %d", first_pos)
+        _logger.debug("Found perfect reflection at %d", first_pos)
         return first_pos
 
 
 def _resolve(input_str: str, required_mismatches_per_map: int) -> int:
     result: int = 0
     for map_counter, map_ in enumerate(_parse_maps(input_str), 1):
-        logging.info(
+        _logger.info(
             "Map %2d: Size (LxC) %2d x %2d\n%s",
             map_counter,
             map_.height,
@@ -178,7 +180,7 @@ def _resolve(input_str: str, required_mismatches_per_map: int) -> int:
 
         map_result = (match_index + 1) * match_multiplier
         result += map_result
-        logging.info(
+        _logger.info(
             "Map %2d: %s: %2d, map_result: %5d, result so far: %d",
             map_counter,
             line_or_column,

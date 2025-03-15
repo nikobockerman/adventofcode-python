@@ -5,6 +5,8 @@ from attrs import Factory, define, field
 
 from adventofcode.tooling.ranges import are_ranges_overlapping, partition_range
 
+_logger = logging.getLogger(__name__)
+
 
 @define
 class _RangeMap:
@@ -111,8 +113,8 @@ def _get_location(maps: _InputMaps, seed: int) -> int:
 
 def p1(input_str: str) -> int:
     seeds, maps = _parse_input(input_str.splitlines())
-    logging.debug("seeds=%s", seeds)
-    logging.debug("maps=%s", maps)
+    _logger.debug("seeds=%s", seeds)
+    _logger.debug("maps=%s", maps)
 
     return min(_get_location(maps, seed) for seed in seeds)
 

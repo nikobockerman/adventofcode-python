@@ -5,6 +5,8 @@ from collections.abc import Iterable
 
 from attrs import define
 
+_logger = logging.getLogger(__name__)
+
 
 def _parse_input(lines: list[str]) -> tuple[str, list[tuple[str, tuple[str, str]]]]:
     directions = lines[0]
@@ -49,7 +51,7 @@ def _create_map_data(map_nodes_list: list[tuple[str, tuple[str, str]]]) -> _MapD
     locations_mapping = {
         location: index for index, (location, _) in enumerate(map_nodes_list)
     }
-    logging.debug("locations_mapping=%s", locations_mapping)
+    _logger.debug("locations_mapping=%s", locations_mapping)
 
     def get_start_locations() -> Iterable[int]:
         for location, _ in map_nodes_list:
@@ -141,17 +143,17 @@ def _resolve_loop_length(
 
 def p2(input_str: str) -> int:
     directions, map_nodes_list = _parse_input(input_str.splitlines())
-    logging.debug("directions=%s", directions)
-    logging.debug("map_nodes_list=%s", map_nodes_list)
+    _logger.debug("directions=%s", directions)
+    _logger.debug("map_nodes_list=%s", map_nodes_list)
 
     map_data = _create_map_data(map_nodes_list)
-    logging.debug("map_data=%s", map_data)
+    _logger.debug("map_data=%s", map_data)
 
     path_lengths = [
         _resolve_loop_length(start_location, directions, map_data)
         for start_location in map_data.start_locations
     ]
 
-    logging.info("path_lengths=%s", path_lengths)
+    _logger.info("path_lengths=%s", path_lengths)
 
     return math.lcm(*path_lengths)

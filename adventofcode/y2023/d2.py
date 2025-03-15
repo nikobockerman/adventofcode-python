@@ -1,11 +1,13 @@
 import logging
 from collections.abc import Iterable
 
+_logger = logging.getLogger(__name__)
+
 
 def _parse_input(lines: Iterable[str]) -> Iterable[tuple[int, list[dict[str, int]]]]:
     for line in lines:
         g_id, rounds = line[5:].split(":")
-        logging.debug("line=%s", line)
+        _logger.debug("line=%s", line)
 
         yield (
             int(g_id),
