@@ -27,6 +27,7 @@ sync = ["sync:uv", "sync:yarn"]
 "check:ruff" = "ruff check"
 "check:ruff:format" = "ruff format --check"
 "check:pytest" = "pytest"
+"check:devcontainer" = "yarn run check:devcontainer"
 check = [
   "check:ruff",
   "check:ruff:format",
