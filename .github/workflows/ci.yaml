@@ -10,6 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-devcontainer:
+    uses: ./.github/workflows/check-devcontainer.yaml
   check-github-actions:
     uses: ./.github/workflows/check-github-actions.yaml
   check-mypy:

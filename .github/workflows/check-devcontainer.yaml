@@ -1,0 +1,23 @@
+name: Check - devcontainer
+
+on:
+  pull_request:
+    paths:
+      - ".github/actions/yarn-project-setup/**"
+      - ".github/workflows/check-devcontainer-build.yaml"
+      - "package.json"
+      - "yarn.lock"
+      - ".devcontainer/**"
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  devcontainer-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Setup yarn tools
+        uses: ./.github/actions/yarn-project-setup
+      - name: Check devcontainer
+        run: yarn run check:devcontainer
