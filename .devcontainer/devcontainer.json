@@ -12,6 +12,7 @@
       "installYarnUsingApt": false,
       "version": "22"
     },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/nikobockerman/devcontainer-features/yarn-persistent-cache:1": {}
   },
   "containerEnv": {
