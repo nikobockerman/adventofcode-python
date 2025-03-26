@@ -4,6 +4,7 @@
     "check:yarn:dedupe": "yarn dedupe --check",
     "check:prettier": "prettier --check .",
     "check:pyright": "pyright",
+    "check:devcontainer": "devcontainer build --workspace-folder . && yarn exec devcontainer up --workspace-folder . && yarn exec devcontainer exec --workspace-folder . uv run poe runall",
     "check:renovateconfig": "npx --package=renovate --yes -- renovate-config-validator --strict",
     "fix:prettier": "prettier --write --cache-location .prettiercache ."
   },
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@action-validator/cli": "0.6.0",
     "@action-validator/core": "0.6.0",
+    "@devcontainers/cli": "0.75.0",
     "prettier": "3.5.3",
     "pyright": "1.1.398"
   }
