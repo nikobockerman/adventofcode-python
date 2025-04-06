@@ -10,7 +10,7 @@
     },
     "ghcr.io/devcontainers/features/node:1": {
       "installYarnUsingApt": false,
-      "version": "22"
+      "version": "22.14.0"
     },
     "ghcr.io/nikobockerman/devcontainer-features/yarn-persistent-cache:1": {}
   },
