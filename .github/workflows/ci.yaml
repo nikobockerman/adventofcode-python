@@ -23,7 +23,7 @@ jobs:
   check-ruff:
     uses: ./.github/workflows/check-ruff.yaml
   check-yarn:
-    uses: ./.github/workflows/check-yarn.yaml
+    uses: nikobockerman/github-workflows/.github/workflows/check-yarn.yaml@d32b3b6765f463389cf43ee69b0bb1a6a8fe80f6
   test-pytest:
     uses: ./.github/workflows/test-pytest.yaml
   run-all:
