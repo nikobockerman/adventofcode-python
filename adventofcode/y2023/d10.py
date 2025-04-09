@@ -190,7 +190,7 @@ def _create_first_path_pipe(
 @define
 class _NeighborCheckGroup:
     prev_neighbor_dirs_to_check: list[Dir]
-    neighbor_dirs_to_set: list[Dir] = field(factory=list)
+    neighbor_dirs_to_set: list[Dir] = field(factory=list[Dir])
     inside: _Inside = _Inside.Unknown
 
 
