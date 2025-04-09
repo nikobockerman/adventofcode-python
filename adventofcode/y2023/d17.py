@@ -57,14 +57,18 @@ def _create_prio_queue(start_pos: Coord2d, destination: Coord2d) -> _PriorityQue
     return queue
 
 
+type _VisitedMinCacheKey = tuple[Coord2d, Dir]
+type _VisitedMinCacheValue = tuple[list[tuple[int, int]], list[tuple[int, int]]]
+
+
 @define
 class _ResolutionData:
     min_straight_moves: int
     max_straight_moves: int
     map_: Map2d[int]
-    visited_min_cache: dict[
-        tuple[Coord2d, Dir], tuple[list[tuple[int, int]], list[tuple[int, int]]]
-    ] = field(factory=dict)
+    visited_min_cache: dict[_VisitedMinCacheKey, _VisitedMinCacheValue] = field(
+        factory=dict[_VisitedMinCacheKey, _VisitedMinCacheValue]
+    )
 
 
 def _get_next_position_in_direction(
