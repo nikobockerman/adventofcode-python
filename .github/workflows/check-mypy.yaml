@@ -1,5 +1,4 @@
 name: Check - mypy
-
 on:
   pull_request:
     paths:
@@ -11,6 +10,8 @@ on:
       - "uv.lock"
   workflow_call:
   workflow_dispatch:
+permissions:
+  contents: read
 
 jobs:
   mypy:
