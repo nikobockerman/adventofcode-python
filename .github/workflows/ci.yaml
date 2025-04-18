@@ -15,19 +15,19 @@ permissions:
 
 jobs:
   check-github-actions:
-    uses: nikobockerman/github-workflows/.github/workflows/check-github-actions.yaml@4f72abc1d57a1a8c8d2741d5b2dc84861eddb0cf
+    uses: nikobockerman/github-workflows/.github/workflows/check-github-actions.yaml@b216e1ae8983e72a3195846d15ae28b5f35f1083
   check-mypy:
     uses: ./.github/workflows/check-mypy.yaml
   check-prettier:
-    uses: nikobockerman/github-workflows/.github/workflows/check-prettier.yaml@4f72abc1d57a1a8c8d2741d5b2dc84861eddb0cf
+    uses: nikobockerman/github-workflows/.github/workflows/check-prettier.yaml@b216e1ae8983e72a3195846d15ae28b5f35f1083
   check-pyright:
     uses: ./.github/workflows/check-pyright.yaml
   check-renovate-config:
-    uses: nikobockerman/github-workflows/.github/workflows/check-renovate-config.yaml@4f72abc1d57a1a8c8d2741d5b2dc84861eddb0cf
+    uses: nikobockerman/github-workflows/.github/workflows/check-renovate-config.yaml@b216e1ae8983e72a3195846d15ae28b5f35f1083
   check-ruff:
     uses: ./.github/workflows/check-ruff.yaml
   check-yarn:
-    uses: nikobockerman/github-workflows/.github/workflows/check-yarn.yaml@4f72abc1d57a1a8c8d2741d5b2dc84861eddb0cf
+    uses: nikobockerman/github-workflows/.github/workflows/check-yarn.yaml@b216e1ae8983e72a3195846d15ae28b5f35f1083
   test-pytest:
     uses: ./.github/workflows/test-pytest.yaml
   run-all:
