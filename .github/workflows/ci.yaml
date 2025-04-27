@@ -27,3 +27,6 @@ jobs:
     uses: ./.github/workflows/test-pytest.yaml
   run-all:
     uses: ./.github/workflows/run-all.yaml
+
+  check-devcontainer:
+    uses: ./.github/workflows/check-devcontainer.yaml
