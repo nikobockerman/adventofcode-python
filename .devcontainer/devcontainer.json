@@ -1,7 +1,8 @@
 {
   "name": "AoC-Python",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "cacheFrom": "ghcr.io/nikobockerman/adventofcode-python-devcontainer:cache"
   },
   "features": {
     "ghcr.io/devcontainers/features/python:1": {
