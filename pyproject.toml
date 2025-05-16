@@ -56,7 +56,7 @@ env = { PYTHONWARNINGS = "always,error" }
 [dependency-groups]
 dev = [
   "ruff ==0.11.9",
-  "joblib-stubs ==1.4.2.5.20240918",
+  "joblib-stubs ==1.5.0.1.20250510",
   "mypy ==1.15.0",
   "pytest ==8.3.5",
   "snakeviz ==2.2.2",
