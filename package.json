@@ -16,6 +16,6 @@
     "@action-validator/cli": "0.6.0",
     "@action-validator/core": "0.6.0",
     "prettier": "3.5.3",
-    "pyright": "1.1.400"
+    "pyright": "1.1.401"
   }
 }
