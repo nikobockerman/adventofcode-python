@@ -1,4 +1,31 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["github>nikobockerman/renovate-config"],
+  packageRules: [
+    {
+      description: "Automerge: devcontainer -> all but python",
+      matchManagers: ["devcontainer"],
+      matchPackageNames: ["!python"],
+      automerge: true,
+    },
+    {
+      description: "Automerge: npm -> all but node",
+      matchManagers: ["npm"],
+      matchPackageNames: ["!node"],
+      automerge: true,
+    },
+    {
+      description: "Automerge: pep621 -> all but python",
+      matchManagers: ["pep621"],
+      matchPackageNames: ["!python"],
+      automerge: true,
+    },
+    {
+      description: "Automerge: pep621 -> python patch updates",
+      matchManagers: ["pep621"],
+      matchPackageNames: ["python"],
+      matchUpdateTypes: ["patch"],
+      automerge: true,
+    },
+  ],
 }
