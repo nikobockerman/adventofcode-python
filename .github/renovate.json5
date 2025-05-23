@@ -27,5 +27,14 @@
       matchUpdateTypes: ["patch"],
       automerge: true,
     },
+    {
+      description: "Automerge: all for other managers",
+      matchManagers: [
+        "dockerfile",
+        "github-actions",
+        "renovate-config-presets",
+      ],
+      automerge: true,
+    },
   ],
 }
