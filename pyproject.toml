@@ -61,7 +61,7 @@ dev = [
   "pytest ==8.3.5",
   "snakeviz ==2.2.2",
   "tuna ==0.5.11",
-  "pyinstrument ==5.0.1",
+  "pyinstrument ==5.0.2",
   "poethepoet ==0.34.0",
 ]
 
