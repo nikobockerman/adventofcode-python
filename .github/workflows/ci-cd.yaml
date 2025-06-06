@@ -12,7 +12,15 @@ permissions:
   packages: write
 
 jobs:
+  prebuild-devcontainer:
+    uses: nikobockerman/github-workflows/.github/workflows/devcontainer-cache.yaml@cc3e3fdec0b2379e550c1ea4059cb79f455ff668
+    permissions:
+      contents: read
+      packages: write
+    with:
+      cache-type: intermediate
   ci:
+    needs: prebuild-devcontainer
     uses: ./.github/workflows/ci.yaml
   deploy-devcontainer-cache:
     needs: ci
