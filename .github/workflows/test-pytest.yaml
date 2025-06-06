@@ -1,12 +1,5 @@
 name: Check - pytest
 on:
-  pull_request:
-    paths:
-      - "**.py"
-      - ".github/actions/uv-project-setup/**"
-      - ".github/workflows/test-pytest.yaml"
-      - "pyproject.toml"
-      - "uv.lock"
   workflow_call:
   workflow_dispatch:
 permissions:

@@ -1,13 +1,5 @@
 name: Check - Devcontainer
 on:
-  pull_request:
-    paths:
-      - "**.py"
-      - ".devcontainer/**"
-      - ".github/workflows/check-devcontainer.yaml"
-      - "adventofcode/**/input-*.txt"
-      - "pyproject.toml"
-      - "uv.lock"
   workflow_call:
   workflow_dispatch:
 permissions:
