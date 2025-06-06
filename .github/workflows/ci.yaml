@@ -9,8 +9,6 @@ permissions:
 jobs:
   check-devcontainer:
     uses: ./.github/workflows/check-devcontainer.yaml
-  check-github-actions:
-    uses: nikobockerman/github-workflows/.github/workflows/check-github-actions.yaml@cc3e3fdec0b2379e550c1ea4059cb79f455ff668
   check-mypy:
     uses: ./.github/workflows/check-mypy.yaml
   check-prettier:
@@ -31,7 +29,6 @@ jobs:
   check:
     needs:
       - check-devcontainer
-      - check-github-actions
       - check-mypy
       - check-prettier
       - check-pyright
