@@ -13,7 +13,9 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Setup project
         uses: ./.github/actions/uv-project-setup
-      - name: Setup yarn tools
-        uses: nikobockerman/github-actions/.github/actions/yarn-project-setup@b828ad15816fd7bb096bb7543cda49aefc8a7fb8
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          experimental: true
       - name: Check pyright
-        run: uv run poe check:pyright
+        run: mise run check:pyright

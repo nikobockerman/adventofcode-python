@@ -1,0 +1,11 @@
+[tools.node]
+version = "22.16.0"
+backend = "core:node"
+
+[tools."npm:prettier"]
+version = "3.5.3"
+backend = "npm:prettier"
+
+[tools."npm:pyright"]
+version = "1.1.401"
+backend = "npm:pyright"
