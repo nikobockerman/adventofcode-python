@@ -27,3 +27,23 @@ jobs:
     uses: ./.github/workflows/test-pytest.yaml
   run-all:
     uses: ./.github/workflows/run-all.yaml
+
+  check:
+    needs:
+      - check-devcontainer
+      - check-github-actions
+      - check-mypy
+      - check-prettier
+      - check-pyright
+      - check-renovate-config
+      - check-ruff
+      - check-yarn
+      - test-pytest
+      - run-all
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: re-actors/alls-green@v1.2.2
+        with:
+          jobs: ${{ toJSON(needs) }}
