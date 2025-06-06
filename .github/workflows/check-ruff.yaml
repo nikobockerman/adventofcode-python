@@ -1,13 +1,5 @@
 name: Check - ruff
 on:
-  pull_request:
-    paths:
-      - "**.py"
-      - "**/py.typed"
-      - ".github/actions/uv-project-setup/**"
-      - ".github/workflows/check-ruff.yaml"
-      - "pyproject.toml"
-      - "uv.lock"
   workflow_call:
   workflow_dispatch:
 permissions:
