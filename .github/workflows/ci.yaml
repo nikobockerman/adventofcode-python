@@ -3,12 +3,16 @@ on:
   pull_request:
   workflow_call:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    # Run every Monday at 00:30 UTC
+    - cron: "30 0 * * 1"
 permissions:
   contents: read
 
 jobs:
-  check-devcontainer:
-    uses: ./.github/workflows/check-devcontainer.yaml
   check-mypy:
     uses: ./.github/workflows/check-mypy.yaml
   check-prettier:
@@ -28,7 +32,6 @@ jobs:
 
   check:
     needs:
-      - check-devcontainer
       - check-mypy
       - check-prettier
       - check-pyright
