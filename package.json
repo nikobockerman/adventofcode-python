@@ -1,18 +1,10 @@
 {
   "scripts": {
-    "check:yarn:dedupe": "yarn dedupe --check",
-    "check:prettier": "prettier --check .",
-    "check:pyright": "pyright",
-    "check:renovateconfig": "npx --package=renovate@latest --yes --prefer-online renovate-config-validator --strict",
-    "fix:prettier": "prettier --write --cache-location .prettiercache ."
+    "check:yarn:dedupe": "yarn dedupe --check"
   },
   "private": true,
   "packageManager": "yarn@4.9.2",
   "engines": {
     "node": "^22.0.0"
-  },
-  "devDependencies": {
-    "prettier": "3.5.3",
-    "pyright": "1.1.401"
   }
 }
