@@ -14,6 +14,6 @@ jobs:
       - name: Setup project
         uses: ./.github/actions/uv-project-setup
       - name: Setup yarn tools
-        uses: nikobockerman/github-actions/.github/actions/yarn-project-setup@b828ad15816fd7bb096bb7543cda49aefc8a7fb8
+        uses: nikobockerman/github-actions/.github/actions/yarn-project-setup@d931c894e22c2c2f3c73f892d944cbc8381b80f9
       - name: Check pyright
         run: uv run poe check:pyright
