@@ -5,7 +5,7 @@ runs:
   steps:
     - name: Install uv
       id: setup-uv
-      uses: astral-sh/setup-uv@a02a550bdd3185dba2ebb6aa98d77047ce54ad21 # v6
+      uses: astral-sh/setup-uv@445689ea25e0de0a23313031f5fe577c74ae45a1 # v6
       with:
         python-version: 3.13
     - name: Install project dependencies
