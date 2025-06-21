@@ -16,15 +16,15 @@ jobs:
   check-mypy:
     uses: ./.github/workflows/check-mypy.yaml
   check-prettier:
-    uses: nikobockerman/github-workflows/.github/workflows/check-prettier.yaml@55864979db2fac18cce2945b11b50e5e06fea565
+    uses: nikobockerman/github-workflows/.github/workflows/check-prettier.yaml@261e8683f0b52b7f6a9d91e2ea639a46f168ce8a
   check-pyright:
     uses: ./.github/workflows/check-pyright.yaml
   check-renovate-config:
-    uses: nikobockerman/github-workflows/.github/workflows/check-renovate-config.yaml@55864979db2fac18cce2945b11b50e5e06fea565
+    uses: nikobockerman/github-workflows/.github/workflows/check-renovate-config.yaml@261e8683f0b52b7f6a9d91e2ea639a46f168ce8a
   check-ruff:
     uses: ./.github/workflows/check-ruff.yaml
   check-yarn:
-    uses: nikobockerman/github-workflows/.github/workflows/check-yarn.yaml@55864979db2fac18cce2945b11b50e5e06fea565
+    uses: nikobockerman/github-workflows/.github/workflows/check-yarn.yaml@261e8683f0b52b7f6a9d91e2ea639a46f168ce8a
   test-pytest:
     uses: ./.github/workflows/test-pytest.yaml
   run-all:
