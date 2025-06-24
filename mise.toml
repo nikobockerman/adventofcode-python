@@ -1,0 +1,29 @@
+[tasks.check]
+depends = [
+  "check:prettier",
+  "check:pyright",
+  "check:renovateconfig",
+]
+
+[tasks."check:prettier"]
+run = "prettier --check ."
+
+[tasks."check:pyright"]
+run = "uv run pyright"
+
+[tasks."check:renovateconfig"]
+run = "renovate-config-validator --strict"
+tools."npm:renovate" = "latest"
+
+[tasks.fix]
+depends = [
+    "fix:prettier"
+]
+
+[tasks."fix:prettier"]
+run = "prettier --write --cache-location .prettiercache ."
+
+[tools]
+node = "22"
+"npm:prettier" = "3.5.3"
+"npm:pyright" = "1.1.402"

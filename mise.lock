@@ -1,0 +1,16 @@
+[tools.node]
+version = "22.16.0"
+backend = "core:node"
+
+[tools.node.checksums]
+"node-v22.16.0-darwin-arm64.tar.gz" = "sha256:1d7f34ec4c03e12d8b33481e5c4560432d7dc31a0ef3ff5a4d9a8ada7cf6ecc9"
+"node-v22.16.0-linux-arm64.tar.gz" = "sha256:1725602e9fb150eb8b8220a899085190e1c04d1a5f3862b01c3dc1dfce0157f9"
+"node-v22.16.0-linux-x64.tar.gz" = "sha256:fb870226119d47378fa9c92c4535389c72dae14fcc7b47e6fdcc82c43de5a547"
+
+[tools."npm:prettier"]
+version = "3.5.3"
+backend = "npm:prettier"
+
+[tools."npm:pyright"]
+version = "1.1.402"
+backend = "npm:pyright"
