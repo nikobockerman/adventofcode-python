@@ -6,7 +6,6 @@
   ],
   "extensions": {
     "recommendations": [
-      "arcanis.vscode-zipfs",
       "charliermarsh.ruff",
       "editorconfig.editorconfig",
       "esbenp.prettier-vscode",

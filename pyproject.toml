@@ -15,14 +15,12 @@ adventofcode = "adventofcode.main:app"
 
 [tool.poe.tasks]
 "sync:uv" = "uv sync"
-"sync:yarn" = "yarn"
-sync = ["sync:uv", "sync:yarn"]
+sync = ["sync:uv"]
 
 "check:mypy" = "mypy ."
-"check:yarn:dedupe" = "yarn run check:yarn:dedupe"
-"check:prettier" = "yarn run check:prettier"
-"check:pyright" = "yarn run check:pyright"
-"check:renovateconfig" = "yarn run check:renovateconfig"
+"check:prettier" = "mise run check:prettier"
+"check:pyright" = "mise run check:pyright"
+"check:renovateconfig" = "mise run check:renovateconfig"
 "check:ruff" = "ruff check"
 "check:ruff:format" = "ruff format --check"
 "check:pytest" = "pytest"
@@ -33,11 +31,10 @@ check = [
   "check:pyright",
   "check:mypy",
   "check:pytest",
-  "check:yarn:dedupe",
   "check:renovateconfig"
 ]
 
-"fix:format:prettier" = "yarn run fix:prettier"
+"fix:format:prettier" = "mise run fix:prettier"
 "fix:format:ruff" = "ruff format"
 "fix:ruff" = "ruff check --fix-only"
 

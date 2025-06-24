@@ -32,8 +32,6 @@ jobs:
       task: check:renovateconfig
   check-ruff:
     uses: ./.github/workflows/check-ruff.yaml
-  check-yarn:
-    uses: nikobockerman/github-workflows/.github/workflows/check-yarn.yaml@261e8683f0b52b7f6a9d91e2ea639a46f168ce8a
   test-pytest:
     uses: ./.github/workflows/test-pytest.yaml
   run-all:
@@ -46,7 +44,6 @@ jobs:
       - check-pyright
       - check-renovate-config
       - check-ruff
-      - check-yarn
       - test-pytest
       - run-all
     if: always()
