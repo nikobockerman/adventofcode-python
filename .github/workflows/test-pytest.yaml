@@ -1,4 +1,4 @@
-name: Check - pytest
+name: Test - pytest
 on:
   workflow_call:
   workflow_dispatch:
