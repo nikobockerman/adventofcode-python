@@ -9,6 +9,7 @@ source = { editable = "." }
 dependencies = [
     { name = "attrs" },
     { name = "joblib" },
+    { name = "pyinstrument" },
     { name = "typer" },
 ]
 
@@ -17,7 +18,6 @@ dev = [
     { name = "joblib-stubs" },
     { name = "mypy" },
     { name = "poethepoet" },
-    { name = "pyinstrument" },
     { name = "pytest" },
     { name = "ruff" },
     { name = "snakeviz" },
@@ -28,6 +28,7 @@ dev = [
 requires-dist = [
     { name = "attrs", specifier = "==25.3.0" },
     { name = "joblib", specifier = "==1.5.1" },
+    { name = "pyinstrument", specifier = "==5.0.2" },
     { name = "typer", specifier = "==0.16.0" },
 ]
 
@@ -36,7 +37,6 @@ dev = [
     { name = "joblib-stubs", specifier = "==1.5.0.1.20250510" },
     { name = "mypy", specifier = "==1.16.1" },
     { name = "poethepoet", specifier = "==0.34.0" },
-    { name = "pyinstrument", specifier = "==5.0.2" },
     { name = "pytest", specifier = "==8.4.1" },
     { name = "ruff", specifier = "==0.11.13" },
     { name = "snakeviz", specifier = "==2.2.2" },
