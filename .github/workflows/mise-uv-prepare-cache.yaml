@@ -21,7 +21,7 @@ jobs:
       - name: Setup mise
         uses: nikobockerman/github-actions/.github/actions/mise-project-setup@e016a979d6e455bb4023977985040870b466cace
       - name: uv cache
-        uses: actions/cache@v4 # TODO: Pin to digest and comment version
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4 # TODO: Pin to digest and comment version
         with:
           path: |
             ${{ steps.prepare.outputs.UV_CACHE_DIR }}
