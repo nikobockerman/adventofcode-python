@@ -1,0 +1,67 @@
+[tasks.all]
+depends = [
+  "check",
+  "runall"
+]
+
+[tasks.check]
+depends = [
+  "check:mypy",
+  "check:prettier",
+  "check:pyright",
+  "check:pytest",
+  "check:renovateconfig",
+  "check:ruff",
+  "check:ruff:format",
+]
+
+[tasks."check:mypy"]
+run = "mypy --python-executable $(uv python find) ."
+
+[tasks."check:prettier"]
+run = "prettier --check ."
+
+[tasks."check:pyright"]
+run = "uv run pyright"
+
+[tasks."check:pytest"]
+run = "uv run pytest"
+
+[tasks."check:renovateconfig"]
+run = "renovate-config-validator --strict"
+tools."npm:renovate" = "latest"
+
+[tasks."check:ruff"]
+run = "ruff check"
+
+[tasks."check:ruff:format"]
+run = "ruff format --check"
+
+[tasks.fix]
+depends = [
+  "fix:prettier",
+  "fix:ruff:format",
+  "fix:ruff",
+]
+
+[tasks."fix:prettier"]
+run = "prettier --write --cache-location .prettiercache ."
+
+[tasks."fix:ruff:format"]
+run = "ruff format"
+
+[tasks."fix:ruff"]
+run = "ruff check --fix-only"
+
+[tasks.runall]
+run = "uv run adventofcode all"
+env = { PYTHONWARNINGS = "always,error" }
+
+[tools]
+node = "22"
+"npm:prettier" = "3.5.3"
+"npm:pyright" = "1.1.402"
+"pipx:mypy" = "1.16.1"
+"pipx:ruff" = "0.11.13"
+python = "3.13.5"
+uv = "0.7.13"

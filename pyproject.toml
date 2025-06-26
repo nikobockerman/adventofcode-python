@@ -6,49 +6,13 @@ readme = "README.md"
 requires-python = "==3.13.5"
 dependencies = [
   "attrs ==25.3.0",
-  "typer ==0.16.0",
   "joblib ==1.5.1",
+  "pyinstrument ==5.0.2",
+  "typer ==0.16.0",
 ]
 
 [project.scripts]
 adventofcode = "adventofcode.main:app"
-
-[tool.poe.tasks]
-"sync:uv" = "uv sync"
-"sync:yarn" = "yarn"
-sync = ["sync:uv", "sync:yarn"]
-
-"check:mypy" = "mypy ."
-"check:yarn:dedupe" = "yarn run check:yarn:dedupe"
-"check:prettier" = "yarn run check:prettier"
-"check:pyright" = "yarn run check:pyright"
-"check:renovateconfig" = "yarn run check:renovateconfig"
-"check:ruff" = "ruff check"
-"check:ruff:format" = "ruff format --check"
-"check:pytest" = "pytest"
-check = [
-  "check:ruff",
-  "check:ruff:format",
-  "check:prettier",
-  "check:pyright",
-  "check:mypy",
-  "check:pytest",
-  "check:yarn:dedupe",
-  "check:renovateconfig"
-]
-
-"fix:format:prettier" = "yarn run fix:prettier"
-"fix:format:ruff" = "ruff format"
-"fix:ruff" = "ruff check --fix-only"
-
-"fix:format" = ["fix:format:prettier", "fix:format:ruff"]
-fix = ["fix:format", "fix:ruff"]
-
-all = ["sync", "check", "runall"]
-
-[tool.poe.tasks.runall]
-cmd = "adventofcode all"
-env = { PYTHONWARNINGS = "always,error" }
 
 
 [dependency-groups]
@@ -57,10 +21,6 @@ dev = [
   "joblib-stubs ==1.5.0.1.20250510",
   "mypy ==1.16.1",
   "pytest ==8.4.1",
-  "snakeviz ==2.2.2",
-  "tuna ==0.5.11",
-  "pyinstrument ==5.0.2",
-  "poethepoet ==0.34.0",
 ]
 
 [tool.pyright]

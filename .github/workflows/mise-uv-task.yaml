@@ -1,0 +1,43 @@
+name: Mise + uv - run task
+on:
+  workflow_call:
+    inputs:
+      task:
+        description: Task to run
+        required: true
+        type: string
+permissions:
+  contents: read
+
+jobs:
+  task:
+    name: Run mise task with uv - ${{ inputs.task }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Prepare
+        id: prepare
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          echo "UV_CACHE_DIR=${RUNNER_TEMP}/uv-cache" >> "$GITHUB_OUTPUT"
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup mise
+        uses: nikobockerman/github-actions/.github/actions/mise-project-setup@e016a979d6e455bb4023977985040870b466cace
+      - name: Restore uv cache
+        uses: actions/cache/restore@v4 # TODO: Pin to digest and comment version
+        with:
+          fail-on-cache-miss: true
+          key: uv-${{ hashFiles('uv.lock') }}
+          path: |
+            ${{ steps.prepare.outputs.UV_CACHE_DIR }}
+            .venv
+      - name: Install project
+        env:
+          UV_CACHE_DIR: ${{ steps.prepare.outputs.UV_CACHE_DIR }}
+        run: uv sync --locked --offline
+      - name: Run task - ${{ inputs.task }}
+        env:
+          UV_CACHE_DIR: ${{ steps.prepare.outputs.UV_CACHE_DIR }}
+        run: mise run ${{ inputs.task }}
