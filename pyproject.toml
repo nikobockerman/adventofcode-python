@@ -14,40 +14,6 @@ dependencies = [
 [project.scripts]
 adventofcode = "adventofcode.main:app"
 
-[tool.poe.tasks]
-"sync:uv" = "uv sync"
-sync = ["sync:uv"]
-
-"check:mypy" = "mypy ."
-"check:prettier" = "mise run check:prettier"
-"check:pyright" = "mise run check:pyright"
-"check:renovateconfig" = "mise run check:renovateconfig"
-"check:ruff" = "ruff check"
-"check:ruff:format" = "ruff format --check"
-"check:pytest" = "pytest"
-check = [
-  "check:ruff",
-  "check:ruff:format",
-  "check:prettier",
-  "check:pyright",
-  "check:mypy",
-  "check:pytest",
-  "check:renovateconfig"
-]
-
-"fix:format:prettier" = "mise run fix:prettier"
-"fix:format:ruff" = "ruff format"
-"fix:ruff" = "ruff check --fix-only"
-
-"fix:format" = ["fix:format:prettier", "fix:format:ruff"]
-fix = ["fix:format", "fix:ruff"]
-
-all = ["sync", "check", "runall"]
-
-[tool.poe.tasks.runall]
-cmd = "adventofcode all"
-env = { PYTHONWARNINGS = "always,error" }
-
 
 [dependency-groups]
 dev = [
@@ -55,7 +21,6 @@ dev = [
   "joblib-stubs ==1.5.0.1.20250510",
   "mypy ==1.16.1",
   "pytest ==8.4.1",
-  "poethepoet ==0.34.0",
 ]
 
 [tool.pyright]
