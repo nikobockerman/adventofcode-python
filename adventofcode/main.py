@@ -269,8 +269,8 @@ def _exec_problem(input_: _ProblemInput) -> _ProblemOutput:
 
 def _profiler_problem(input_: _ProblemInput, profiler: _Profiler) -> _ProblemOutput:
     if profiler is _Profiler.CProfile:
-        import cProfile
-        import pstats
+        import cProfile  # noqa: PLC0415
+        import pstats  # noqa: PLC0415
 
         with cProfile.Profile() as pr:
             result = input_.func(input_.input_str)
@@ -282,9 +282,9 @@ def _profiler_problem(input_: _ProblemInput, profiler: _Profiler) -> _ProblemOut
             return _ProblemOutput(input_.id, None, result)
 
     elif profiler is _Profiler.Pyinstrument:
-        import pyinstrument
-        import pyinstrument.util
-        from pyinstrument.renderers.console import ConsoleRenderer
+        import pyinstrument  # noqa: PLC0415
+        import pyinstrument.util  # noqa: PLC0415
+        from pyinstrument.renderers.console import ConsoleRenderer  # noqa: PLC0415
 
         with pyinstrument.profile(
             renderer=ConsoleRenderer(
