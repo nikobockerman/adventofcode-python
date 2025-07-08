@@ -60,7 +60,7 @@ env = { PYTHONWARNINGS = "always,error" }
 [tools]
 node = "22"
 "npm:prettier" = "3.6.2"
-"npm:pyright" = "1.1.402"
+"npm:pyright" = "1.1.403"
 "pipx:mypy" = "1.16.1"
 "pipx:ruff" = "0.12.1"
 python = "3.13.5"
