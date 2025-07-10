@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   mise-cache:
-    uses: nikobockerman/github-workflows/.github/workflows/mise-prepare-cache.yaml@875a9f10dd31453a5a82220c60efc60cd0a0a8a0
+    uses: nikobockerman/github-workflows/.github/workflows/mise-prepare-cache.yaml@b15020dc3c095d9b31a643233f3e5bd81eaecef7
   uv-cache:
     needs: mise-cache
     uses: ./.github/workflows/mise-uv-prepare-cache.yaml
@@ -25,7 +25,7 @@ jobs:
       task: check:mypy
   check-prettier:
     needs: mise-cache
-    uses: nikobockerman/github-workflows/.github/workflows/mise-task.yaml@875a9f10dd31453a5a82220c60efc60cd0a0a8a0
+    uses: nikobockerman/github-workflows/.github/workflows/mise-task.yaml@b15020dc3c095d9b31a643233f3e5bd81eaecef7
     with:
       task: check:prettier
   check-pyright:
@@ -35,12 +35,12 @@ jobs:
       task: check:pyright
   check-renovate-config:
     needs: mise-cache
-    uses: nikobockerman/github-workflows/.github/workflows/mise-task.yaml@875a9f10dd31453a5a82220c60efc60cd0a0a8a0
+    uses: nikobockerman/github-workflows/.github/workflows/mise-task.yaml@b15020dc3c095d9b31a643233f3e5bd81eaecef7
     with:
       task: check:renovateconfig
   check-ruff:
     needs: mise-cache
-    uses: nikobockerman/github-workflows/.github/workflows/mise-task.yaml@875a9f10dd31453a5a82220c60efc60cd0a0a8a0
+    uses: nikobockerman/github-workflows/.github/workflows/mise-task.yaml@b15020dc3c095d9b31a643233f3e5bd81eaecef7
     with:
       task: "check:ruff ::: check:ruff::format"
   test-pytest:
