@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Setup mise
-        uses: nikobockerman/github-actions/.github/actions/mise-project-setup@d0eee8223c4ff7c60c2ec2e61457b3ee867dffed # v1.0.14
+        uses: nikobockerman/github-actions/.github/actions/mise-project-setup@7b957b33a78854e2d90110e7d397e55fbe09abc8 # v1.0.15
       - name: uv cache
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
