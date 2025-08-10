@@ -7,7 +7,7 @@ requires-python = "==3.13.6"
 dependencies = [
   "attrs ==25.3.0",
   "joblib ==1.5.1",
-  "pyinstrument ==5.0.3",
+  "pyinstrument ==5.1.0",
   "typer ==0.16.0",
 ]
 
