@@ -8,7 +8,7 @@ dependencies = [
   "attrs ==25.3.0",
   "joblib ==1.5.1",
   "pyinstrument ==5.1.1",
-  "typer ==0.16.0",
+  "typer ==0.16.1",
 ]
 
 [project.scripts]
